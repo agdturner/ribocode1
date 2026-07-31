@@ -168,11 +168,20 @@ Next, the user can do several things:
 * In `Viewer A`, the loaded `Aligned` dataset is hidden by default. Use the `Aligned` visibility (eye) button in `MoleculeUI` to show it.
 * If a chain is selected, the `Select Residue` control becomes actionable and in the `Zoom to Chain` control becomes actionable to zoom to the selected chain.
 * If a residue is selected, the `Zoom to Residue` control becomes actionable to zoom to the selected residue within the chain. The selected residue will be in the viewer centre. How much is displayed around that depends on the `Residue Zoom` settings.
-* If chains are selected for both `AlignedTo` and `Aligned` molecules, the `Re-align` button can be actioned to add a new re-aligned representation to the viewers. Multiple ones of these can be created. They can also be removed.
+* If chains are selected for both `AlignedTo` and `Aligned` molecules, the `Re-align` button can be actioned to apply chain-based re-alignment in both viewers.
+* Re-aligning a different chain pair is supported repeatedly; repeating the same pair is blocked to avoid cumulative transform/rotation drift.
+
+### Re-align implementation note
+
+- Chain re-alignment now prefers an in-place transform of the currently loaded aligned structures for faster iteration.
+- If in-place transform cannot be applied, Ribocode automatically falls back to the reload-based `ReAligned` path.
+- Console diagnostics for re-alignment now include fit-quality metrics (`movingSelectedAtomCount`, `referenceSelectedAtomCount`, `atomPairCount`, and `rmsd`).
 
 Ribosome data can be downloaded from the [RCSB Protein Data Bank](https://www.rcsb.org/pages/about-us/index) in CIF format. Two datasets which align well are: [4ug0](https://files.rcsb.org/download/4UG0.cif); and [6xu8](https://files.rcsb.org/download/6XU8.cif).
 
-Sychronization is `Off` by default. If selected to be `On`, rotation/zoom in one `Mol* 3D Canvas` triggers rotation/zoom in the other.
+Synchronization is `Off` by default. If selected to be `On`, camera changes (rotation/pan/zoom) from the active viewer are propagated to the other viewer as relative deltas, so the non-active viewer keeps its own local framing while following the active interaction.
+This includes wheel/dolly zoom where camera distance changes even if camera radius is unchanged.
+The active sync source follows the viewer currently under the mouse pointer. Hovering or interacting (move/wheel/drag) in a viewer switches the sync source to that viewer; an explicit click is not required.
 
 Please refer to the [Mol* viewer Documentation](https://molstar.org/viewer-docs/) for details of the Mol* UI. In each Ribocode `Molstar Container`, the `Mol* 3D Canvas` is always visible and the additional Mol* panels (`Sequence Panel`, `Main Menu`, `Control Panel`, `Log Panel`) are hidden by default for a cleaner workflow. Use the `Show Advanced Mol* Controls` button in a column to reveal these panels for advanced usage, and `Hide Advanced Mol* Controls` to collapse them again. The Mol* viewer style is adapted so that the UI fits in a column of 600 pixels in width.
 

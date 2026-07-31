@@ -27,7 +27,11 @@ export function focusLociOnResidue(
     syncPlugin?: PluginUIContext,
     zoomExtraRadius?: number,
     zoomMinRadius?: number,
-    getResidueLociFn: (plugin: PluginUIContext, structureRef: string, chainId: string, residueId: string, insCode?: string) => any = getResidueLoci
+    getResidueLociFn: (plugin: PluginUIContext, structureRef: string, chainId: string, residueId: string, insCode?: string) => any = getResidueLoci,
+    syncStructureRef?: string,
+    syncChainId?: string,
+    syncResidueId?: string,
+    syncInsCode?: string
 ) {
     const loci = getResidueLociFn(plugin, structureRef, chainId, residueId, insCode);
     if (!loci) return;
@@ -36,7 +40,19 @@ export function focusLociOnResidue(
         : undefined;
     plugin.managers.camera.focusLoci(loci, focusOptions);
     if (syncPlugin) {
-        syncPlugin.managers.camera.focusLoci(loci, focusOptions);
+        const resolvedSyncStructureRef = syncStructureRef ?? structureRef;
+        const resolvedSyncChainId = syncChainId ?? chainId;
+        const resolvedSyncResidueId = syncResidueId ?? residueId;
+        const syncLoci = getResidueLociFn(
+            syncPlugin,
+            resolvedSyncStructureRef,
+            resolvedSyncChainId,
+            resolvedSyncResidueId,
+            syncInsCode ?? insCode
+        );
+        if (syncLoci) {
+            syncPlugin.managers.camera.focusLoci(syncLoci, focusOptions);
+        }
     }
 }
 
@@ -71,7 +87,9 @@ export function focusLociOnChain(
     syncPlugin?: PluginUIContext,
     getChainLociFn: (plugin: PluginUIContext, structureRef: string, chainId: string) => any = getChainLoci,
     zoomExtraRadius?: number,
-    zoomMinRadius?: number
+    zoomMinRadius?: number,
+    syncStructureRef?: string,
+    syncChainId?: string
 ) {
     const loci = getChainLociFn(plugin, structureRef, chainId);
     if (!loci) return;
@@ -80,7 +98,10 @@ export function focusLociOnChain(
         : undefined;
     plugin.managers.camera.focusLoci(loci, focusOptions);
     if (syncPlugin) {
-        syncPlugin.managers.camera.focusLoci(loci, focusOptions);
+        const syncLoci = getChainLociFn(syncPlugin, syncStructureRef ?? structureRef, syncChainId ?? chainId);
+        if (syncLoci) {
+            syncPlugin.managers.camera.focusLoci(syncLoci, focusOptions);
+        }
     }
 }
 

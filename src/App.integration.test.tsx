@@ -51,6 +51,56 @@ vi.mock('./utils/structure', () => ({
   }),
 }));
 
+vi.mock('./utils/data', () => ({
+  getAtomDataFromStructureUnits: vi.fn((_structure: any, chainId: string) => {
+    const xs = [0, 1, 2, 3];
+    const ys = [0, 0, 0, 0];
+    const zs = [0, 0, 0, 0];
+    return {
+      symbolTypes: ['C', 'N', 'O', 'P'],
+      chainIds: [chainId, chainId, chainId, chainId],
+      xs,
+      ys,
+      zs,
+    };
+  }),
+  summarizeAtomCloud: vi.fn((xs: number[], ys: number[], zs: number[]) => {
+    const atomCount = xs.length;
+    return {
+      atomCount,
+      finiteAtomCount: atomCount,
+      centroid: {
+        x: xs.reduce((a, b) => a + b, 0) / atomCount,
+        y: ys.reduce((a, b) => a + b, 0) / atomCount,
+        z: zs.reduce((a, b) => a + b, 0) / atomCount,
+      },
+    };
+  }),
+}));
+
+vi.mock('molstar/lib/extensions/ribocode/utils/geometry', () => ({
+  alignDatasetUsingChains: vi.fn((
+    _selectedAtomTypes: any,
+    _movingChainId: string,
+    _movingSymbolTypes: string[],
+    _movingChainIds: string[],
+    movingXs: number[],
+    movingYs: number[],
+    movingZs: number[]
+  ) => ({
+    rotmat: [
+      1, 0, 0,
+      0, 1, 0,
+      0, 0, 1,
+    ],
+    centroidReference: [0, 0, 0],
+    centroid: [0, 0, 0],
+    alignedX: [...movingXs],
+    alignedY: [...movingYs],
+    alignedZ: [...movingZs],
+  })),
+}));
+
 vi.mock('./hooks/useMolstarViewer', () => ({
   useMolstarViewer: vi.fn((pluginRef: any) => {
     const allInstances = ((globalThis as any).__molstarViewerInstances ||= []);
@@ -137,32 +187,71 @@ vi.mock('molstar/lib/extensions/ribocode/structure', () => {
 // Mock MolstarContainer to always render a stub and trigger viewer loaded state
 vi.mock('./components/MolstarContainer', () => {
   const React = require('react');
-  const createMockCamera = () => ({
-    state: { mode: 'perspective' },
-    stateChanged: {
-      subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })),
-    },
-    getSnapshot: vi.fn(() => ({
+  const createMockCamera = () => {
+    const listeners = new Set<() => void>();
+    const state = {
+      mode: 'perspective',
       position: [1, 2, 3],
       target: [4, 5, 6],
       up: [0, 1, 0],
       radius: 10,
-    })),
-    setState: vi.fn(),
-  });
+    };
+
+    return {
+      state,
+      stateChanged: {
+        subscribe: vi.fn((cb: () => void) => {
+          listeners.add(cb);
+          return { unsubscribe: vi.fn(() => listeners.delete(cb)) };
+        }),
+      },
+      getSnapshot: vi.fn(() => ({
+        position: [...state.position],
+        target: [...state.target],
+        up: [...state.up],
+        radius: state.radius,
+      })),
+      setState: vi.fn((nextState: any) => {
+        if (nextState?.position) state.position = [...nextState.position];
+        if (nextState?.target) state.target = [...nextState.target];
+        if (nextState?.up) state.up = [...nextState.up];
+        if (typeof nextState?.radius === 'number') state.radius = nextState.radius;
+        listeners.forEach(listener => listener());
+      }),
+      emit: vi.fn((nextState: any = {}) => {
+        if (nextState?.position) state.position = [...nextState.position];
+        if (nextState?.target) state.target = [...nextState.target];
+        if (nextState?.up) state.up = [...nextState.up];
+        if (typeof nextState?.radius === 'number') state.radius = nextState.radius;
+        listeners.forEach(listener => listener());
+      }),
+    };
+  };
   const buildStructure = (ref: string) => ({
     cell: {
       transform: { ref },
       obj: {
         data: {
           units: [
-            { chainGroupId: 'A', label: 'Chain A', subunit: 'default' },
-            { chainGroupId: 'B', label: 'Chain B', subunit: 'default' },
+            { chainGroupId: 'A', label: 'Chain A', subunit: 'default', model: {} },
+            { chainGroupId: 'B', label: 'Chain B', subunit: 'default', model: {} },
           ],
         },
       },
     },
   });
+  const buildStateData = () => {
+    const builder = {
+      to: vi.fn(() => builder),
+      update: vi.fn(() => builder),
+      insert: vi.fn(() => builder),
+    };
+    return {
+      selectQ: vi.fn(() => []),
+      build: vi.fn(() => builder),
+      updateTree: vi.fn(() => ({ kind: 'mock-tree-update' })),
+    };
+  };
   const buildPlugin = () => ({
     managers: {
       structure: {
@@ -176,7 +265,8 @@ vi.mock('./components/MolstarContainer', () => {
         },
       },
     },
-    state: { data: {} },
+    state: { data: buildStateData() },
+    runTask: vi.fn().mockResolvedValue(undefined),
     canvas3d: {
       requestDraw: vi.fn(),
       camera: createMockCamera(),
@@ -190,7 +280,7 @@ vi.mock('./components/MolstarContainer', () => {
   global.__mockPluginB = mockPluginB;
   return {
     __esModule: true,
-    default: ({ idPrefix, onReady, setViewer }: { idPrefix: string, onReady?: () => void, setViewer?: (plugin: any) => void }) => {
+    default: ({ idPrefix, viewerKey, onMouseDown, onReady, setViewer }: { idPrefix: string, viewerKey: 'A' | 'B', onMouseDown?: (viewerKey: 'A' | 'B') => void, onReady?: () => void, setViewer?: (plugin: any) => void }) => {
       const plugin = idPrefix?.includes('-B') ? mockPluginB : mockPluginA;
       // Use useLayoutEffect with empty deps so setViewer fires synchronously
       // before any user-event handlers that read viewerA/B.ref.current.
@@ -198,7 +288,17 @@ vi.mock('./components/MolstarContainer', () => {
         if (setViewer) setViewer(plugin);
         if (onReady) onReady();
       }, []);
-      return <div id={`${idPrefix}-molstar-container-mock`}>[Mocked MolstarContainer]</div>;
+      return (
+        <div
+          id={`${idPrefix}-molstar-container-mock`}
+          onMouseDown={() => onMouseDown?.(viewerKey)}
+          onPointerDown={() => onMouseDown?.(viewerKey)}
+          onPointerMove={() => onMouseDown?.(viewerKey)}
+          onWheel={() => onMouseDown?.(viewerKey)}
+        >
+          [Mocked MolstarContainer]
+        </div>
+      );
     },
   };
 });
@@ -307,6 +407,123 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     }, { timeout: 5000 });
   });
 
+  it('does not sync from inactive viewer camera events when sync is on', async () => {
+    render(<App />);
+
+    const alignedToInput = document.getElementById('viewer-column-A-alignedto-file-input') as HTMLInputElement | null;
+    const alignedInput = document.getElementById('viewer-column-B-aligned-file-input') as HTMLInputElement | null;
+    const alignedLoadBtn = document.getElementById('viewer-column-B-aligned-load-btn') as HTMLButtonElement | null;
+
+    fireEvent.change(alignedToInput!, { target: { files: [loadTestFile('4ug0.cif')] } });
+    await waitFor(() => {
+      expect(document.getElementById('viewer-column-B-aligned-load-btn')).not.toBeDisabled();
+    }, { timeout: 5000 });
+
+    fireEvent.change(alignedInput!, { target: { files: [loadTestFile('6xu8.cif')] } });
+    fireEvent.click(alignedLoadBtn!);
+
+    await waitFor(() => {
+      expect(document.getElementById('generalcontrols-sync-select')).not.toBeDisabled();
+    }, { timeout: 5000 });
+
+    const pluginA = (globalThis as any).__mockPluginA;
+    const pluginB = (globalThis as any).__mockPluginB;
+    pluginA.canvas3d.camera.setState.mockClear();
+
+    fireEvent.change(document.getElementById('generalcontrols-sync-select') as HTMLSelectElement, { target: { value: 'On' } });
+
+    pluginB.canvas3d.camera.emit({
+      position: [99, 98, 97],
+      target: [1, 2, 3],
+      up: [0, 1, 0],
+      radius: 12,
+    });
+
+    expect(pluginA.canvas3d.camera.setState).not.toHaveBeenCalled();
+  });
+
+  it('syncs from viewer B to viewer A after viewer B becomes active', async () => {
+    render(<App />);
+
+    const alignedToInput = document.getElementById('viewer-column-A-alignedto-file-input') as HTMLInputElement | null;
+    const alignedInput = document.getElementById('viewer-column-B-aligned-file-input') as HTMLInputElement | null;
+    const alignedLoadBtn = document.getElementById('viewer-column-B-aligned-load-btn') as HTMLButtonElement | null;
+
+    fireEvent.change(alignedToInput!, { target: { files: [loadTestFile('4ug0.cif')] } });
+    await waitFor(() => {
+      expect(document.getElementById('viewer-column-B-aligned-load-btn')).not.toBeDisabled();
+    }, { timeout: 5000 });
+
+    fireEvent.change(alignedInput!, { target: { files: [loadTestFile('6xu8.cif')] } });
+    fireEvent.click(alignedLoadBtn!);
+
+    await waitFor(() => {
+      expect(document.getElementById('generalcontrols-sync-select')).not.toBeDisabled();
+    }, { timeout: 5000 });
+
+    fireEvent.mouseDown(document.getElementById('viewer-column-B-molstar-container-mock') as HTMLElement);
+    fireEvent.change(document.getElementById('generalcontrols-sync-select') as HTMLSelectElement, { target: { value: 'On' } });
+
+    const pluginA = (globalThis as any).__mockPluginA;
+    const pluginB = (globalThis as any).__mockPluginB;
+    pluginA.canvas3d.camera.setState.mockClear();
+
+    pluginB.canvas3d.camera.emit({
+      position: [4, 5, 6],
+      target: [7, 8, 9],
+      up: [0, 1, 0],
+      radius: 21,
+    });
+
+    expect(pluginA.canvas3d.camera.setState).toHaveBeenCalledWith(expect.objectContaining({
+      position: [4, 5, 6],
+      target: [7, 8, 9],
+      radius: 21,
+    }));
+  });
+
+  it('syncs back from viewer A to viewer B after switching active viewer from B to A', async () => {
+    render(<App />);
+
+    const alignedToInput = document.getElementById('viewer-column-A-alignedto-file-input') as HTMLInputElement | null;
+    const alignedInput = document.getElementById('viewer-column-B-aligned-file-input') as HTMLInputElement | null;
+    const alignedLoadBtn = document.getElementById('viewer-column-B-aligned-load-btn') as HTMLButtonElement | null;
+
+    fireEvent.change(alignedToInput!, { target: { files: [loadTestFile('4ug0.cif')] } });
+    await waitFor(() => {
+      expect(document.getElementById('viewer-column-B-aligned-load-btn')).not.toBeDisabled();
+    }, { timeout: 5000 });
+
+    fireEvent.change(alignedInput!, { target: { files: [loadTestFile('6xu8.cif')] } });
+    fireEvent.click(alignedLoadBtn!);
+
+    await waitFor(() => {
+      expect(document.getElementById('generalcontrols-sync-select')).not.toBeDisabled();
+    }, { timeout: 5000 });
+
+    // Make B active first, then switch back to A via hover to validate both directions.
+    fireEvent.pointerDown(document.getElementById('viewer-column-B-molstar-container-mock') as HTMLElement);
+    fireEvent.change(document.getElementById('generalcontrols-sync-select') as HTMLSelectElement, { target: { value: 'On' } });
+    fireEvent.pointerMove(document.getElementById('viewer-column-A-molstar-container-mock') as HTMLElement);
+
+    const pluginA = (globalThis as any).__mockPluginA;
+    const pluginB = (globalThis as any).__mockPluginB;
+    pluginB.canvas3d.camera.setState.mockClear();
+
+    pluginA.canvas3d.camera.emit({
+      position: [4, 5, 6],
+      target: [7, 8, 9],
+      up: [0, 1, 0],
+      radius: 33,
+    });
+
+    expect(pluginB.canvas3d.camera.setState).toHaveBeenCalledWith(expect.objectContaining({
+      position: [4, 5, 6],
+      target: [7, 8, 9],
+      radius: 33,
+    }));
+  });
+
   let loadMoleculeFileToViewerMock: any;
   beforeAll(() => {
     Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
@@ -332,6 +549,19 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     (globalThis as any).__molstarViewerInstances = [];
     (globalThis as any).__mockStructureRepsByRef = {};
     (PluginCommands.State.RemoveObject.apply as any).mockClear?.();
+    const pluginA = (globalThis as any).__mockPluginA;
+    const pluginB = (globalThis as any).__mockPluginB;
+    for (const plugin of [pluginA, pluginB]) {
+      plugin?.canvas3d?.camera?.setState?.mockClear?.();
+      plugin?.canvas3d?.camera?.emit?.mockClear?.();
+      plugin?.canvas3d?.camera?.setState?.({
+        position: [1, 2, 3],
+        target: [4, 5, 6],
+        up: [0, 1, 0],
+        radius: 10,
+      });
+      plugin?.runTask?.mockClear?.();
+    }
   });
 
   afterEach(() => {
@@ -459,6 +689,7 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     expect(session.uiState.selections.aligned).toEqual(expect.objectContaining({
       subunit: 'Small',
     }));
+    expect(session.uiState.chainFinderQueries).toEqual({ alignedTo: '', aligned: '' });
     expect(session.uiState.cameraSnapshots.viewerA).toEqual(expect.objectContaining({ radius: 10 }));
     expect(session.uiState.cameraSnapshots.viewerB).toEqual(expect.objectContaining({ radius: 10 }));
   });
@@ -477,6 +708,10 @@ describe('App integration: AlignedTo and Aligned loading', () => {
         zoom: { extraRadius: 31, minRadius: 14 },
         syncEnabled: true,
         showUniprotAccessionInChainLabels: false,
+        chainFinderQueries: {
+          alignedTo: 'auth CU',
+          aligned: 'L22-like',
+        },
         selections: {
           alignedTo: { subunit: 'Large', chainId: 'A', residueId: '10' },
           aligned: { subunit: 'Small', chainId: 'B', residueId: '20' },
@@ -506,6 +741,14 @@ describe('App integration: AlignedTo and Aligned loading', () => {
       expect((document.getElementById('generalcontrols-show-uniprot-accession') as HTMLInputElement).checked).toBe(false);
     }, { timeout: 5000 });
 
+    const getSessionState = (globalThis as any).__getSessionState as (() => any) | undefined;
+    expect(getSessionState).toBeDefined();
+    const restoredSession = getSessionState!();
+    expect(restoredSession.uiState.chainFinderQueries).toEqual({
+      alignedTo: 'auth CU',
+      aligned: 'L22-like',
+    });
+
     expect(pluginA.canvas3d.camera.setState).toHaveBeenCalledWith(expect.objectContaining({
       position: [10, 11, 12],
       target: [1, 2, 3],
@@ -518,6 +761,18 @@ describe('App integration: AlignedTo and Aligned loading', () => {
       up: [0, 1, 0],
       radius: 84,
     }));
+
+    // Camera restore must not be cross-overwritten by sync while loading.
+    expect(pluginA.canvas3d.camera.setState).toHaveBeenCalledTimes(1);
+    expect(pluginB.canvas3d.camera.setState).toHaveBeenCalledTimes(1);
+    expect(pluginA.canvas3d.camera.state.position).toEqual([10, 11, 12]);
+    expect(pluginA.canvas3d.camera.state.target).toEqual([1, 2, 3]);
+    expect(pluginA.canvas3d.camera.state.up).toEqual([0, 1, 0]);
+    expect(pluginA.canvas3d.camera.state.radius).toBe(42);
+    expect(pluginB.canvas3d.camera.state.position).toEqual([20, 21, 22]);
+    expect(pluginB.canvas3d.camera.state.target).toEqual([4, 5, 6]);
+    expect(pluginB.canvas3d.camera.state.up).toEqual([0, 1, 0]);
+    expect(pluginB.canvas3d.camera.state.radius).toBe(84);
   });
 
   it('restores saved additional representations on session load (regression)', async () => {

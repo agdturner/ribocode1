@@ -52,6 +52,12 @@ function createMockCamera(initialRadius = 10) {
             if (typeof next.radius === 'number') snapshot.radius = next.radius;
             listeners.forEach(listener => listener());
         },
+        setSnapshotSilently: (next: Partial<typeof snapshot>) => {
+            if (next.position) snapshot.position = [...next.position];
+            if (next.target) snapshot.target = [...next.target];
+            if (next.up) snapshot.up = [...next.up];
+            if (typeof next.radius === 'number') snapshot.radius = next.radius;
+        },
     };
 }
 
@@ -143,11 +149,20 @@ describe('SyncButton', () => {
         expect(getByLabelText('Select Sync')).toBeDisabled();
     });
 
-    it('syncs camera changes from viewer A to viewer B', () => {
+    it('syncs active viewer camera changes as deltas to the other viewer', () => {
         const cameraA = createMockCamera(10);
         const cameraB = createMockCamera(20);
         const viewerA = createMockViewer(cameraA);
         const viewerB = createMockViewer(cameraB);
+
+        act(() => {
+            cameraB.setSnapshotSilently({
+                position: [41, 50, 60],
+                target: [40, 50, 60],
+                up: [0, 1, 0],
+                radius: 30,
+            });
+        });
 
         render(
             <SyncButton
@@ -162,19 +177,25 @@ describe('SyncButton', () => {
         );
 
         act(() => {
-            cameraA.emit({ position: [9, 8, 7], target: [6, 5, 4], up: [0, 0, 1], radius: 42 });
+            cameraA.emit({ position: [11, 12, 13], target: [14, 15, 16], up: [0, 1, 0], radius: 20 });
         });
 
-        expect(cameraB.setState).toHaveBeenCalledWith(expect.objectContaining({
-            position: [9, 8, 7],
-            target: [6, 5, 4],
-            up: [0, 0, 1],
-            radius: 42,
-        }));
+        expect(cameraB.setState).toHaveBeenCalled();
+        const syncState = cameraB.setState.mock.calls.at(-1)?.[0];
+        expect(syncState.target[0]).toBeCloseTo(50, 7);
+        expect(syncState.target[1]).toBeCloseTo(60, 7);
+        expect(syncState.target[2]).toBeCloseTo(70, 7);
+        expect(syncState.position[0]).toBeCloseTo(51, 7);
+        expect(syncState.position[1]).toBeCloseTo(60, 7);
+        expect(syncState.position[2]).toBeCloseTo(70, 7);
+        expect(syncState.up[0]).toBeCloseTo(0, 7);
+        expect(syncState.up[1]).toBeCloseTo(1, 7);
+        expect(syncState.up[2]).toBeCloseTo(0, 7);
+        expect(syncState.radius).toBeCloseTo(60, 7);
         expect(viewerB.canvas3d.requestDraw).toHaveBeenCalled();
     });
 
-    it('syncs camera changes from viewer B to viewer A', () => {
+    it('does not sync changes from the inactive viewer', () => {
         const cameraA = createMockCamera(10);
         const cameraB = createMockCamera(20);
         const viewerA = createMockViewer(cameraA);
@@ -196,12 +217,215 @@ describe('SyncButton', () => {
             cameraB.emit({ position: [3, 2, 1], target: [1, 2, 3], up: [1, 0, 0], radius: 77 });
         });
 
-        expect(cameraA.setState).toHaveBeenCalledWith(expect.objectContaining({
-            position: [3, 2, 1],
-            target: [1, 2, 3],
-            up: [1, 0, 0],
-            radius: 77,
-        }));
+        expect(cameraA.setState).not.toHaveBeenCalled();
+        expect(viewerA.canvas3d.requestDraw).not.toHaveBeenCalled();
+    });
+
+    it('syncs camera changes from viewer B to viewer A when viewer B is active', () => {
+        const cameraA = createMockCamera(10);
+        const cameraB = createMockCamera(20);
+        const viewerA = createMockViewer(cameraA);
+        const viewerB = createMockViewer(cameraB);
+
+        act(() => {
+            cameraA.setSnapshotSilently({
+                position: [81, 90, 100],
+                target: [80, 90, 100],
+                up: [0, 1, 0],
+                radius: 15,
+            });
+        });
+
+        render(
+            <SyncButton
+                viewerA={viewerA as any}
+                viewerB={viewerB as any}
+                activeViewer={'B'}
+                disabled={false}
+                syncEnabled={true}
+                setSyncEnabled={() => {}}
+                id={syncSelectIdSuffix}
+            />
+        );
+
+        act(() => {
+            cameraB.emit({ position: [6, 7, 8], target: [9, 10, 11], up: [0, 1, 0], radius: 30 });
+        });
+
+        expect(cameraA.setState).toHaveBeenCalled();
+        const syncState = cameraA.setState.mock.calls.at(-1)?.[0];
+        expect(syncState.target[0]).toBeCloseTo(85, 7);
+        expect(syncState.target[1]).toBeCloseTo(95, 7);
+        expect(syncState.target[2]).toBeCloseTo(105, 7);
+        expect(syncState.position[0]).toBeCloseTo(86, 7);
+        expect(syncState.position[1]).toBeCloseTo(95, 7);
+        expect(syncState.position[2]).toBeCloseTo(105, 7);
+        expect(syncState.up[0]).toBeCloseTo(0, 7);
+        expect(syncState.up[1]).toBeCloseTo(1, 7);
+        expect(syncState.up[2]).toBeCloseTo(0, 7);
+        expect(syncState.radius).toBeCloseTo(22.5, 7);
         expect(viewerA.canvas3d.requestDraw).toHaveBeenCalled();
+    });
+
+    it('does not propagate a no-op source camera event', () => {
+        const cameraA = createMockCamera(10);
+        const cameraB = createMockCamera(20);
+        const viewerA = createMockViewer(cameraA);
+        const viewerB = createMockViewer(cameraB);
+
+        render(
+            <SyncButton
+                viewerA={viewerA as any}
+                viewerB={viewerB as any}
+                activeViewer={'A'}
+                disabled={false}
+                syncEnabled={true}
+                setSyncEnabled={() => {}}
+                id={syncSelectIdSuffix}
+            />
+        );
+
+        act(() => {
+            // Emit without any state change; this should not trigger a target update.
+            cameraA.emit({});
+        });
+
+        expect(cameraB.setState).not.toHaveBeenCalled();
+    });
+
+    it('propagates source camera changes on animation frame even without stateChanged event', () => {
+        const cameraA = createMockCamera(10);
+        const cameraB = createMockCamera(20);
+        const viewerA = createMockViewer(cameraA);
+        const viewerB = createMockViewer(cameraB);
+
+        act(() => {
+            cameraB.setSnapshotSilently({
+                position: [201, 300, 400],
+                target: [200, 300, 400],
+                up: [0, 1, 0],
+                radius: 50,
+            });
+        });
+
+        const frameCallbacks = new Map<number, FrameRequestCallback>();
+        let nextFrameId = 1;
+        vi.stubGlobal('requestAnimationFrame', vi.fn((cb: FrameRequestCallback) => {
+            const id = nextFrameId++;
+            frameCallbacks.set(id, cb);
+            return id;
+        }));
+        vi.stubGlobal('cancelAnimationFrame', vi.fn((id: number) => {
+            frameCallbacks.delete(id);
+        }));
+
+        try {
+            render(
+                <SyncButton
+                    viewerA={viewerA as any}
+                    viewerB={viewerB as any}
+                    activeViewer={'A'}
+                    disabled={false}
+                    syncEnabled={true}
+                    setSyncEnabled={() => {}}
+                    id={syncSelectIdSuffix}
+                />
+            );
+
+            act(() => {
+                // Update source snapshot without emitting stateChanged.
+                cameraA.setSnapshotSilently({
+                    position: [4, 5, 6],
+                    target: [7, 8, 9],
+                    up: [0, 1, 0],
+                    radius: 20,
+                });
+            });
+
+            act(() => {
+                const callbacks = Array.from(frameCallbacks.values());
+                callbacks.forEach(cb => cb(16));
+            });
+
+            act(() => {
+                const callbacks = Array.from(frameCallbacks.values());
+                callbacks.forEach(cb => cb(40));
+            });
+
+            expect(cameraB.setState).toHaveBeenCalled();
+            const syncState = cameraB.setState.mock.calls.at(-1)?.[0];
+            expect(syncState.target[0]).toBeCloseTo(203, 7);
+            expect(syncState.target[1]).toBeCloseTo(303, 7);
+            expect(syncState.target[2]).toBeCloseTo(403, 7);
+            expect(syncState.position[0]).toBeCloseTo(204, 7);
+            expect(syncState.position[1]).toBeCloseTo(303, 7);
+            expect(syncState.position[2]).toBeCloseTo(403, 7);
+            expect(syncState.up[0]).toBeCloseTo(0, 7);
+            expect(syncState.up[1]).toBeCloseTo(1, 7);
+            expect(syncState.up[2]).toBeCloseTo(0, 7);
+            expect(syncState.radius).toBeCloseTo(100, 7);
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
+
+    it('propagates zoom when source distance changes but radius is unchanged', () => {
+        const cameraA = createMockCamera(10);
+        const cameraB = createMockCamera(20);
+        const viewerA = createMockViewer(cameraA);
+        const viewerB = createMockViewer(cameraB);
+
+        act(() => {
+            cameraB.setSnapshotSilently({
+                position: [101, 200, 300],
+                target: [100, 200, 300],
+                up: [0, 1, 0],
+                radius: 20,
+            });
+        });
+
+        render(
+            <SyncButton
+                viewerA={viewerA as any}
+                viewerB={viewerB as any}
+                activeViewer={'A'}
+                disabled={false}
+                syncEnabled={true}
+                setSyncEnabled={() => {}}
+                id={syncSelectIdSuffix}
+            />
+        );
+
+        act(() => {
+            // Move the source camera farther from its target without changing radius.
+            cameraA.emit({
+                position: [-5, 5, 6],
+                target: [7, 8, 9],
+                up: [0, 1, 0],
+                radius: 10,
+            });
+        });
+
+        expect(cameraB.setState).toHaveBeenCalled();
+        const syncState = cameraB.setState.mock.calls.at(-1)?.[0];
+
+        // The source offset length changed from 3 to sqrt(162), scale factor sqrt(18).
+        expect(syncState.target[0]).toBeCloseTo(103, 7);
+        expect(syncState.target[1]).toBeCloseTo(203, 7);
+        expect(syncState.target[2]).toBeCloseTo(303, 7);
+
+        const offset = [
+            syncState.position[0] - syncState.target[0],
+            syncState.position[1] - syncState.target[1],
+            syncState.position[2] - syncState.target[2],
+        ];
+        const propagatedDistance = Math.sqrt(
+            offset[0] * offset[0] + offset[1] * offset[1] + offset[2] * offset[2]
+        );
+        // Source offset length changed from sqrt(27) to sqrt(162), so distance scale is sqrt(6).
+        expect(propagatedDistance).toBeCloseTo(Math.sqrt(6), 7);
+
+        // Radius remains unchanged in source, so target radius should remain unchanged too.
+        expect(syncState.radius).toBeCloseTo(20, 7);
     });
 });

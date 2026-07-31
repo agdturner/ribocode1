@@ -40,4 +40,29 @@ describe('ChainSelectionTable', () => {
 
     expect(onSelectChainId).toHaveBeenCalledWith('CU');
   });
+
+  it('supports controlled query state', () => {
+    const onSelectChainId = vi.fn();
+    const onQueryChange = vi.fn();
+    const chainLabels = new Map<string, string>([
+      ['CU', 'Chain CU'],
+      ['AA', 'Chain AA'],
+    ]);
+
+    render(
+      <ChainSelectionTable
+        chainLabels={chainLabels}
+        selectedChainId=""
+        onSelectChainId={onSelectChainId}
+        idPrefix="viewer-column-B"
+        query="CU"
+        onQueryChange={onQueryChange}
+      />
+    );
+
+    const search = screen.getByTestId('viewer-column-B-chain-table-search') as HTMLInputElement;
+    expect(search.value).toBe('CU');
+    fireEvent.change(search, { target: { value: 'AA' } });
+    expect(onQueryChange).toHaveBeenCalledWith('AA');
+  });
 });

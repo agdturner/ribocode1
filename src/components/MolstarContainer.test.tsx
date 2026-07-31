@@ -9,7 +9,7 @@
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { vi } from 'vitest';
-import { render, act } from '@testing-library/react';
+import { render, act, fireEvent, waitFor } from '@testing-library/react';
 
 // Mock Molstar and PluginUI imports to avoid Vitest parsing errors
 vi.mock('molstar/lib/mol-plugin-ui/context', () => ({}));
@@ -48,22 +48,50 @@ describe('MolstarContainer', () => {
     it('calls onMouseDown when the plugin root is clicked', async () => {
         const setViewer = vi.fn();
         const onMouseDown = vi.fn();
-        let pluginRoot: Element | null = null;
+        let container: HTMLElement;
         await act(async () => {
-            const { container } = render(
+            const rendered = render(
                 <MolstarContainer
                     viewerKey="A"
                     setViewer={setViewer}
                     onMouseDown={onMouseDown}
+                    idPrefix="test-molstar"
                 />
             );
-            pluginRoot = container.querySelector('.molstar-plugin-root');
+            container = rendered.container;
         });
-        if (pluginRoot) {
-            await act(async () => {
-                pluginRoot!.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-            });
-            expect(onMouseDown).toHaveBeenCalledWith('A');
-        }
+
+        await waitFor(() => {
+            expect(container.querySelector('.molstar-container-root')).not.toBeNull();
+        });
+
+        const root = container.querySelector('.molstar-container-root') as HTMLElement;
+        fireEvent.pointerDown(root);
+        expect(onMouseDown).toHaveBeenCalledWith('A');
+    });
+
+    it('calls onMouseDown when pointer moves over the container', async () => {
+        const setViewer = vi.fn();
+        const onMouseDown = vi.fn();
+        let container: HTMLElement;
+        await act(async () => {
+            const rendered = render(
+                <MolstarContainer
+                    viewerKey="B"
+                    setViewer={setViewer}
+                    onMouseDown={onMouseDown}
+                    idPrefix="test-molstar-hover"
+                />
+            );
+            container = rendered.container;
+        });
+
+        await waitFor(() => {
+            expect(container.querySelector('.molstar-container-root')).not.toBeNull();
+        });
+
+        const root = container.querySelector('.molstar-container-root') as HTMLElement;
+        fireEvent.pointerMove(root);
+        expect(onMouseDown).toHaveBeenCalledWith('B');
     });
 });

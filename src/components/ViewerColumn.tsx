@@ -517,18 +517,20 @@ export function getMolstarContainerProps({
 	viewer,
 	pluginRef,
 	setViewerWrapper,
+	setActiveViewer,
 	setViewerReady
 }: {
 	viewer: any,
 	pluginRef: any,
 	setViewerWrapper: (viewer: any) => void,
+	setActiveViewer: (viewer: ViewerKey) => void,
 	setViewerReady: (ready: boolean) => void
 }) {
 	return {
 		ref: pluginRef,
 		viewerKey: viewer.viewerKey,
 		setViewer: setViewerWrapper,
-		onMouseDown: () => setViewerWrapper(viewer.viewerKey),
+		onMouseDown: () => setActiveViewer(viewer.viewerKey),
 		onReady: () => setViewerReady(true),
 	};
 }
@@ -560,6 +562,10 @@ export interface ViewerColumnProps {
 	moleculeUIAlignedProps: any;
 	realignedMoleculeListProps: any;
 	molstarContainerProps: any;
+	alignedToChainFinderQuery?: string;
+	onAlignedToChainFinderQueryChange?: (query: string) => void;
+	alignedChainFinderQuery?: string;
+	onAlignedChainFinderQueryChange?: (query: string) => void;
 	testMode?: boolean;
 	idPrefix?: string;
 }
@@ -572,6 +578,10 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 	moleculeUIAlignedProps,
 	realignedMoleculeListProps,
 	molstarContainerProps,
+	alignedToChainFinderQuery,
+	onAlignedToChainFinderQueryChange,
+	alignedChainFinderQuery,
+	onAlignedChainFinderQueryChange,
 	testMode,
 	idPrefix
 }) => {
@@ -583,12 +593,16 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 			selectedChainId: loadDataRowPropsAlignedTo?.selectedChainId ?? '',
 			onSelectChainId: loadDataRowPropsAlignedTo?.onSelectChainId as (chainId: string) => void,
 			title: 'AlignedTo Chain Finder',
+			query: alignedToChainFinderQuery,
+			onQueryChange: onAlignedToChainFinderQueryChange,
 		}
 		: {
 			chainLabels: loadDataRowPropsAligned?.chainInfo?.chainLabels as Map<string, string>,
 			selectedChainId: loadDataRowPropsAligned?.selectedChainId ?? '',
 			onSelectChainId: loadDataRowPropsAligned?.onSelectChainId as (chainId: string) => void,
 			title: 'Aligned Chain Finder',
+			query: alignedChainFinderQuery,
+			onQueryChange: onAlignedChainFinderQueryChange,
 		};
 	       return (
 		       <div className="Column" id={viewerIdPrefix}>
@@ -613,6 +627,8 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 				   selectedChainId={chainTableProps.selectedChainId}
 				   onSelectChainId={chainTableProps.onSelectChainId || (() => {})}
 				   title={chainTableProps.title}
+				   query={chainTableProps.query}
+				   onQueryChange={chainTableProps.onQueryChange}
 				   idPrefix={viewerIdPrefix}
 			       />
 			       <button

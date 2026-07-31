@@ -98,7 +98,7 @@ describe('structure', () => {
             const syncPlugin = {
                 managers: { camera: { focusLoci: vi.fn() } }
             } as any;
-            focusLociOnChain(plugin, structureRef, chainId, syncPlugin, () => lociObj, 10, 5);
+          focusLociOnChain(plugin, structureRef, chainId, syncPlugin, () => lociObj, 10, 5, structureRef, chainId);
             expect(plugin.managers.camera.focusLoci).toHaveBeenCalledWith(
                 lociObj, { extraRadius: 10, minRadius: 5 }
             );
@@ -110,12 +110,12 @@ describe('structure', () => {
 
     describe('focusLociOnResidue', () => {
         it('calls camera.focusLoci if loci is found', () => {
-            focusLociOnResidue(plugin, structureRef, chainId, residueId, insCode, undefined, undefined, undefined, () => lociObj);
+          focusLociOnResidue(plugin, structureRef, chainId, residueId, insCode, undefined, undefined, undefined, () => lociObj, undefined, undefined, undefined, undefined);
             expect(plugin.managers.camera.focusLoci).toHaveBeenCalled();
         });
         it('does not call camera.focusLoci if loci is null', () => {
             (plugin.managers.camera.focusLoci as ReturnType<typeof vi.fn>).mockClear();
-            focusLociOnResidue(plugin, structureRef, chainId, residueId, insCode, undefined, undefined, undefined, () => null);
+          focusLociOnResidue(plugin, structureRef, chainId, residueId, insCode, undefined, undefined, undefined, () => null, undefined, undefined, undefined, undefined);
             expect(plugin.managers.camera.focusLoci).not.toHaveBeenCalled();
         });
     });

@@ -16,6 +16,8 @@ export interface ChainSelectionTableProps {
   onSelectChainId: (chainId: string) => void;
   title?: string;
   idPrefix: string;
+  query?: string;
+  onQueryChange?: (query: string) => void;
 }
 
 const ChainSelectionTable: React.FC<ChainSelectionTableProps> = ({
@@ -24,11 +26,15 @@ const ChainSelectionTable: React.FC<ChainSelectionTableProps> = ({
   onSelectChainId,
   title = 'Chain Finder',
   idPrefix,
+  query,
+  onQueryChange,
 }) => {
-  const [query, setQuery] = useState('');
+  const [internalQuery, setInternalQuery] = useState('');
+  const activeQuery = query ?? internalQuery;
+  const setActiveQuery = onQueryChange ?? setInternalQuery;
 
   const rows = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = activeQuery.trim().toLowerCase();
     return Array.from(chainLabels.entries())
       .sort((a, b) => {
         const byLabel = a[1].localeCompare(b[1], undefined, { numeric: true, sensitivity: 'base' });
@@ -39,7 +45,7 @@ const ChainSelectionTable: React.FC<ChainSelectionTableProps> = ({
         if (!q) return true;
         return chainId.toLowerCase().includes(q) || label.toLowerCase().includes(q);
       });
-  }, [chainLabels, query]);
+  }, [chainLabels, activeQuery]);
 
   if (!chainLabels || chainLabels.size === 0) {
     return null;
@@ -55,8 +61,8 @@ const ChainSelectionTable: React.FC<ChainSelectionTableProps> = ({
         data-testid={`${idPrefix}-chain-table-search`}
         className="chain-selection-table-search"
         type="text"
-        value={query}
-        onChange={e => setQuery(e.target.value)}
+        value={activeQuery}
+        onChange={e => setActiveQuery(e.target.value)}
         placeholder="Search chain, auth, UniProt, molecule..."
         aria-label={`${title} search`}
       />

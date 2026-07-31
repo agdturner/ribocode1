@@ -25,7 +25,7 @@ export const idSuffix = 'molstar-container';
  * Props for MolstarContainer component.
  * @param viewerKey Unique key for the viewer instance.
  * @param setViewer Function to set the PluginUIContext instance.
- * @param onMouseDown Optional callback for mouse down events.
+ * @param onMouseDown Optional callback for viewer activation events.
  * @param onReady Optional callback when the viewer is ready.
  */
 type MolstarContainerProps = {
@@ -41,7 +41,7 @@ type MolstarContainerProps = {
  * MolstarContainer component manages the lifecycle of the Mol* plugin instance.
  * @param viewerKey Unique key for the viewer instance.
  * @param setViewer Function to set the PluginUIContext instance.
- * @param onMouseDown Optional callback for mouse down events.
+ * @param onMouseDown Optional callback for viewer activation events.
  * @param onReady Optional callback when the viewer is ready.
  * @param ref Forwarded ref to expose methods to parent components.
  * @returns The MolstarContainer component.
@@ -58,6 +58,24 @@ const MolstarContainer = React.forwardRef(({ viewerKey, setViewer, onMouseDown, 
     const pluginRef = useRef<PluginUIContext | null>(null);
     const [plugin, setPlugin] = useState<PluginUIContext | null>(null);
     const rootRef = useRef<ReactDOM.Root | null>(null);
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container || !onMouseDown) return;
+
+        const activateViewer = () => onMouseDown(viewerKey);
+        container.addEventListener('pointerenter', activateViewer, true);
+        container.addEventListener('pointermove', activateViewer, true);
+        container.addEventListener('wheel', activateViewer, true);
+        container.addEventListener('pointerdown', activateViewer, true);
+
+        return () => {
+            container.removeEventListener('pointerenter', activateViewer, true);
+            container.removeEventListener('pointermove', activateViewer, true);
+            container.removeEventListener('wheel', activateViewer, true);
+            container.removeEventListener('pointerdown', activateViewer, true);
+        };
+    }, [onMouseDown, viewerKey, containerReady]);
+
     // Plugin lifecycle: initialization and cleanup
     React.useLayoutEffect(() => {
         const container = containerRef.current;

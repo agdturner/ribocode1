@@ -57,7 +57,10 @@ describe('useUpdateResidueInfo', () => {
       )
     );
     expect(molstar.getResidueInfo).toHaveBeenCalledWith(mockStructureObj, 'A');
-    expect(setResidueInfo).toHaveBeenCalledWith({ residueLabels: mockResidueLabels, residueToAtomIds: mockResidueToAtomIds });
+    expect(setResidueInfo).toHaveBeenCalled();
+    const updater = setResidueInfo.mock.calls[0][0];
+    const result = updater({ residueLabels: new Map(), residueToAtomIds: {} });
+    expect(result).toEqual({ residueLabels: mockResidueLabels, residueToAtomIds: mockResidueToAtomIds });
     expect(setSelectedResidueId).toHaveBeenCalledWith('1');
   });
 

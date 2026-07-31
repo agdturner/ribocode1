@@ -52,7 +52,55 @@ export function useUpdateResidueInfo(
       if (!structureObj) return;
       // Get residue info from molstar utility
       const { residueLabels, residueToAtomIds } = molstar.getResidueInfo(structureObj, selectedChainId);
-      setResidueInfo({ residueLabels, residueToAtomIds });
+      setResidueInfo(prev => {
+        const prevLabels = prev.residueLabels;
+        const nextLabels = residueLabels;
+
+        let labelsChanged = prevLabels.size !== nextLabels.size;
+        if (!labelsChanged) {
+          for (const [id, info] of nextLabels.entries()) {
+            const prevInfo = prevLabels.get(id);
+            if (!prevInfo) {
+              labelsChanged = true;
+              break;
+            }
+            if (
+              prevInfo.id !== info.id
+              || prevInfo.name !== info.name
+              || prevInfo.compId !== info.compId
+              || prevInfo.seqNumber !== info.seqNumber
+              || prevInfo.insCode !== info.insCode
+            ) {
+              labelsChanged = true;
+              break;
+            }
+          }
+        }
+
+        const prevResidueKeys = Object.keys(prev.residueToAtomIds);
+        const nextResidueKeys = Object.keys(residueToAtomIds);
+        let atomMapChanged = prevResidueKeys.length !== nextResidueKeys.length;
+        if (!atomMapChanged) {
+          for (const key of nextResidueKeys) {
+            const prevAtoms = prev.residueToAtomIds[key] || [];
+            const nextAtoms = residueToAtomIds[key] || [];
+            if (prevAtoms.length !== nextAtoms.length) {
+              atomMapChanged = true;
+              break;
+            }
+            for (let i = 0; i < nextAtoms.length; i++) {
+              if (prevAtoms[i] !== nextAtoms[i]) {
+                atomMapChanged = true;
+                break;
+              }
+            }
+            if (atomMapChanged) break;
+          }
+        }
+
+        if (!labelsChanged && !atomMapChanged) return prev;
+        return { residueLabels, residueToAtomIds };
+      });
       // Reset selection when the current residue ID is not in the new chain.
       // Also auto-select the first residue when nothing is selected.
       const currentId = selectedResidueIdRef.current;

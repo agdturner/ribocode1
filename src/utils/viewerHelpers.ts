@@ -38,6 +38,10 @@ export function createZoomHandler(
     syncPluginRef?: React.RefObject<PluginUIContext | null>,
     residueId?: string,
     insCode?: string,
+    syncStructureRef?: string | null,
+    syncChainId?: string,
+    syncResidueId?: string,
+    syncInsCode?: string,
     zoomExtraRadius?: number,
     zoomMinRadius?: number
 ) {
@@ -53,7 +57,9 @@ export function createZoomHandler(
                     sync && syncPluginRef?.current ? syncPluginRef.current : undefined,
                     undefined,        // use default getChainLociFn
                     zoomExtraRadius,
-                    zoomMinRadius
+                    zoomMinRadius,
+                    syncStructureRef ?? undefined,
+                    syncChainId
                 );
             } else if (property === 'residue-test') {
                 focusLociOnResidue(
@@ -64,7 +70,12 @@ export function createZoomHandler(
                     insCode,
                     sync && syncPluginRef?.current ? syncPluginRef.current : undefined,
                     zoomExtraRadius,
-                    zoomMinRadius
+                    zoomMinRadius,
+                    undefined,
+                    syncStructureRef ?? undefined,
+                    syncChainId,
+                    syncResidueId,
+                    syncInsCode
                 );
             } else {
                 // fallback: use chain loci for other property types for now
@@ -88,6 +99,10 @@ export function makeZoomHandler({
     syncPluginRef,
     residueId,
     insCode,
+    syncStructureRef,
+    syncChainId,
+    syncResidueId,
+    syncInsCode,
     zoomExtraRadius,
     zoomMinRadius
 }: {
@@ -99,6 +114,10 @@ export function makeZoomHandler({
     syncPluginRef?: React.RefObject<PluginUIContext | null>,
     residueId?: string,
     insCode?: string,
+    syncStructureRef?: string | null,
+    syncChainId?: string,
+    syncResidueId?: string,
+    syncInsCode?: string,
     zoomExtraRadius?: number,
     zoomMinRadius?: number
 }) {
@@ -111,6 +130,10 @@ export function makeZoomHandler({
         syncPluginRef,
         residueId,
         insCode,
+        syncStructureRef,
+        syncChainId,
+        syncResidueId,
+        syncInsCode,
         zoomExtraRadius,
         zoomMinRadius
     );

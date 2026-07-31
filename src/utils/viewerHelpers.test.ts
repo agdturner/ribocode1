@@ -59,6 +59,7 @@ describe('viewerHelpers', () => {
   });
 
   it('syncs chain zoom to the other viewer when sync is enabled', async () => {
+    vi.mocked(focusLociOnChain).mockClear();
     const pluginRef = { current: { id: 'plugin-a' } };
     const syncPluginRef = { current: { id: 'plugin-b' } };
     const handler = makeZoomHandler({
@@ -80,11 +81,14 @@ describe('viewerHelpers', () => {
       syncPluginRef.current,
       undefined,
       undefined,
+      undefined,
+      undefined,
       undefined
     );
   });
 
   it('passes zoomExtraRadius and zoomMinRadius to chain zoom handler', async () => {
+    vi.mocked(focusLociOnChain).mockClear();
     const pluginRef = { current: { id: 'plugin-a' } };
     const handler = createZoomHandler(
       pluginRef as any,
@@ -92,6 +96,10 @@ describe('viewerHelpers', () => {
       'chain-test',
       'B',
       false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -108,11 +116,14 @@ describe('viewerHelpers', () => {
       undefined,
       undefined,
       20,
-      16
+      16,
+      undefined,
+      undefined
     );
   });
 
   it('syncs residue zoom with zoom options to the other viewer when sync is enabled', async () => {
+    vi.mocked(focusLociOnResidue).mockClear();
     const pluginRef = { current: { id: 'plugin-a' } };
     const syncPluginRef = { current: { id: 'plugin-b' } };
     const handler = createZoomHandler(
@@ -124,6 +135,10 @@ describe('viewerHelpers', () => {
       syncPluginRef as any,
       '25',
       'A',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
       5,
       2
     );
@@ -138,11 +153,17 @@ describe('viewerHelpers', () => {
       'A',
       syncPluginRef.current,
       5,
-      2
+      2,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined
     );
   });
 
   it('passes zoomExtraRadius/minRadius for residue zoom when sync is disabled', async () => {
+    vi.mocked(focusLociOnResidue).mockClear();
     const pluginRef = { current: { id: 'plugin-a' } };
     const handler = makeZoomHandler({
       pluginRef: pluginRef as any,
@@ -166,7 +187,12 @@ describe('viewerHelpers', () => {
       '',
       undefined,
       24,
-      12
+      12,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined
     );
   });
 });

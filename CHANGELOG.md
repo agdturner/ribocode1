@@ -1,3 +1,18 @@
+## [v0.11.0] - Unreleased
+- Added a preferred in-place chain re-alignment path that applies rigid transforms directly to existing aligned structures in both viewers.
+- Kept the existing reload-based `ReAligned` path as an automatic fallback if in-place transform application is unavailable or fails.
+- Updated chain-fit atom selection to use atom types present in the selected chains, instead of relying on a narrow static default subset.
+- Added re-alignment fit diagnostics in logs, including selected atom counts, atom pair count, and pairwise RMSD.
+- Updated Mol* alignment-data application to use full rotation+translation when `rotMat` and centroids are available.
+- Updated sync camera propagation to follow the current active viewer as the source, avoiding unintended camera pan/rotation updates from the inactive viewer.
+- Updated sync propagation to apply source camera deltas (pan/rotation/zoom) onto the non-active viewer, preserving the non-active viewer's own local framing instead of hard-overwriting its target/centroid.
+- Updated active-viewer detection so sync source follows pointer presence/interactions in a viewer (hover/move/wheel/pointer down), rather than requiring a click to switch source.
+- Added camera-sync no-op suppression so unchanged source camera events are ignored.
+- Fixed sync zoom propagation for cases where wheel/dolly updates camera distance (`position-target`) without changing radius; zoom now tracks distance scaling as well as radius changes.
+- Added in-place re-alignment pair tracking to prevent repeated transform stacking when the same chain pair is re-aligned again.
+- Corrected Mol* equal-count alignment centroid mapping so `centroid` (moving) and `centroidReference` (reference) match the trajectory transform convention `R * (p - centroid) + centroidReference`.
+- Added regression coverage for sync directionality and repeated re-align guarding across unit, integration, and E2E tests.
+
 ## [v0.10.0] - 2026-07-28
 - Moved viewer rendering to the top of each column so the two Mol* canvases stay visually aligned even when control content differs between columns.
 - Added a dedicated advanced-controls panel below the Chain Finder in each column, with `Show Advanced Mol* Controls` / `Hide Advanced Mol* Controls` placed directly above the panel.
