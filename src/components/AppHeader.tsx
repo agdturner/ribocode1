@@ -29,7 +29,7 @@ const AppHeader: React.FC = () => (
       {' ('}
       <a href="https://github.com/ribocode-slola/ribocode1/?tab=readme-ov-file#ribocode" target="_blank" rel="noopener noreferrer">README</a>
       {' | '}
-      <a href="/docs/index.html" target="_blank" rel="noopener noreferrer">Docs</a>
+      <a href="https://github.com/ribocode-slola/ribocode1/blob/main/UserGuide.md" target="_blank" rel="noopener noreferrer">User Guide</a>
       {')'}
     </h1>
   </header>

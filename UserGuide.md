@@ -39,8 +39,8 @@ The UI layout is as follows:
      - `Load Colours` button
      - `Select Representation` control
    - `MoleculeUI` components including:
-     - `AlignedTo`
-     - `Aligned`
+     - `AlignedTo` with `Zoom to Chain:` and `Zoom to Residue` 
+     - `Aligned` with `Zoom to Chain:` and `Zoom to Residue` 
    - `AlignedTo Chain Finder` table (searchable chain list shown below the viewer)
    - `Show Advanced Mol* Controls` button (toggles advanced Mol* interface for power users)
    - `Advanced Mol* Controls` panel (shown only when expanded; includes Sequence, Left Panel, Structure Tools, and Log sections)
@@ -56,8 +56,8 @@ The UI layout is as follows:
      - `Load Colours` button
      - `Select Representation` control
    - `MoleculeUI` components including:
-     - `AlignedTo`
-     - `Aligned`
+     - `AlignedTo` with `Zoom to Chain:` and `Zoom to Residue`
+     - `Aligned` with `Zoom to Chain:` and `Zoom to Residue`
    - `Aligned Chain Finder` table (searchable chain list shown below the viewer)
    - `Show Advanced Mol* Controls` button (toggles advanced Mol* interface for power users)
    - `Advanced Mol* Controls` panel (shown only when expanded; includes Sequence, Left Panel, Structure Tools, and Log sections)
@@ -93,33 +93,24 @@ The UI layout is as follows:
 +-------------------------------------------------------------+
 ```
 
-## Chain Selection Enrichment
+## Chain Selection
 
-When structure data are loaded, Ribocode enriches chain labels used in both:
-- the `Select Chain` dropdown;
-- the chain-finder table below each viewer.
+When structure data are loaded, Ribocode enriches chain labels used in the respective (`AlignedTo` or `Aligned`):
+- `Select Chain` dropdown; and,
+- `Chain Finder` table below each viewer.
 
-### What users can do now
+The `Chain Finder` table should appear below the `MoleculeUI` rows and above `Show Advanced Mol* Controls` and the optional advanced-controls panel.
+- Column `A` shows the `AlignedTo Chain Finder`.
+- Column `B` shows the `Aligned Chain Finder`.
 
-- Use the chain-finder search box to quickly find chains by any part of the label, including:
+Users can use `Chain Finder` search boxes to quickly find chains by any part of the label, including:
   - label chain ID (e.g., `ZB`),
   - auth chain ID (e.g., `auth CU`),
   - UniProt accession,
   - RP family name,
   - molecule description (e.g., `L22-like`).
-- Click a row in the chain-finder table to select that chain.
-- Continue using the existing `Select Chain` dropdown if preferred.
 
-### Where to find the chain finder
-
-- In each column, the chain-finder table is shown below the `MoleculeUI` rows and above `Show Advanced Mol* Controls` and the optional advanced-controls panel.
-- The `Mol* Viewer` canvas is shown at the top of each column.
-- Column `A` shows the `AlignedTo Chain Finder`.
-- Column `B` shows the `Aligned Chain Finder`.
-- Type in the search box to filter rows immediately.
-- Click a row to select that chain for the same column's chain-based controls.
-
-### How loaded data are enriched for chain selection
+Selecting a chain can be done both via the `Select Chain` drop down or by selecting a row in the `Chain Finder`.
 
 Ribocode combines metadata from the loaded mmCIF file and lookup tables to build a richer chain label.
 
@@ -166,9 +157,9 @@ Next, the user can do several things:
   
 * As an `Aligned` dataset is loaded, it's atom positions are centralized and aligned with the centralized `AlignedTo` atom positions using an algorithm.
 * In `Viewer A`, the loaded `Aligned` dataset is hidden by default. Use the `Aligned` visibility (eye) button in `MoleculeUI` to show it.
-* If a chain is selected, the `Select Residue` control becomes actionable and in the `Zoom to Chain` control becomes actionable to zoom to the selected chain.
+* If a chain is selected, the `Select Residue` control becomes actionable and the `Zoom to Chain` control becomes actionable to zoom to the selected chain.
 * If a residue is selected, the `Zoom to Residue` control becomes actionable to zoom to the selected residue within the chain. The selected residue will be in the viewer centre. How much is displayed around that depends on the `Residue Zoom` settings.
-* If chains are selected for both `AlignedTo` and `Aligned` molecules, the `Re-align` button can be actioned to apply chain-based re-alignment in both viewers.
+* If chains are selected for both `AlignedTo` and `Aligned` molecules, the `Re-align` button can be actioned to apply chain-based re-alignment.
 * Re-aligning a different chain pair is supported repeatedly; repeating the same pair is blocked to avoid cumulative transform/rotation drift.
 
 ### Re-align implementation note
@@ -179,14 +170,13 @@ Next, the user can do several things:
 
 Ribosome data can be downloaded from the [RCSB Protein Data Bank](https://www.rcsb.org/pages/about-us/index) in CIF format. Two datasets which align well are: [4ug0](https://files.rcsb.org/download/4UG0.cif); and [6xu8](https://files.rcsb.org/download/6XU8.cif).
 
-Synchronization is `Off` by default. If selected to be `On`, camera changes (rotation/pan/zoom) from the active viewer are propagated to the other viewer as relative deltas, so the non-active viewer keeps its own local framing while following the active interaction.
-This includes wheel/dolly zoom where camera distance changes even if camera radius is unchanged.
-The active sync source follows the viewer currently under the mouse pointer. Hovering or interacting (move/wheel/drag) in a viewer switches the sync source to that viewer; an explicit click is not required.
+Synchronization is `Off` by default. If selected to be `On`, camera changes (rotation/pan/zoom) from the active viewer are propagated to the other viewer as relative deltas.
 
-Please refer to the [Mol* viewer Documentation](https://molstar.org/viewer-docs/) for details of the Mol* UI. In each Ribocode `Molstar Container`, the `Mol* 3D Canvas` is always visible and the additional Mol* panels (`Sequence Panel`, `Main Menu`, `Control Panel`, `Log Panel`) are hidden by default for a cleaner workflow. Use the `Show Advanced Mol* Controls` button in a column to reveal these panels for advanced usage, and `Hide Advanced Mol* Controls` to collapse them again. The Mol* viewer style is adapted so that the UI fits in a column of 600 pixels in width.
+Please refer to the [Mol* viewer Documentation](https://molstar.org/viewer-docs/) for details of the Mol* UI. In each Ribocode `Molstar Container`, the `Mol* 3D Canvas` is always visible and the additional Mol* panels (`Sequence Panel`, `Main Menu`, `Control Panel`, `Log Panel`) are hidden by default so as not to clutter the UI. Use the `Show Advanced Mol* Controls` button in a column to expand those hidden by default panels for advanced usage, and use `Hide Advanced Mol* Controls` to collapse them again. The Mol* viewer style is adapted so that the UI fits in a column of 600 pixels in width.
 
-For convenience, users can save and load a session via the Session Menu. Loading a session does not load the data. For security reasons data loading is a manual process, but once the `AlignedTo` and `Aligned` data are selected, the representations are recreated and the loaded session should be in the state it was when the session was saved.
+For convenience, users can save and load a session via the Session Menu. Loading a session does not load the data. For security reasons data loading is a manual process, but once the `AlignedTo` and `Aligned` data are selected, the representations are recreated and the loaded session should be in the same state as when the session was saved.
 
-Session `uiState` also persists the `Show UniProt accession in chain labels` setting, so chain label formatting is restored consistently when a session is loaded.
+Session `uiState` persists the `Show UniProt accession in chain labels` setting, so chain label formatting is restored consistently when a session is loaded.
 
+The `Session` > `Save All` saves all the data and all the UI state so that this can be reloaded using `Session` > `Load All`.
 ---
