@@ -237,9 +237,8 @@ export function summarizeAtomCloud(xs: number[], ys: number[], zs: number[]): At
 /**
  * Update atom coordinates and log before/after for verification.
  * @param model The Mol* model object
- * @param xs Array of x coordinates
- * @param ys Array of y coordinates
- * @param zs Array of z coordinates
+ * @param centroid Translation centroid used to recenter coordinates.
+ * @param rotmat 3x3 rotation matrix (flat array, row-major).
  */
 export function updateAndLogAtomCoordinates(model: any, centroid: Vec3, rotmat: number[]) {
     const xs = model.atomicConformation.x;

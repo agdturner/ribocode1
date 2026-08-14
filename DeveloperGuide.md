@@ -24,6 +24,7 @@ Welcome to the Ribocode Developer Guide!
   - [How to Generate Documentation](#how-to-generate-documentation)
   - [Configuration](#configuration)
   - [Deployment Recommendation](#deployment-recommendation)
+  - [Docs-only Deployment](#docs-only-deployment)
 - [Deployment](#deployment)
 - [Versioning](#versioning)
 - [Tests](#tests)
@@ -237,21 +238,57 @@ There is a [CHANGELOG](./CHANGELOG.md) which summarises changes, particularly ch
 - Documentation is generated into the `docs/` directory.
 - To generate or update the documentation, run:
 	```sh
-	npm run docs -- --entryPointStrategy expand
+  npm run docs
 	```
 - The documentation will be available as static HTML files in the `docs/` folder.
+- `npm run docs` generates docs locally only; it does not deploy them.
 
 
 ### Configuration
 
 - The TypeDoc configuration is in `typedoc.json` at the project root.
+- TypeDoc uses `tsconfig.typedoc.json` (via `typedoc.json`) so docs generation excludes test files and focuses on production API surface.
 - The entry point is the `src/` directory.
 - You can customize the output and included files by editing `typedoc.json`.
 
 
 ### Deployment Recommendation
 
-- If you are using GitHub Pages for your PWA, you can serve the documentation alongside your app by ensuring the `docs/` directory is included in your deployment. For example, you can link to `https://<username>.github.io/<repo>/docs/index.html` from your site or README. This allows users to access both the app and the documentation from the same domain.
+- GitHub Pages deployment (`npm run deploy`) publishes docs together with the app because the build step copies `docs/` into `dist/docs` (`postbuild`) before publishing `dist`.
+- For this repository, deployed docs are available at `https://ribocode-slola.github.io/ribocode1/docs/index.html`.
+- For forks, use `https://<username>.github.io/ribocode1/docs/index.html`.
+
+### Docs-only Deployment
+
+- Use `npm run docs:deploy` to publish only API docs to the `gh-pages` branch under the `docs/` folder.
+- Use `npm run docs:deploy:dryrun` to validate the same process without pushing.
+- These scripts run TypeDoc first (`npm run docs`) and then publish the generated `docs/` output using `gh-pages`.
+- Use `npm run docs:deploy:target` to publish docs to an explicit repository URL from env config.
+- Use `npm run docs:deploy:target:dryrun` to validate targeted publishing without pushing.
+
+Targeted deployment configuration:
+
+- Set `DOCS_GH_PAGES_REPO` in `.env` or `.env.production` (production values override `.env`).
+- Example value: `DOCS_GH_PAGES_REPO=https://github.com/<your-github-username>/ribocode1.git`
+- This keeps shared scripts stable while allowing each developer to publish docs to their own fork.
+
+Destination URL rules:
+
+- The final URL is determined by the repository that receives the `gh-pages` push.
+- If push target is your fork (typical `origin`), docs will be at `https://<your-github-username>.github.io/ribocode1/docs/index.html`.
+- If push target is the upstream repository, docs will be at `https://ribocode-slola.github.io/ribocode1/docs/index.html`.
+
+How to confirm where deployment will go:
+
+- Run `git remote -v` and verify which repository URL is configured for `origin`.
+- `npm run docs:deploy` uses your configured git remote unless you override it with gh-pages options.
+
+Optional explicit target example:
+
+```sh
+gh-pages -d docs -e docs -a -m "Docs: update API documentation" \
+  --repo https://github.com/<your-github-username>/ribocode1.git
+```
 
 ### Useful Links
 

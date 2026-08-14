@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.integration.test.ts",
+    "**/*.integration.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "e2e",
+    "test-results",
+    "dist",
+    "docs"
+  ]
+}

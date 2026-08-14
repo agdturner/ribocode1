@@ -22,8 +22,7 @@ export interface ResidueLabelInfo {
 
 /**
  * Get residue labels and mapping from residue IDs to atom IDs for a given chain in a molecule.
- * @param plugin The Molstar plugin UI context.
- * @param molecule The molecule object.
+ * @param structure The structure object containing units and model hierarchy.
  * @param chainId The chain ID to extract residue information for.
  * @returns An object containing:
  *   - residueLabels: Map from residue ID to ResidueLabelInfo

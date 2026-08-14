@@ -1,9 +1,22 @@
 {
+  "tsconfig": "tsconfig.typedoc.json",
+  "entryPointStrategy": "expand",
   "entryPoints": ["src"],
   "out": "docs",
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.integration.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/__tests__/**"
+  ],
   "includeVersion": true,
   "excludePrivate": true,
   "excludeExternals": true,
-  "excludeNotDocumented": true,
+  "excludeNotDocumented": false,
+  "validation": {
+    "notExported": false
+  },
   "readme": "README.md"
 }

@@ -258,9 +258,9 @@ const SyncButton: React.FC<SyncButtonProps> = ({
             try {
                 targetCamera.setState({
                     ...targetCamera.state,
-                    position: Vec3.clone(nextPosition),
-                    target: Vec3.clone(translatedTarget),
-                    up: Vec3.clone(normalizedUp),
+                    position: Vec3.create(nextPosition[0], nextPosition[1], nextPosition[2]),
+                    target: Vec3.create(translatedTarget[0], translatedTarget[1], translatedTarget[2]),
+                    up: Vec3.create(normalizedUp[0], normalizedUp[1], normalizedUp[2]),
                     radius: nextRadius,
                 });
                 targetViewer.canvas3d?.requestDraw?.();

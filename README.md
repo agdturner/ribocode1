@@ -17,7 +17,15 @@ Once installed as a PWA, Ribocode can be used offline.
 
 For recent UI and workflow updates, see the [CHANGELOG](./CHANGELOG.md).
 
-The generated API documentation is available at [`/docs/`](./docs/index.html) after building the project, or at `/docs/` in the deployed app (e.g., https://ribocode-slola.github.io/ribocode1/docs/).
+The generated API documentation is created locally by `npm run docs` into the `docs/` directory (entry point: `docs/index.html`).
+
+Documentation is deployed when you run `npm run deploy` (the build copies `docs/` into `dist/docs` before publishing GitHub Pages).
+
+For this repository, deployed API docs are available at:
+* https://ribocode-slola.github.io/ribocode1/docs/index.html
+
+For forks, the equivalent deployed URL is:
+* `https://<username>.github.io/ribocode1/docs/index.html`
 
 Please see the [User Guide](./UserGuide.md) for help using Ribocode.
 

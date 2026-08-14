@@ -21,7 +21,11 @@
     "test:e2e:session": "playwright test e2e/session-load.e2e.spec.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
-    "docs": "typedoc --out docs src",
+    "docs": "typedoc",
+    "docs:deploy": "npm run docs && gh-pages -d docs -e docs -a -m \"Docs: update API documentation\"",
+    "docs:deploy:dryrun": "npm run docs && gh-pages -d docs -e docs -a --no-push -m \"Docs: update API documentation\"",
+    "docs:deploy:target": "npm run docs && node scripts/docs-deploy-target.cjs",
+    "docs:deploy:target:dryrun": "npm run docs && node scripts/docs-deploy-target.cjs --dry-run",
     "version:patch": "npm version patch --no-git-tag-version",
     "version:minor": "npm version minor --no-git-tag-version",
     "version:major": "npm version major --no-git-tag-version"

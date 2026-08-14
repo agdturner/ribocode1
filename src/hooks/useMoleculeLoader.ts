@@ -16,20 +16,10 @@ import { AlignedTo, Aligned, ReAligned } from '../constants/ribocode';
 import type { MoleculeMode } from '../types/ribocode';
 
 /**
- * Custom hook to encapsulate molecule loading logic for viewers.
- * @param viewerA Viewer state for A
- * @param viewerB Viewer state for B
- * @param molstarA Molstar viewer hook instance for A
- * @param molstarB Molstar viewer hook instance for B
- * @param setAlignedFile Setter for aligned file (optional, for reloads)
- * @param selectedChainIdAlignedTo Selected chain id for realignment (optional)
- * @param selectedChainIdAligned Selected chain id for realignment (optional)
- * @param setRealignedMoleculesA Setter for realigned molecules in A (optional)
- * @param setRealignedMoleculesB Setter for realigned molecules in B (optional)
- * @param setRealignedStructRefsA Setter for realigned struct refs in A (optional)
- * @param setRealignedStructRefsB Setter for realigned struct refs in B (optional)
- * @param setRealignedRepRefsA Setter for realigned rep refs in A (optional)
- * @param setRealignedRepRefsB Setter for realigned rep refs in B (optional)
+ * Custom hook to encapsulate molecule loading logic for both viewers.
+ *
+ * Accepts a single options object containing viewer state, Mol* helpers,
+ * and optional setters used by reload/re-alignment flows.
  */
 export function useMoleculeLoader({
   viewerA,
