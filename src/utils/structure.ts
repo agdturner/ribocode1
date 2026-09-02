@@ -196,6 +196,70 @@ export function getResidueLoci(
 }
 
 /**
+ * Computes a loci that spans all supplied residue IDs in a chain by unioning residue loci.
+ */
+export function getResiduesLoci(
+    plugin: PluginUIContext,
+    structureRef: string,
+    chainId: string,
+    residueIds: string[],
+    residueInsCodes?: Record<string, string | undefined>
+) {
+    if (!Array.isArray(residueIds) || residueIds.length === 0) return null;
+    const uniqueResidueIds = Array.from(new Set(residueIds.filter(Boolean)));
+    let mergedLoci: any = null;
+    for (const residueId of uniqueResidueIds) {
+        const loci = getResidueLoci(plugin, structureRef, chainId, residueId, residueInsCodes?.[residueId]);
+        if (!loci) continue;
+        if (!mergedLoci) {
+            mergedLoci = loci;
+            continue;
+        }
+        if (mergedLoci.kind === 'element-loci' && loci.kind === 'element-loci') {
+            mergedLoci = StructureElement.Loci.union(mergedLoci, loci);
+        }
+    }
+    return mergedLoci;
+}
+
+/**
+ * Focus the camera on multiple residues in a chain, with optional sync to another plugin.
+ */
+export function focusLociOnResidues(
+    plugin: PluginUIContext,
+    structureRef: string,
+    chainId: string,
+    residueIds: string[],
+    residueInsCodes?: Record<string, string | undefined>,
+    syncPlugin?: PluginUIContext,
+    zoomExtraRadius?: number,
+    zoomMinRadius?: number,
+    syncStructureRef?: string,
+    syncChainId?: string,
+    syncResidueIds?: string[],
+    syncResidueInsCodes?: Record<string, string | undefined>
+) {
+    const loci = getResiduesLoci(plugin, structureRef, chainId, residueIds, residueInsCodes);
+    if (!loci) return;
+    const focusOptions = (zoomExtraRadius !== undefined && zoomMinRadius !== undefined)
+        ? { extraRadius: zoomExtraRadius, minRadius: zoomMinRadius }
+        : undefined;
+    plugin.managers.camera.focusLoci(loci, focusOptions);
+    if (syncPlugin) {
+        const syncLoci = getResiduesLoci(
+            syncPlugin,
+            syncStructureRef ?? structureRef,
+            syncChainId ?? chainId,
+            syncResidueIds ?? residueIds,
+            syncResidueInsCodes ?? residueInsCodes
+        );
+        if (syncLoci) {
+            syncPlugin.managers.camera.focusLoci(syncLoci, focusOptions);
+        }
+    }
+}
+
+/**
  * Utility to get all Representation3D nodes for a structure.
  *
  * This function is useful for session save/restore logic, allowing you to capture

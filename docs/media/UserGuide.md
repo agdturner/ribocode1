@@ -30,35 +30,29 @@ The UI layout is as follows:
  - Column `A`
    - `Mol* Viewer A`
      - `3D Canvas`
-   - `Load Molecule`
-     - `Load AlignedTo` button for loading the dataset to align to (`AlignedTo`)
-     - `Select Controls`
-       - `Select Subunit` control
-       - `Select Chain` control
-       - `Select Residue` control
-     - `Load Colours` button
-     - `Select Representation` control
-   - `MoleculeUI` components including:
+   - `MoleculeUI` components (representation toggles) including:
      - `AlignedTo` with `Zoom to Chain:` and `Zoom to Residue` 
      - `Aligned` with `Zoom to Chain:` and `Zoom to Residue` 
-   - `AlignedTo Chain Finder` table (searchable chain list shown below the viewer)
+   - `Load Molecule`
+     - `Load AlignedTo` button for loading the dataset to align to (`AlignedTo`)
+     - `Add Representation` control
+     - `Load Colours` button
+   - `Show Select and Zoom Controls` button (collapsed by default)
+   - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, and `AlignedTo Chain Finder`)
    - `Show Advanced Mol* Controls` button (toggles advanced Mol* interface for power users)
    - `Advanced Mol* Controls` panel (shown only when expanded; includes Sequence, Left Panel, Structure Tools, and Log sections)
  - Column `B`
    - `Mol* Viewer B`
      - `3D Canvas`
-   - `Load Molecule` 
-     - `Load Aligned` button for loading the dataset to be aligned (`Aligned`)
-     - `Select Controls`
-       - `Select Subunit` control
-       - `Select Chain` control
-       - `Select Residue` control
-     - `Load Colours` button
-     - `Select Representation` control
-   - `MoleculeUI` components including:
+   - `MoleculeUI` components (representation toggles) including:
      - `AlignedTo` with `Zoom to Chain:` and `Zoom to Residue`
      - `Aligned` with `Zoom to Chain:` and `Zoom to Residue`
-   - `Aligned Chain Finder` table (searchable chain list shown below the viewer)
+   - `Load Molecule` 
+     - `Load Aligned` button for loading the dataset to be aligned (`Aligned`)
+     - `Add Representation` control
+     - `Load Colours` button
+   - `Show Select and Zoom Controls` button (collapsed by default)
+   - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, and `Aligned Chain Finder`)
    - `Show Advanced Mol* Controls` button (toggles advanced Mol* interface for power users)
    - `Advanced Mol* Controls` panel (shown only when expanded; includes Sequence, Left Panel, Structure Tools, and Log sections)
 ```
@@ -78,15 +72,15 @@ The UI layout is as follows:
 |  |                        |  |  |                        |  |
 |  +------------------------+  |  +------------------------+  |
 +------------------------------+------------------------------+
-|         Load AlignedTo       |          Load Aligned        |
-| Select Subunit/Chain/Residue | Select Subunit/Chain/Residue |
-|          Load Colours        |          Load Colours        |
-+------------------------------+------------------------------+
 |     MoleculeUI AlignedTo     |     MoleculeUI AlignedTo     |
 |      MoleculeUI Aligned      |      MoleculeUI Aligned      |
 |     MoleculeUI Re-aligned    |     MoleculeUI Re-aligned    |
 |              ...             |             ...              |
-|   AlignedTo Chain Finder     |      Aligned Chain Finder    |
+|         Load AlignedTo       |          Load Aligned        |
+|      Representation/+        |       Representation/+       |
+|          Load Colours        |          Load Colours        |
+| Show Select and Zoom Controls| Show Select and Zoom Controls|
+| Select/Zoom + Chain Finder   | Select/Zoom + Chain Finder   |
 | Show Advanced Mol* Controls  | Show Advanced Mol* Controls  |
 |  Advanced Mol* Controls      |   Advanced Mol* Controls     |
 | (Sequence/Tools/Log panels)  | (Sequence/Tools/Log panels)  |
@@ -99,7 +93,7 @@ When structure data are loaded, Ribocode enriches chain labels used in the respe
 - `Select Chain` dropdown; and,
 - `Chain Finder` table below each viewer.
 
-The `Chain Finder` table should appear below the `MoleculeUI` rows and above `Show Advanced Mol* Controls` and the optional advanced-controls panel.
+The `Chain Finder` table appears inside the `Select and Zoom Controls` panel and is hidden by default together with Select/Zoom controls.
 - Column `A` shows the `AlignedTo Chain Finder`.
 - Column `B` shows the `Aligned Chain Finder`.
 
@@ -111,6 +105,8 @@ Users can use `Chain Finder` search boxes to quickly find chains by any part of 
   - molecule description (e.g., `L22-like`).
 
 Selecting a chain can be done both via the `Select Chain` drop down or by selecting a row in the `Chain Finder`.
+
+To access `Select Subunit`, `Select Chain`, `Select Residues`, and zoom-to-selection controls, first click `Show Select and Zoom Controls` in the relevant column.
 
 Ribocode combines metadata from the loaded mmCIF file and lookup tables to build a richer chain label.
 

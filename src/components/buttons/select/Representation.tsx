@@ -38,7 +38,7 @@ interface RepresentationSelectButtonProps {
  * @param disabled Whether the select button is disabled.
  * @returns The SelectButton component.
  */
-const RepresentationSelectButton: React.FC<RepresentationSelectButtonProps> = ({ label = 'Select Representation', options, selected, onSelect, disabled, id }) => (
+const RepresentationSelectButton: React.FC<RepresentationSelectButtonProps> = ({ label = 'Add Representation', options, selected, onSelect, disabled, id }) => (
 	<GenericSelectButton
 		label={label}
 		options={options.map(String)}

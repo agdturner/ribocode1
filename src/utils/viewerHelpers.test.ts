@@ -10,11 +10,12 @@
  */
 import { vi } from 'vitest';
 import { makeFogSetters, makeCameraSetters, createZoomHandler, makeZoomHandler } from './viewerHelpers';
-import { focusLociOnChain, focusLociOnResidue } from '../utils/structure';
+import { focusLociOnChain, focusLociOnResidue, focusLociOnResidues } from '../utils/structure';
 
 vi.mock('../utils/structure', () => ({
   focusLociOnChain: vi.fn(),
   focusLociOnResidue: vi.fn(),
+  focusLociOnResidues: vi.fn(),
   focusLociOnSubunit: vi.fn(),
 }));
 
@@ -194,6 +195,45 @@ describe('viewerHelpers', () => {
       undefined,
       undefined,
       undefined
+    );
+  });
+
+  it('uses multi-residue focus when multiple residue ids are provided', async () => {
+    vi.mocked(focusLociOnResidues).mockClear();
+    const pluginRef = { current: { id: 'plugin-a' } };
+    const syncPluginRef = { current: { id: 'plugin-b' } };
+    const handler = makeZoomHandler({
+      pluginRef: pluginRef as any,
+      structureRef: 'struct-a',
+      property: 'residue-test',
+      chainId: 'A',
+      sync: true,
+      syncPluginRef: syncPluginRef as any,
+      syncStructureRef: 'struct-b',
+      syncChainId: 'A',
+      residueIds: ['10', '11'],
+      syncResidueIds: ['10', '11'],
+      residueInsCodes: { '10': '', '11': 'A' },
+      syncResidueInsCodes: { '10': '', '11': 'A' },
+      zoomExtraRadius: 24,
+      zoomMinRadius: 12,
+    });
+
+    await handler.handleButtonClick();
+
+    expect(focusLociOnResidues).toHaveBeenCalledWith(
+      pluginRef.current,
+      'struct-a',
+      'A',
+      ['10', '11'],
+      { '10': '', '11': 'A' },
+      syncPluginRef.current,
+      24,
+      12,
+      'struct-b',
+      'A',
+      ['10', '11'],
+      { '10': '', '11': 'A' }
     );
   });
 });

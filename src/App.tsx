@@ -1120,6 +1120,27 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncChainId: selectedChainIdAligned,
     });
 
+    const selectedResidueInsCodesAlignedTo = useMemo(
+        () => Object.fromEntries(
+            selectedResidueIdsAlignedTo.map((id) => [id, residueInfoAlignedTo.residueLabels.get(id)?.insCode])
+        ) as Record<string, string | undefined>,
+        [selectedResidueIdsAlignedTo, residueInfoAlignedTo]
+    );
+    const selectedResidueInsCodesAligned = useMemo(
+        () => Object.fromEntries(
+            selectedResidueIdsAligned.map((id) => [id, residueInfoAligned.residueLabels.get(id)?.insCode])
+        ) as Record<string, string | undefined>,
+        [selectedResidueIdsAligned, residueInfoAligned]
+    );
+    const residueZoomLabelAlignedTo = selectedResidueIdsAlignedTo.length > 1
+        ? `${selectedResidueIdsAlignedTo.length} residues`
+        : (residueInfoAlignedTo.residueLabels.get(selectedResidueIdAlignedTo)?.name || '');
+    const residueZoomLabelAligned = selectedResidueIdsAligned.length > 1
+        ? `${selectedResidueIdsAligned.length} residues`
+        : (residueInfoAligned.residueLabels.get(selectedResidueIdAligned)?.name || '');
+    const residueZoomDisabledAlignedTo = selectedResidueIdsAlignedTo.length === 0;
+    const residueZoomDisabledAligned = selectedResidueIdsAligned.length === 0;
+
     // Residue zoom handlers
     const residueZoomAAlignedTo = makeZoomHandler({
         pluginRef: viewerA.ref,
@@ -1134,6 +1155,10 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncResidueId: selectedResidueIdAlignedTo,
         insCode: residueInfoAlignedTo.residueLabels.get(selectedResidueIdAlignedTo)?.insCode,
         syncInsCode: residueInfoAlignedTo.residueLabels.get(selectedResidueIdAlignedTo)?.insCode,
+        residueIds: selectedResidueIdsAlignedTo,
+        syncResidueIds: selectedResidueIdsAlignedTo,
+        residueInsCodes: selectedResidueInsCodesAlignedTo,
+        syncResidueInsCodes: selectedResidueInsCodesAlignedTo,
         zoomExtraRadius,
         zoomMinRadius
     });
@@ -1150,6 +1175,10 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncResidueId: selectedResidueIdAligned,
         insCode: residueInfoAligned.residueLabels.get(selectedResidueIdAligned)?.insCode,
         syncInsCode: residueInfoAligned.residueLabels.get(selectedResidueIdAligned)?.insCode,
+        residueIds: selectedResidueIdsAligned,
+        syncResidueIds: selectedResidueIdsAligned,
+        residueInsCodes: selectedResidueInsCodesAligned,
+        syncResidueInsCodes: selectedResidueInsCodesAligned,
         zoomExtraRadius,
         zoomMinRadius
     });
@@ -1166,6 +1195,10 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncResidueId: selectedResidueIdAlignedTo,
         insCode: residueInfoAlignedTo.residueLabels.get(selectedResidueIdAlignedTo)?.insCode,
         syncInsCode: residueInfoAlignedTo.residueLabels.get(selectedResidueIdAlignedTo)?.insCode,
+        residueIds: selectedResidueIdsAlignedTo,
+        syncResidueIds: selectedResidueIdsAlignedTo,
+        residueInsCodes: selectedResidueInsCodesAlignedTo,
+        syncResidueInsCodes: selectedResidueInsCodesAlignedTo,
         zoomExtraRadius,
         zoomMinRadius
     });
@@ -1182,6 +1215,10 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncResidueId: selectedResidueIdAligned,
         insCode: residueInfoAligned.residueLabels.get(selectedResidueIdAligned)?.insCode,
         syncInsCode: residueInfoAligned.residueLabels.get(selectedResidueIdAligned)?.insCode,
+        residueIds: selectedResidueIdsAligned,
+        syncResidueIds: selectedResidueIdsAligned,
+        residueInsCodes: selectedResidueInsCodesAligned,
+        syncResidueInsCodes: selectedResidueInsCodesAligned,
         zoomExtraRadius,
         zoomMinRadius
     });
@@ -2412,9 +2449,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueInfo: residueInfoAlignedTo,
                                     selectedResidueIds: selectedResidueIdsAlignedTo,
                                     setSelectedResidueIds: setSelectedResidueIdsAlignedTo,
-                                    residueZoomLabel: residueInfoAlignedTo.residueLabels.get(selectedResidueIdAlignedTo)?.name || '',
+                                    residueZoomLabel: residueZoomLabelAlignedTo,
                                     onResidueZoom: residueZoomAAlignedTo.handleButtonClick,
-                                    residueZoomDisabled: !selectedResidueIdAlignedTo,
+                                    residueZoomDisabled: residueZoomDisabledAlignedTo,
                                     fog: fogA,
                                     setFog: makeFogSetters(setFogA),
                                     camera: cameraA,
@@ -2464,9 +2501,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueInfo: residueInfoAligned,
                                     selectedResidueIds: selectedResidueIdsAligned,
                                     setSelectedResidueIds: setSelectedResidueIdsAligned,
-                                    residueZoomLabel: residueInfoAligned.residueLabels.get(selectedResidueIdAligned)?.name || '',
+                                    residueZoomLabel: residueZoomLabelAligned,
                                     onResidueZoom: residueZoomAAligned.handleButtonClick,
-                                    residueZoomDisabled: !selectedResidueIdAligned,
+                                    residueZoomDisabled: residueZoomDisabledAligned,
                                     fog: fogA,
                                     setFog: makeFogSetters(setFogA),
                                     camera: cameraA,
@@ -2496,9 +2533,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     subunitZoomLabel: selectedSubunitAlignedTo,
                                     onSubunitZoom: subunitZoomAAlignedTo.handleButtonClick,
                                     subunitZoomDisabled: selectedSubunitChainIdsAlignedTo.length === 0,
-                                    residueZoomLabel: residueInfoAlignedTo.residueLabels.get(selectedResidueIdAlignedTo)?.name || '',
+                                    residueZoomLabel: residueZoomLabelAlignedTo,
                                     onResidueZoom: residueZoomAAlignedTo.handleButtonClick,
-                                    residueZoomDisabled: !selectedResidueIdAlignedTo,
+                                    residueZoomDisabled: residueZoomDisabledAlignedTo,
                                     isLoaded: viewerA.isMoleculeAlignedToLoaded,
                                     forceUpdate,
                                     representationRefs: molstarA.representationRefs[AlignedTo] || [],
@@ -2521,9 +2558,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     subunitZoomLabel: selectedSubunitAligned,
                                     onSubunitZoom: subunitZoomAAligned.handleButtonClick,
                                     subunitZoomDisabled: selectedSubunitChainIdsAligned.length === 0,
-                                    residueZoomLabel: residueInfoAligned.residueLabels.get(selectedResidueIdAligned)?.name || '',
+                                    residueZoomLabel: residueZoomLabelAligned,
                                     onResidueZoom: residueZoomAAligned.handleButtonClick,
-                                    residueZoomDisabled: !selectedResidueIdAligned,
+                                    residueZoomDisabled: residueZoomDisabledAligned,
                                     isLoaded: viewerA.isMoleculeAlignedLoaded,
                                     forceUpdate,
                                     representationRefs: molstarA.representationRefs[Aligned] || [],
@@ -2604,9 +2641,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueInfo: residueInfoAlignedTo,
                                     selectedResidueIds: selectedResidueIdsAlignedTo,
                                     setSelectedResidueIds: setSelectedResidueIdsAlignedTo,
-                                    residueZoomLabel: residueInfoAlignedTo.residueLabels.get(selectedResidueIdAlignedTo)?.name || '',
+                                    residueZoomLabel: residueZoomLabelAlignedTo,
                                     onResidueZoom: residueZoomBAlignedTo.handleButtonClick,
-                                    residueZoomDisabled: !selectedResidueIdAlignedTo,
+                                    residueZoomDisabled: residueZoomDisabledAlignedTo,
                                     fog: fogB,
                                     setFog: makeFogSetters(setFogB),
                                     camera: cameraB,
@@ -2656,9 +2693,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueInfo: residueInfoAligned,
                                     selectedResidueIds: selectedResidueIdsAligned,
                                     setSelectedResidueIds: setSelectedResidueIdsAligned,
-                                    residueZoomLabel: residueInfoAligned.residueLabels.get(selectedResidueIdAligned)?.name || '',
+                                    residueZoomLabel: residueZoomLabelAligned,
                                     onResidueZoom: residueZoomBAligned.handleButtonClick,
-                                    residueZoomDisabled: !selectedResidueIdAligned,
+                                    residueZoomDisabled: residueZoomDisabledAligned,
                                     fog: fogB,
                                     setFog: makeFogSetters(setFogB),
                                     camera: cameraB,
@@ -2690,9 +2727,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     subunitZoomLabel: selectedSubunitAlignedTo,
                                     onSubunitZoom: subunitZoomBAlignedTo.handleButtonClick,
                                     subunitZoomDisabled: selectedSubunitChainIdsAlignedTo.length === 0,
-                                    residueZoomLabel: residueInfoAlignedTo.residueLabels.get(selectedResidueIdAlignedTo)?.name || '',
+                                    residueZoomLabel: residueZoomLabelAlignedTo,
                                     onResidueZoom: residueZoomBAlignedTo.handleButtonClick,
-                                    residueZoomDisabled: !selectedResidueIdAlignedTo,
+                                    residueZoomDisabled: residueZoomDisabledAlignedTo,
                                     isLoaded: viewerB.isMoleculeAlignedToLoaded,
                                     forceUpdate,
                                     representationRefs: molstarB.representationRefs[AlignedTo] || [],
@@ -2715,9 +2752,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     subunitZoomLabel: selectedSubunitAligned,
                                     onSubunitZoom: subunitZoomBAligned.handleButtonClick,
                                     subunitZoomDisabled: selectedSubunitChainIdsAligned.length === 0,
-                                    residueZoomLabel: residueInfoAligned.residueLabels.get(selectedResidueIdAligned)?.name || '',
+                                    residueZoomLabel: residueZoomLabelAligned,
                                     onResidueZoom: residueZoomBAligned.handleButtonClick,
-                                    residueZoomDisabled: !selectedResidueIdAligned,
+                                    residueZoomDisabled: residueZoomDisabledAligned,
                                     isLoaded: viewerB.isMoleculeAlignedLoaded,
                                     forceUpdate,
                                     representationRefs: molstarB.representationRefs[Aligned] || [],

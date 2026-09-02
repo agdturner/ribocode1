@@ -4,7 +4,8 @@ Release summary: this release improves alignment and camera-sync reliability in 
 - Added `Zoom to Subunit` controls for each viewer/molecule panel, using the selected subunit chain set for camera focus.
 - Added `Re-align to Subunit` in General Controls, enabled only when valid non-`All` subunits are selected on both datasets and disabled after an already-applied subunit pair.
 - Added dedicated Playwright E2E coverage for subunit re-alignment button state transitions in `e2e/subunit-realign.e2e.spec.ts`.
-- Updated `Select Residue` to support multi-residue selection per viewer, while keeping residue zoom/session compatibility via first-selected residue fallback.
+- Updated `Select Residue` to support multi-residue selection per viewer, while keeping session compatibility via legacy first-selected `residueId` fallback.
+- Updated `Zoom to Residue` so when multiple residues are selected the camera focuses the combined loci of all selected residues (instead of only the first).
 - Fixed residue-code extraction so labels use meaningful residue/nucleotide codes from residue/atom comp IDs instead of malformed fallbacks (e.g. preventing `ATOM` -> `ATO`).
 - Added residue code normalization for RNA/protein conventions and updated residue label order to `number code` (for example `12 A`, `70 GLY`).
 - Added focused unit/integration regression coverage for residue label lookup, multi-selection persistence (`residueIds` + legacy `residueId`), and session round-tripping.
@@ -12,6 +13,7 @@ Release summary: this release improves alignment and camera-sync reliability in 
 - Added per-column `Show/Hide Select and Zoom Controls` toggle that controls Subunit/Chain/Residue selectors, zoom buttons, and Chain Finder together.
 - Set Select/Zoom controls to be collapsed by default, and positioned the toggle immediately above `Show/Hide Advanced Mol* Controls`.
 - Updated toggle button layout so `Show/Hide Advanced Mol* Controls` always appears below `Show/Hide Select and Zoom Controls` (stacked vertically).
+- Moved per-molecule representation toggle rows (`MoleculeUI` visibility controls) to render immediately below each Mol* viewer, before `Load Molecule` controls.
 
 ## [v0.11.0] - 2026-08-14
 - Added a preferred in-place chain re-alignment path that applies rigid transforms directly to existing aligned structures in both viewers.

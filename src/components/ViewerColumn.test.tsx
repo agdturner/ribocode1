@@ -239,6 +239,10 @@ describe('ViewerColumn', () => {
 
         expect(root?.firstElementChild?.id).toBe(`${idPrefix}-${viewerColumnIdSuffix}-A-molstar-container`);
 
+        const rootChildren = Array.from(root?.children ?? []);
+        expect(rootChildren[1]?.classList.contains('molecule-row')).toBe(true);
+        expect(rootChildren[2]?.classList.contains('molecule-row')).toBe(true);
+
         const children = Array.from(root?.children ?? []);
         const selectZoomToggleIndex = children.findIndex((child) => child.id === `${idPrefix}-${viewerColumnIdSuffix}-A-select-zoom-controls-toggle-btn`);
         const toggleIndex = children.findIndex((child) => child.id === `${idPrefix}-${viewerColumnIdSuffix}-A-advanced-molstar-controls-toggle-btn`);

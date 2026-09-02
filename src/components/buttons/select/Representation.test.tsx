@@ -23,7 +23,7 @@ describe('RepresentationSelectButton', () => {
                 onSelect={() => {}}
             />
         );
-        expect(getByLabelText('Select Representation')).toBeInTheDocument();
+        expect(getByLabelText('Add Representation')).toBeInTheDocument();
         allowedRepresentationTypes.forEach(opt => {
             expect(getByText(opt)).toBeInTheDocument();
         });
@@ -50,7 +50,7 @@ describe('RepresentationSelectButton', () => {
                 onSelect={onSelect}
             />
         );
-        fireEvent.change(getByLabelText('Select Representation'), { target: { value: 'line' } });
+        fireEvent.change(getByLabelText('Add Representation'), { target: { value: 'line' } });
         expect(onSelect).toHaveBeenCalledWith('line');
     });
 
@@ -63,6 +63,6 @@ describe('RepresentationSelectButton', () => {
                 disabled
             />
         );
-        expect(getByLabelText('Select Representation')).toBeDisabled();
+        expect(getByLabelText('Add Representation')).toBeDisabled();
     });
 });

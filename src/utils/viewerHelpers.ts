@@ -8,7 +8,7 @@
  * @lastModified 2026-04-24
  * @see https://github.com/ribocode-slola/ribocode1
  */
-import { focusLociOnChain, focusLociOnResidue, focusLociOnSubunit } from '../utils/structure';
+import { focusLociOnChain, focusLociOnResidue, focusLociOnResidues, focusLociOnSubunit } from '../utils/structure';
 import { PluginUIContext } from 'molstar/lib/mol-plugin-ui/context';
 
 // Helper for fog setters
@@ -45,7 +45,11 @@ export function createZoomHandler(
     zoomExtraRadius?: number,
     zoomMinRadius?: number,
     chainIds?: string[],
-    syncChainIds?: string[]
+    syncChainIds?: string[],
+    residueIds?: string[],
+    syncResidueIds?: string[],
+    residueInsCodes?: Record<string, string | undefined>,
+    syncResidueInsCodes?: Record<string, string | undefined>
 ) {
     return {
         handleButtonClick: async () => {
@@ -75,21 +79,39 @@ export function createZoomHandler(
                     syncChainIds
                 );
             } else if (property === 'residue-test') {
-                focusLociOnResidue(
-                    plugin,
-                    structureRef,
-                    chainId,
-                    residueId ?? '',
-                    insCode,
-                    sync && syncPluginRef?.current ? syncPluginRef.current : undefined,
-                    zoomExtraRadius,
-                    zoomMinRadius,
-                    undefined,
-                    syncStructureRef ?? undefined,
-                    syncChainId,
-                    syncResidueId,
-                    syncInsCode
-                );
+                const selectedResidueIds = (residueIds ?? []).filter(Boolean);
+                if (selectedResidueIds.length > 0) {
+                    focusLociOnResidues(
+                        plugin,
+                        structureRef,
+                        chainId,
+                        selectedResidueIds,
+                        residueInsCodes,
+                        sync && syncPluginRef?.current ? syncPluginRef.current : undefined,
+                        zoomExtraRadius,
+                        zoomMinRadius,
+                        syncStructureRef ?? undefined,
+                        syncChainId,
+                        syncResidueIds,
+                        syncResidueInsCodes
+                    );
+                } else {
+                    focusLociOnResidue(
+                        plugin,
+                        structureRef,
+                        chainId,
+                        residueId ?? '',
+                        insCode,
+                        sync && syncPluginRef?.current ? syncPluginRef.current : undefined,
+                        zoomExtraRadius,
+                        zoomMinRadius,
+                        undefined,
+                        syncStructureRef ?? undefined,
+                        syncChainId,
+                        syncResidueId,
+                        syncInsCode
+                    );
+                }
             } else {
                 // fallback: use chain loci for other property types for now
                 focusLociOnChain(
@@ -118,6 +140,10 @@ export function makeZoomHandler({
     syncInsCode,
     chainIds,
     syncChainIds,
+    residueIds,
+    syncResidueIds,
+    residueInsCodes,
+    syncResidueInsCodes,
     zoomExtraRadius,
     zoomMinRadius
 }: {
@@ -135,6 +161,10 @@ export function makeZoomHandler({
     syncInsCode?: string,
     chainIds?: string[],
     syncChainIds?: string[],
+    residueIds?: string[],
+    syncResidueIds?: string[],
+    residueInsCodes?: Record<string, string | undefined>,
+    syncResidueInsCodes?: Record<string, string | undefined>,
     zoomExtraRadius?: number,
     zoomMinRadius?: number
 }) {
@@ -154,6 +184,10 @@ export function makeZoomHandler({
         zoomExtraRadius,
         zoomMinRadius,
         chainIds,
-        syncChainIds
+        syncChainIds,
+        residueIds,
+        syncResidueIds,
+        residueInsCodes,
+        syncResidueInsCodes
     );
 }

@@ -30,13 +30,13 @@ The UI layout is as follows:
  - Column `A`
    - `Mol* Viewer A`
      - `3D Canvas`
-   - `Load Molecule`
-     - `Load AlignedTo` button for loading the dataset to align to (`AlignedTo`)
-     - `Select Representation` control
-     - `Load Colours` button
-   - `MoleculeUI` components including:
+   - `MoleculeUI` components (representation toggles) including:
      - `AlignedTo` with `Zoom to Chain:` and `Zoom to Residue` 
      - `Aligned` with `Zoom to Chain:` and `Zoom to Residue` 
+   - `Load Molecule`
+     - `Load AlignedTo` button for loading the dataset to align to (`AlignedTo`)
+     - `Add Representation` control
+     - `Load Colours` button
    - `Show Select and Zoom Controls` button (collapsed by default)
    - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, and `AlignedTo Chain Finder`)
    - `Show Advanced Mol* Controls` button (toggles advanced Mol* interface for power users)
@@ -44,13 +44,13 @@ The UI layout is as follows:
  - Column `B`
    - `Mol* Viewer B`
      - `3D Canvas`
-   - `Load Molecule` 
-     - `Load Aligned` button for loading the dataset to be aligned (`Aligned`)
-     - `Select Representation` control
-     - `Load Colours` button
-   - `MoleculeUI` components including:
+   - `MoleculeUI` components (representation toggles) including:
      - `AlignedTo` with `Zoom to Chain:` and `Zoom to Residue`
      - `Aligned` with `Zoom to Chain:` and `Zoom to Residue`
+   - `Load Molecule` 
+     - `Load Aligned` button for loading the dataset to be aligned (`Aligned`)
+     - `Add Representation` control
+     - `Load Colours` button
    - `Show Select and Zoom Controls` button (collapsed by default)
    - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, and `Aligned Chain Finder`)
    - `Show Advanced Mol* Controls` button (toggles advanced Mol* interface for power users)
@@ -72,14 +72,13 @@ The UI layout is as follows:
 |  |                        |  |  |                        |  |
 |  +------------------------+  |  +------------------------+  |
 +------------------------------+------------------------------+
-|         Load AlignedTo       |          Load Aligned        |
-|      Representation/+        |       Representation/+       |
-|          Load Colours        |          Load Colours        |
-+------------------------------+------------------------------+
 |     MoleculeUI AlignedTo     |     MoleculeUI AlignedTo     |
 |      MoleculeUI Aligned      |      MoleculeUI Aligned      |
 |     MoleculeUI Re-aligned    |     MoleculeUI Re-aligned    |
 |              ...             |             ...              |
+|         Load AlignedTo       |          Load Aligned        |
+|      Representation/+        |       Representation/+       |
+|          Load Colours        |          Load Colours        |
 | Show Select and Zoom Controls| Show Select and Zoom Controls|
 | Select/Zoom + Chain Finder   | Select/Zoom + Chain Finder   |
 | Show Advanced Mol* Controls  | Show Advanced Mol* Controls  |

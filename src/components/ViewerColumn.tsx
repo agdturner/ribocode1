@@ -162,7 +162,7 @@ export function getLoadDataRowProps({
 		representationTypeDisabled: Aligned === 'AlignedTo' ? !isMoleculeAlignedToLoaded : !isMoleculeAlignedLoaded,
 		representationTypeSelector: (
 			<RepresentationSelectButton
-				label="Select Representation"
+				label="Add Representation"
 				options={allowedRepresentationTypes as AllowedRepresentationType[]}
 				selected={representationType}
 				onSelect={option => setRepresentationType(option as AllowedRepresentationType)}
@@ -669,6 +669,9 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 			   viewerKey={viewerKey}
 			   showAdvancedControls={false}
 		       />
+		       <MoleculeUI key={moleculeUIAlignedToProps.key} {...(() => { const { key, ...rest } = moleculeUIAlignedToProps; return rest; })()} idPrefix={viewerIdPrefix} />
+		       <MoleculeUI key={moleculeUIAlignedProps.key} {...(() => { const { key, ...rest } = moleculeUIAlignedProps; return rest; })()} idPrefix={viewerIdPrefix} />
+		       <RealignedMoleculeList {...realignedMoleculeListProps} idPrefix={viewerIdPrefix} />
 					   {/* Only render the correct loader in each column as per requirements */}
 					   {viewerKey === 'A' && (
 					   <LoadDataRow {...loadDataRowPropsAlignedTo} showSelectZoomControls={false} testMode={testMode} idPrefix={`${viewerIdPrefix}-alignedto`} />
@@ -676,9 +679,6 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 					   {viewerKey === 'B' && (
 					   <LoadDataRow {...loadDataRowPropsAligned} showSelectZoomControls={false} testMode={testMode} idPrefix={`${viewerIdPrefix}-aligned`} />
 					   )}
-			       <MoleculeUI key={moleculeUIAlignedToProps.key} {...(() => { const { key, ...rest } = moleculeUIAlignedToProps; return rest; })()} idPrefix={viewerIdPrefix} />
-			       <MoleculeUI key={moleculeUIAlignedProps.key} {...(() => { const { key, ...rest } = moleculeUIAlignedProps; return rest; })()} idPrefix={viewerIdPrefix} />
-			       <RealignedMoleculeList {...realignedMoleculeListProps} idPrefix={viewerIdPrefix} />
 		       <button
 			   id={`${viewerIdPrefix}-select-zoom-controls-toggle-btn`}
 			   data-testid={`${viewerIdPrefix}-select-zoom-controls-toggle-btn`}
