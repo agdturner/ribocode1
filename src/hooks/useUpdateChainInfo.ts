@@ -11,6 +11,7 @@
 import { useEffect, useRef } from 'react';
 import { getChainInfo } from '../utils/chain';
 import { RpNameLookupBySpecies } from '../utils/rpNameTable';
+import { getSubunitToChainIds } from '../utils/subunit';
 
 /**
  * Custom hook to update chain info and subunit-to-chain mapping for a Mol* structure.
@@ -70,12 +71,33 @@ export function useUpdateChainInfo(
         }
       }
 
-      // Build subunit-to-chain mapping (subunit defaults to 'default' for all chains)
-      const subunitToChainIds = new Map<string, Set<string>>();
-      for (const [chainId] of chainLabels) {
-        const subunit = 'default';
-        if (!subunitToChainIds.has(subunit)) subunitToChainIds.set(subunit, new Set());
-        subunitToChainIds.get(subunit)!.add(chainId);
+      // Build subunit-to-chain mapping from structure chain IDs and keep it aligned
+      // with the currently available chain labels.
+      const inferred = getSubunitToChainIds(structureObj).subunitToChainIds;
+      const subunitToChainIds = new Map<string, Set<string>>([
+        ['All', new Set<string>()],
+        ['Large', new Set<string>()],
+        ['Small', new Set<string>()],
+        ['Other', new Set<string>()],
+      ]);
+
+      for (const chainId of chainLabels.keys()) {
+        subunitToChainIds.get('All')!.add(chainId);
+      }
+
+      for (const subunit of ['Large', 'Small', 'Other'] as const) {
+        const ids = inferred.get(subunit);
+        if (!ids) continue;
+        for (const chainId of ids) {
+          if (chainLabels.has(chainId)) subunitToChainIds.get(subunit)!.add(chainId);
+        }
+      }
+
+      // Ensure every labeled chain is assigned to at least one specific subunit bucket.
+      for (const chainId of chainLabels.keys()) {
+        if (!subunitToChainIds.get('Large')!.has(chainId) && !subunitToChainIds.get('Small')!.has(chainId)) {
+          subunitToChainIds.get('Other')!.add(chainId);
+        }
       }
 
       if (chainLabels.size === 0) {

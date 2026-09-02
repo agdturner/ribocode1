@@ -46,9 +46,66 @@
 .General-Controls {
 	align-items: center;
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: center; /* Centralize the controls horizontally */
 	gap: 12px;
 	margin-bottom: 16px;
+}
+
+.General-Controls > button {
+	flex: 0 1 auto;
+}
+
+.molecule-row {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.molecule-top-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.molecule-visibility-btn {
+	width: auto;
+	max-width: 100%;
+	align-self: flex-start;
+	display: inline-flex;
+}
+
+.rep-controls {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.rep-btn-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.molecule-control-row {
+	display: block;
+}
+
+.molecule-control-row .msp-btn {
+	width: 100%;
+	text-align: left;
+}
+
+.load-data-controls {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.load-data-control-row {
+	display: block;
 }
 
 .Two-Columns-Container {

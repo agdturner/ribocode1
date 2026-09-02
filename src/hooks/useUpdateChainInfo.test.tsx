@@ -64,11 +64,14 @@ describe('useUpdateChainInfo', () => {
     expect(result.chainLabels.get('A')).toBe('AA [auth A]');
     expect(result.chainLabels.get('B')).toBe('BB [auth B]');
 
-    // All chains now map to the 'default' subunit
+    // Chains are mapped using standard subunit buckets.
     expect(setSubunitToChainIds).toHaveBeenCalled();
     const subunitUpdater = setSubunitToChainIds.mock.calls[0][0];
     const subunitResult = subunitUpdater(new Map());
-    expect(subunitResult.get('default')).toEqual(new Set(['A', 'B']));
+    expect(subunitResult.get('All')).toEqual(new Set(['A', 'B']));
+    expect(subunitResult.get('Large')).toEqual(expect.any(Set));
+    expect(subunitResult.get('Small')).toEqual(expect.any(Set));
+    expect(subunitResult.get('Other')).toEqual(expect.any(Set));
   });
 
   it('enriches labels with family names when rpNameLookup is provided', () => {

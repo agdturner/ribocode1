@@ -44,13 +44,22 @@ export interface LoadDataRowPropsInput {
 	otherStructureRef: any;
 	selectedSubunit: any;
 	setSelectedSubunit: (val: any) => void;
+	subunitZoomLabel: string;
+	onSubunitZoom: () => void;
+	subunitZoomDisabled: boolean;
 	subunitToChainIds: any;
 	chainInfo: any;
 	selectedChainId: any;
 	setSelectedChainId: (val: any) => void;
+	chainZoomLabel: string;
+	onChainZoom: () => void;
+	chainZoomDisabled: boolean;
 	residueInfo: any;
 	selectedResidueId: any;
 	setSelectedResidueId: (val: any) => void;
+	residueZoomLabel: string;
+	onResidueZoom: () => void;
+	residueZoomDisabled: boolean;
 	fog: { enabled: boolean; near: number; far: number };
 	setFog: {
 		setEnabled: (val: boolean) => void;
@@ -100,13 +109,22 @@ export function getLoadDataRowProps({
 	otherStructureRef,
 	selectedSubunit,
 	setSelectedSubunit,
+	subunitZoomLabel,
+	onSubunitZoom,
+	subunitZoomDisabled,
 	subunitToChainIds,
 	chainInfo,
 	selectedChainId,
 	setSelectedChainId,
+	chainZoomLabel,
+	onChainZoom,
+	chainZoomDisabled,
 	residueInfo,
 	selectedResidueId,
 	setSelectedResidueId,
+	residueZoomLabel,
+	onResidueZoom,
+	residueZoomDisabled,
 	fog,
 	setFog,
 	camera,
@@ -161,13 +179,20 @@ export function getLoadDataRowProps({
 				colorTheme = { name: 'default', params: {} };
 			}
 			const repId = (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+			const thisViewerVisible = Aligned === 'AlignedTo'
+				? viewer.isMoleculeAlignedToVisible
+				: viewer.isMoleculeAlignedVisible;
+			const otherViewerVisible = Aligned === 'AlignedTo'
+				? otherViewer.isMoleculeAlignedToVisible
+				: otherViewer.isMoleculeAlignedVisible;
 			if ((Aligned === 'AlignedTo' ? viewer.moleculeAlignedTo : viewer.moleculeAligned) && structureRef) {
 				molstar.addRepresentation(
 					Aligned,
 					structureRef,
 					representationType,
 					colorTheme,
-					repId
+					repId,
+					thisViewerVisible
 				);
 			}
 			if ((Aligned === 'AlignedTo' ? otherViewer.moleculeAlignedTo : otherViewer.moleculeAligned) && otherStructureRef) {
@@ -176,7 +201,8 @@ export function getLoadDataRowProps({
 					otherStructureRef,
 					representationType,
 					colorTheme,
-					repId
+					repId,
+					otherViewerVisible
 				);
 			}
 			Object.entries(realignedStructRefs).forEach(([id, structRef]) => {
@@ -207,14 +233,23 @@ export function getLoadDataRowProps({
 		onColorsFileChange: colorsFile.handleFileChange,
 		selectedSubunit,
 		onSelectSubunit: setSelectedSubunit,
+		subunitZoomLabel,
+		onSubunitZoom,
+		subunitZoomDisabled,
 		subunitSelectDisabled: !isMoleculeAlignedToLoaded,
 		chainInfo,
 		selectedChainId,
 		onSelectChainId: setSelectedChainId,
+		chainZoomLabel,
+		onChainZoom,
+		chainZoomDisabled,
 		chainSelectDisabled: !isMoleculeAlignedToLoaded,
 		residueInfo,
 		selectedResidueId,
 		onSelectResidueId: setSelectedResidueId,
+		residueZoomLabel,
+		onResidueZoom,
+		residueZoomDisabled,
 		residueSelectDisabled: !isMoleculeAlignedToLoaded,
 		fogEnabled: fog.enabled,
 		fogNear: fog.near,
@@ -260,6 +295,9 @@ export function getMoleculeUIAlignedToProps({
 	chainZoomLabel,
 	onChainZoom,
 	chainZoomDisabled,
+	subunitZoomLabel,
+	onSubunitZoom,
+	subunitZoomDisabled,
 	residueZoomLabel,
 	onResidueZoom,
 	residueZoomDisabled,
@@ -279,6 +317,9 @@ export function getMoleculeUIAlignedToProps({
 	chainZoomLabel: string,
 	onChainZoom: () => void,
 	chainZoomDisabled: boolean,
+	subunitZoomLabel: string,
+	onSubunitZoom: () => void,
+	subunitZoomDisabled: boolean,
 	residueZoomLabel: string,
 	onResidueZoom: () => void,
 	residueZoomDisabled: boolean,
@@ -299,6 +340,9 @@ export function getMoleculeUIAlignedToProps({
 		chainZoomLabel,
 		onChainZoom,
 		chainZoomDisabled,
+		subunitZoomLabel,
+		onSubunitZoom,
+		subunitZoomDisabled,
 		residueZoomLabel,
 		onResidueZoom,
 		residueZoomDisabled,
@@ -357,6 +401,9 @@ export function getMoleculeUIAlignedProps({
 	chainZoomLabel,
 	onChainZoom,
 	chainZoomDisabled,
+	subunitZoomLabel,
+	onSubunitZoom,
+	subunitZoomDisabled,
 	residueZoomLabel,
 	onResidueZoom,
 	residueZoomDisabled,
@@ -380,6 +427,9 @@ export function getMoleculeUIAlignedProps({
 	chainZoomLabel: string,
 	onChainZoom: () => void,
 	chainZoomDisabled: boolean,
+	subunitZoomLabel: string,
+	onSubunitZoom: () => void,
+	subunitZoomDisabled: boolean,
 	residueZoomLabel: string,
 	onResidueZoom: () => void,
 	residueZoomDisabled: boolean,
@@ -404,6 +454,9 @@ export function getMoleculeUIAlignedProps({
 		chainZoomLabel,
 		onChainZoom,
 		chainZoomDisabled,
+		subunitZoomLabel,
+		onSubunitZoom,
+		subunitZoomDisabled,
 		residueZoomLabel,
 		onResidueZoom,
 		residueZoomDisabled,

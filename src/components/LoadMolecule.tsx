@@ -90,11 +90,17 @@ interface LoadDataRowProps {
     selectedSubunit: RibosomeSubunitType;
     onSelectSubunit: (subunit: RibosomeSubunitType) => void;
     subunitSelectDisabled: boolean;
+    subunitZoomLabel: string;
+    onSubunitZoom: () => void;
+    subunitZoomDisabled: boolean;
     // Chain
     chainInfo: { chainLabels: Map<string, string>; };
     selectedChainId: string;
     onSelectChainId: (id: string) => void;
     chainSelectDisabled: boolean;
+    chainZoomLabel: string;
+    onChainZoom: () => void;
+    chainZoomDisabled: boolean;
     // Residue
     residueInfo: {
         residueLabels: Map<string, ResidueLabelInfo>;
@@ -103,6 +109,9 @@ interface LoadDataRowProps {
     selectedResidueId: string;
     onSelectResidueId: (id: string) => void;
     residueSelectDisabled: boolean;
+    residueZoomLabel: string;
+    onResidueZoom: () => void;
+    residueZoomDisabled: boolean;
     // Optional representation type selector
     representationTypeSelector?: React.ReactNode;
     onAddRepresentationClick: () => void;
@@ -197,14 +206,23 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     selectedSubunit,
     onSelectSubunit,
     subunitSelectDisabled,
+    subunitZoomLabel,
+    onSubunitZoom,
+    subunitZoomDisabled,
     chainInfo,
     selectedChainId,
     onSelectChainId,
     chainSelectDisabled,
+    chainZoomLabel,
+    onChainZoom,
+    chainZoomDisabled,
     residueInfo,
     selectedResidueId,
     onSelectResidueId,
     residueSelectDisabled,
+    residueZoomLabel,
+    onResidueZoom,
+    residueZoomDisabled,
     representationTypeSelector,
     onAddRepresentationClick = () => { },
     addRepresentationDisabled = false,
@@ -251,26 +269,62 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
             </div>
         )}
         <div className="load-data-controls">
-            <SubunitSelectButton
-                disabled={subunitSelectDisabled}
-                selectedSubunit={selectedSubunit}
-                onSelect={onSelectSubunit}
-                id={`${idPrefix}-subunit-select`}
-            />
-            <ChainSelectButton
-                 disabled={chainSelectDisabled || !selectedSubunit}
-                 chainLabels={getFilteredChainLabels(selectedSubunit, chainInfo.chainLabels, subunitToChainIds)}
-                 selectedChainId={selectedChainId}
-                 onSelect={onSelectChainId}
-                 id={`${idPrefix}-chain-select`}
-            />
-            <ResidueSelectButton
-                disabled={residueSelectDisabled || !selectedChainId}
-                residueLabels={residueInfo.residueLabels}
-                selectedResidueId={selectedResidueId}
-                onSelect={onSelectResidueId}
-                id={`${idPrefix}-residue-select`}
-            />
+            <div className="load-data-control-row">
+                <SubunitSelectButton
+                    disabled={subunitSelectDisabled}
+                    selectedSubunit={selectedSubunit}
+                    onSelect={onSelectSubunit}
+                    id={`${idPrefix}-subunit-select`}
+                />
+            </div>
+            <div className="load-data-control-row">
+                <button
+                    onClick={onSubunitZoom}
+                    disabled={subunitZoomDisabled}
+                    className="msp-btn msp-form-control"
+                    id={`${idPrefix}-zoom-subunit-btn`}
+                >
+                    Zoom to Subunit: {subunitZoomLabel}
+                </button>
+            </div>
+            <div className="load-data-control-row">
+                <ChainSelectButton
+                     disabled={chainSelectDisabled || !selectedSubunit}
+                     chainLabels={getFilteredChainLabels(selectedSubunit, chainInfo.chainLabels, subunitToChainIds)}
+                     selectedChainId={selectedChainId}
+                     onSelect={onSelectChainId}
+                     id={`${idPrefix}-chain-select`}
+                />
+            </div>
+            <div className="load-data-control-row">
+                <button
+                    onClick={onChainZoom}
+                    disabled={chainZoomDisabled}
+                    className="msp-btn msp-form-control"
+                    id={`${idPrefix}-zoom-chain-btn`}
+                >
+                    Zoom to Chain: {chainZoomLabel}
+                </button>
+            </div>
+            <div className="load-data-control-row">
+                <ResidueSelectButton
+                    disabled={residueSelectDisabled || !selectedChainId}
+                    residueLabels={residueInfo.residueLabels}
+                    selectedResidueId={selectedResidueId}
+                    onSelect={onSelectResidueId}
+                    id={`${idPrefix}-residue-select`}
+                />
+            </div>
+            <div className="load-data-control-row">
+                <button
+                    onClick={onResidueZoom}
+                    disabled={residueZoomDisabled}
+                    className="msp-btn msp-form-control"
+                    id={`${idPrefix}-zoom-residue-btn`}
+                >
+                    Zoom to Residue: {residueZoomLabel}
+                </button>
+            </div>
             <div>
                 <button
                     type="button"
@@ -421,11 +475,17 @@ interface LoadDataRowProps {
     selectedSubunit: RibosomeSubunitType;
     onSelectSubunit: (subunit: RibosomeSubunitType) => void;
     subunitSelectDisabled: boolean;
+    subunitZoomLabel: string;
+    onSubunitZoom: () => void;
+    subunitZoomDisabled: boolean;
     // Chain
     chainInfo: { chainLabels: Map<string, string>; };
     selectedChainId: string;
     onSelectChainId: (id: string) => void;
     chainSelectDisabled: boolean;
+    chainZoomLabel: string;
+    onChainZoom: () => void;
+    chainZoomDisabled: boolean;
     // Residue
     residueInfo: {
         residueLabels: Map<string, ResidueLabelInfo>;
@@ -434,6 +494,9 @@ interface LoadDataRowProps {
     selectedResidueId: string;
     onSelectResidueId: (id: string) => void;
     residueSelectDisabled: boolean;
+    residueZoomLabel: string;
+    onResidueZoom: () => void;
+    residueZoomDisabled: boolean;
     // Optional representation type selector
     representationTypeSelector?: React.ReactNode;
     onAddRepresentationClick: () => void;

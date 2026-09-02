@@ -48,12 +48,11 @@ describe('MoleculeUI', () => {
         expect(baseProps.onToggleVisibility).toHaveBeenCalled();
     });
 
-    it('calls onChainZoom and onResidueZoom when zoom buttons are clicked', () => {
+    it('does not render zoom controls in MoleculeUI', () => {
         render(<MoleculeUI {...baseProps} />);
-        fireEvent.click(screen.getByText('Zoom to Chain: A'));
-        fireEvent.click(screen.getByText('Zoom to Residue: 10'));
-        expect(baseProps.onChainZoom).toHaveBeenCalled();
-        expect(baseProps.onResidueZoom).toHaveBeenCalled();
+        expect(screen.queryByText(/Zoom to Subunit:/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Zoom to Chain:/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Zoom to Residue:/i)).not.toBeInTheDocument();
     });
 
     it('renders and calls onRemove if provided', () => {
@@ -90,5 +89,35 @@ describe('MoleculeUI', () => {
 
         fireEvent.click(screen.getByLabelText('Toggle visibility for spacefill representation'));
         expect(onToggleRepVisibility).toHaveBeenCalledWith(repRef);
+    });
+
+    it('renders representation controls in the same top row as main visibility control', () => {
+        const repRef = 'rep-ref-2';
+        const pluginWithRep = {
+            state: {
+                data: {
+                    cells: new Map([
+                        [repRef, {
+                            params: { values: { type: { name: 'cartoon' }, _ribocodeId: 'custom-id-2' } },
+                            state: { isHidden: false }
+                        }]
+                    ])
+                }
+            }
+        } as any;
+
+        const { container } = render(
+            <MoleculeUI
+                {...baseProps}
+                plugin={pluginWithRep}
+                representationRefs={[repRef]}
+            />
+        );
+
+        const topRow = container.querySelector('.molecule-top-row');
+        expect(topRow).toBeInTheDocument();
+        expect(topRow?.querySelector('.molecule-visibility-btn')).toBeInTheDocument();
+        expect(topRow?.querySelector('.rep-controls')).toBeInTheDocument();
+        expect(topRow?.querySelector('.rep-btn-group')).toBeInTheDocument();
     });
 });

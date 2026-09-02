@@ -49,6 +49,9 @@ interface MoleculeUIProps {
     chainZoomLabel: string;
     onChainZoom: () => void;
     chainZoomDisabled: boolean;
+    subunitZoomLabel?: string;
+    onSubunitZoom?: () => void;
+    subunitZoomDisabled?: boolean;
     residueZoomLabel: string;
     onResidueZoom: () => void;
     residueZoomDisabled: boolean;
@@ -86,12 +89,6 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
     plugin,
     isVisible,
     onToggleVisibility,
-    chainZoomLabel,
-    onChainZoom,
-    chainZoomDisabled,
-    residueZoomLabel,
-    onResidueZoom,
-    residueZoomDisabled,
     isLoaded,
     forceUpdate,
     representationRefs = [],
@@ -140,71 +137,55 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
     const safeLabel = typeof label === 'string' ? label : '';
     return (
         <div className="molecule-row" id={idPrefix ? `${idPrefix}-${idSuffix}-${safeLabel.replace(/\s+/g, '-').toLowerCase()}` : `${idSuffix}-${safeLabel.replace(/\s+/g, '-').toLowerCase()}` }>
-            <button
-                onClick={onToggleVisibility}
-                disabled={!plugin || !isLoaded}
-                className="msp-btn msp-form-control"
-                aria-label={isVisible ? `Hide ${label}` : `Show ${label}`}
-                id={idPrefix ? `${idPrefix}-toggle-visibility-btn` : undefined}
-            >
-                {isVisible ? <VisibilityOutlinedSvg /> : <VisibilityOffOutlinedSvg />}
-                <span className="molstar-label">{label}</span>
-            </button>
-            {/* Per-representation controls */}
-            {representationRefs.length > 0 && (
-                <span className="rep-controls">
-                    {representationRefs.map(ref => {
-                        const cell = plugin?.state?.data?.cells?.get(ref);
-                        const typeName = getRepType(ref);
-                        const isVisible = isRepVisible(ref);
-                        if (!typeName) return null;
-                        // Use _ribocodeId if available, else fallback to ref
-                        const repId = cell?.params?.values?._ribocodeId || ref;
-                        return (
-                            <span key={ref} className="rep-btn-group">
-                                <button
-                                    onClick={() => onToggleRepVisibility ? onToggleRepVisibility(ref) : handleToggleRepVisibility(ref)}
-                                    className="msp-btn msp-form-control"
-                                    disabled={!isLoaded}
-                                    aria-label={`Toggle visibility for ${typeName} representation`}
-                                    id={idPrefix ? `${idPrefix}-${toggleVisibilityRepIdSuffix}-${repId}` : undefined}
-                                >
-                                    {isVisible ? <VisibilityOutlinedSvg /> : <VisibilityOffOutlinedSvg />}
-                                    <span className="molstar-label">{typeName}</span>
-                                </button>
-                                {/* Delete button */}
-                                <button
-                                    onClick={() => onDeleteRepresentation && onDeleteRepresentation(repId)}
-                                    className="msp-btn msp-btn-danger msp-form-control"
-                                    disabled={!isLoaded}
-                                    aria-label={`Delete ${typeName} representation`}
-                                    id={idPrefix ? `${idPrefix}-delete-rep-${repId}` : undefined}
-                                >
-                                    &#x2716;
-                                </button>
-                            </span>
-                        );
-                    })}
-                </span>
-            )}
-            {/* Chain Zoom Button */}
-            <button
-                onClick={onChainZoom}
-                disabled={chainZoomDisabled}
-                className="msp-btn msp-form-control"
-                id={idPrefix ? `${idPrefix}-zoom-chain-btn` : undefined}
-            >
-                Zoom to Chain: {chainZoomLabel}
-            </button>
-            {/* Residue Zoom Button */}
-            <button
-                onClick={onResidueZoom}
-                disabled={residueZoomDisabled}
-                className="msp-btn msp-form-control"
-                id={idPrefix ? `${idPrefix}-zoom-residue-btn` : undefined}
-            >
-                Zoom to Residue: {residueZoomLabel}
-            </button>
+            <div className="molecule-top-row">
+                <button
+                    onClick={onToggleVisibility}
+                    disabled={!plugin || !isLoaded}
+                    className="msp-btn msp-form-control molecule-visibility-btn"
+                    aria-label={isVisible ? `Hide ${label}` : `Show ${label}`}
+                    id={idPrefix ? `${idPrefix}-toggle-visibility-btn` : undefined}
+                >
+                    {isVisible ? <VisibilityOutlinedSvg /> : <VisibilityOffOutlinedSvg />}
+                    <span className="molstar-label">{label}</span>
+                </button>
+                {/* Per-representation controls */}
+                {representationRefs.length > 0 && (
+                    <span className="rep-controls">
+                        {representationRefs.map(ref => {
+                            const cell = plugin?.state?.data?.cells?.get(ref);
+                            const typeName = getRepType(ref);
+                            const isVisible = isRepVisible(ref);
+                            if (!typeName) return null;
+                            // Use _ribocodeId if available, else fallback to ref
+                            const repId = cell?.params?.values?._ribocodeId || ref;
+                            return (
+                                <span key={ref} className="rep-btn-group">
+                                    <button
+                                        onClick={() => onToggleRepVisibility ? onToggleRepVisibility(ref) : handleToggleRepVisibility(ref)}
+                                        className="msp-btn msp-form-control"
+                                        disabled={!isLoaded}
+                                        aria-label={`Toggle visibility for ${typeName} representation`}
+                                        id={idPrefix ? `${idPrefix}-${toggleVisibilityRepIdSuffix}-${repId}` : undefined}
+                                    >
+                                        {isVisible ? <VisibilityOutlinedSvg /> : <VisibilityOffOutlinedSvg />}
+                                        <span className="molstar-label">{typeName}</span>
+                                    </button>
+                                    {/* Delete button */}
+                                    <button
+                                        onClick={() => onDeleteRepresentation && onDeleteRepresentation(repId)}
+                                        className="msp-btn msp-btn-danger msp-form-control"
+                                        disabled={!isLoaded}
+                                        aria-label={`Delete ${typeName} representation`}
+                                        id={idPrefix ? `${idPrefix}-delete-rep-${repId}` : undefined}
+                                    >
+                                        &#x2716;
+                                    </button>
+                                </span>
+                            );
+                        })}
+                    </span>
+                )}
+            </div>
             {/* Remove button for realigned molecules */}
             {onRemove && (
                 <button

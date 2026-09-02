@@ -574,7 +574,7 @@ describe('App integration: AlignedTo and Aligned loading', () => {
 
     await waitFor(() => {
       const zoomChainButtons = Array.from(
-        document.querySelectorAll('#viewer-column-A button#viewer-column-A-zoom-chain-btn')
+        document.querySelectorAll('#viewer-column-A button#viewer-column-A-alignedto-zoom-chain-btn')
       ) as HTMLButtonElement[];
       expect(zoomChainButtons.length).toBeGreaterThan(0);
       expect(zoomChainButtons.every(button => button.disabled)).toBe(true);

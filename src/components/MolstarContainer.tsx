@@ -14,6 +14,8 @@ import * as PluginUI from 'molstar/lib/mol-plugin-ui';
 const createPluginUI = PluginUI.createPluginUI;
 import type { ViewerKey } from '../types/ribocode';
 import { PluginUIContext } from 'molstar/lib/mol-plugin-ui/context';
+import { PluginBehaviors } from 'molstar/lib/mol-plugin/behavior';
+import { Binding } from 'molstar/lib/mol-util/binding';
 import RibocodeViewer from './RibocodeViewer';
 
 /**
@@ -105,6 +107,15 @@ const MolstarContainer = React.forwardRef(({ viewerKey, setViewer, onMouseDown, 
                         rootRef.current.render(component);
                     },
                 });
+                if (typeof pluginInstance.state?.updateBehavior === 'function') {
+                    await pluginInstance.state.updateBehavior(PluginBehaviors.Camera.FocusLoci, params => {
+                        params.bindings = {
+                            ...params.bindings,
+                            clickResetCameraOnEmpty: Binding.Empty,
+                            clickResetCameraOnEmptySelectMode: Binding.Empty,
+                        };
+                    });
+                }
                 // WebGL context loss handling
                 const gl = pluginInstance.canvas3d?.webgl?.gl;
                 if (gl) {

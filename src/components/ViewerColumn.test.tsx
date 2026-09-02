@@ -13,6 +13,7 @@ import { vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 import ViewerColumn, { getMoleculeUIAlignedProps, idSuffix as viewerColumnIdSuffix } from './ViewerColumn';
 import { idSuffix as moleculeIdSuffix } from './Molecule';
+import { getLoadDataRowProps } from './ViewerColumn';
 
 // Mock props for ViewerColumn
 const loadDataRowProps = {
@@ -271,5 +272,108 @@ describe('ViewerColumn', () => {
 
         expect(getCellA).toHaveBeenCalledWith('rep-a');
         expect(getCellB).not.toHaveBeenCalled();
+    });
+
+    it('passes per-viewer visibility flags when adding representations', () => {
+        const addRepresentationA = vi.fn();
+        const addRepresentationB = vi.fn();
+        const viewer = {
+            key: 'A',
+            moleculeAligned: { filename: '6xu8.cif' },
+            moleculeAlignedTo: null,
+            isMoleculeAlignedVisible: false,
+            isMoleculeAlignedToVisible: true,
+            handleFileInputButtonClick: vi.fn(),
+            fileInputRef: { current: null },
+            ref: { current: null },
+        } as any;
+        const otherViewer = {
+            key: 'B',
+            moleculeAligned: { filename: '6xu8.cif' },
+            moleculeAlignedTo: null,
+            isMoleculeAlignedVisible: true,
+            isMoleculeAlignedToVisible: true,
+            handleFileInputButtonClick: vi.fn(),
+            fileInputRef: { current: null },
+            ref: { current: null },
+        } as any;
+
+        const props = getLoadDataRowProps({
+            viewer,
+            otherViewer,
+            molstar: {
+                addRepresentation: addRepresentationA,
+                representationRefs: {},
+                repIdMap: {},
+                pluginRef: { current: null },
+            },
+            otherMolstar: {
+                addRepresentation: addRepresentationB,
+                representationRefs: {},
+                repIdMap: {},
+                pluginRef: { current: null },
+            },
+            realignedStructRefs: {},
+            otherRealignedStructRefs: {},
+            isMoleculeAlignedLoaded: true,
+            isMoleculeAlignedToLoaded: true,
+            viewerReady: true,
+            otherViewerReady: true,
+            representationType: 'spacefill',
+            setRepresentationType: vi.fn(),
+            colorsFile: { handleButtonClick: vi.fn(), inputRef: { current: null }, handleFileChange: vi.fn() },
+            isMoleculeColoursLoaded: false,
+            structureRef: 'ref-a',
+            otherStructureRef: 'ref-b',
+            selectedSubunit: 'All',
+            setSelectedSubunit: vi.fn(),
+            subunitZoomLabel: 'All',
+            onSubunitZoom: vi.fn(),
+            subunitZoomDisabled: false,
+            subunitToChainIds: new Map(),
+            chainInfo: { chainLabels: new Map([['A', 'Chain A']]) },
+            selectedChainId: 'A',
+            setSelectedChainId: vi.fn(),
+            chainZoomLabel: 'Chain A',
+            onChainZoom: vi.fn(),
+            chainZoomDisabled: false,
+            residueInfo: { residueLabels: new Map(), residueToAtomIds: {} },
+            selectedResidueId: '',
+            setSelectedResidueId: vi.fn(),
+            residueZoomLabel: '',
+            onResidueZoom: vi.fn(),
+            residueZoomDisabled: true,
+            fog: { enabled: false, near: 0, far: 100 },
+            setFog: { setEnabled: vi.fn(), setNear: vi.fn(), setFar: vi.fn() },
+            camera: { near: 0.1, far: 1000 },
+            setCamera: { setNear: vi.fn(), setFar: vi.fn() },
+            updateFog: vi.fn(),
+            handleFileChange: vi.fn(),
+            Aligned: 'Aligned',
+            allowedRepresentationTypes: ['spacefill'] as any,
+            syncEnabled: false,
+            realignedRepRefs: {},
+            setRealignedRepRefs: vi.fn(),
+            setRealignedStructRefs: vi.fn(),
+        });
+
+        props.onAddRepresentationClick();
+
+        expect(addRepresentationA).toHaveBeenCalledWith(
+            'Aligned',
+            'ref-a',
+            'spacefill',
+            expect.any(Object),
+            expect.any(String),
+            false
+        );
+        expect(addRepresentationB).toHaveBeenCalledWith(
+            'Aligned',
+            'ref-b',
+            'spacefill',
+            expect.any(Object),
+            expect.any(String),
+            true
+        );
     });
 });

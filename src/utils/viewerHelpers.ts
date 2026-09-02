@@ -8,7 +8,7 @@
  * @lastModified 2026-04-24
  * @see https://github.com/ribocode-slola/ribocode1
  */
-import { focusLociOnChain, focusLociOnResidue } from '../utils/structure';
+import { focusLociOnChain, focusLociOnResidue, focusLociOnSubunit } from '../utils/structure';
 import { PluginUIContext } from 'molstar/lib/mol-plugin-ui/context';
 
 // Helper for fog setters
@@ -32,7 +32,7 @@ export function makeCameraSetters(setCamera: React.Dispatch<React.SetStateAction
 export function createZoomHandler(
     pluginRef: React.RefObject<PluginUIContext | null>,
     structureRef: string | null,
-    property: 'entity-test' | 'chain-test' | 'residue-test' | 'atom-test' | 'group-by',
+    property: 'entity-test' | 'chain-test' | 'residue-test' | 'subunit-test' | 'atom-test' | 'group-by',
     chainId: string,
     sync: boolean = false,
     syncPluginRef?: React.RefObject<PluginUIContext | null>,
@@ -43,7 +43,9 @@ export function createZoomHandler(
     syncResidueId?: string,
     syncInsCode?: string,
     zoomExtraRadius?: number,
-    zoomMinRadius?: number
+    zoomMinRadius?: number,
+    chainIds?: string[],
+    syncChainIds?: string[]
 ) {
     return {
         handleButtonClick: async () => {
@@ -60,6 +62,17 @@ export function createZoomHandler(
                     zoomMinRadius,
                     syncStructureRef ?? undefined,
                     syncChainId
+                );
+            } else if (property === 'subunit-test') {
+                focusLociOnSubunit(
+                    plugin,
+                    structureRef,
+                    chainIds ?? [],
+                    sync && syncPluginRef?.current ? syncPluginRef.current : undefined,
+                    zoomExtraRadius,
+                    zoomMinRadius,
+                    syncStructureRef ?? undefined,
+                    syncChainIds
                 );
             } else if (property === 'residue-test') {
                 focusLociOnResidue(
@@ -103,12 +116,14 @@ export function makeZoomHandler({
     syncChainId,
     syncResidueId,
     syncInsCode,
+    chainIds,
+    syncChainIds,
     zoomExtraRadius,
     zoomMinRadius
 }: {
     pluginRef: React.RefObject<PluginUIContext | null>,
     structureRef: string | null,
-    property: 'entity-test' | 'chain-test' | 'residue-test' | 'atom-test' | 'group-by',
+    property: 'entity-test' | 'chain-test' | 'residue-test' | 'subunit-test' | 'atom-test' | 'group-by',
     chainId: string,
     sync: boolean,
     syncPluginRef?: React.RefObject<PluginUIContext | null>,
@@ -118,6 +133,8 @@ export function makeZoomHandler({
     syncChainId?: string,
     syncResidueId?: string,
     syncInsCode?: string,
+    chainIds?: string[],
+    syncChainIds?: string[],
     zoomExtraRadius?: number,
     zoomMinRadius?: number
 }) {
@@ -135,6 +152,8 @@ export function makeZoomHandler({
         syncResidueId,
         syncInsCode,
         zoomExtraRadius,
-        zoomMinRadius
+        zoomMinRadius,
+        chainIds,
+        syncChainIds
     );
 }

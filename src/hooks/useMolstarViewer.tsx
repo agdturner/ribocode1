@@ -51,7 +51,8 @@ export interface MolstarViewerState {
         structureRef: string,
         type: AllowedRepresentationType,
         colorTheme: { name: string; params?: Record<string, unknown> },
-        repId?: string
+        repId?: string,
+        visible?: boolean
     ) => Promise<string>;
     getChainInfo: (structure: any) => { 
         chainLabels: Map<string, string>;};
@@ -135,7 +136,8 @@ export function useMolstarViewer(pluginRef: React.RefObject<PluginUIContext | nu
             structureRef: string,
             type: AllowedRepresentationType,
             colorTheme: ColorTheme,
-            repId?: string
+            repId?: string,
+            visible: boolean = true
         ): Promise<string> => {
             if (!pluginRef.current) return '';
             const plugin = pluginRef.current;
@@ -178,6 +180,11 @@ export function useMolstarViewer(pluginRef: React.RefObject<PluginUIContext | nu
             if (!cellExists) {
                 console.warn(`[addRepresentation] Failed to verify representation ref ${potentialNewRepRef} exists in state for ${key}`);
                 return newRepId; // Return early but still return the repId
+            }
+
+            if (!visible) {
+                const { PluginCommands } = await import('molstar/lib/mol-plugin/commands');
+                await PluginCommands.State.ToggleVisibility.apply(plugin, [plugin, { state: plugin.state.data, ref: potentialNewRepRef }]);
             }
             
             // Scan for all reps to update the lists for UI toggles

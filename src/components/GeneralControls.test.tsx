@@ -21,6 +21,7 @@ describe('GeneralControls', () => {
     const setShowUniprotAccessionInChainLabels = vi.fn();
     const setSyncEnabled = vi.fn();
     const handleRealignToChains = vi.fn();
+    const handleRealignToSubunits = vi.fn();
     const props = {
       zoomExtraRadius: 20,
       setZoomExtraRadius,
@@ -39,6 +40,11 @@ describe('GeneralControls', () => {
       selectedChainIdAligned: B,
       realignmentExists: false,
       handleRealignToChains,
+      selectedSubunitAlignedTo: 'Large',
+      selectedSubunitAligned: 'Small',
+      subunitRealignmentExists: false,
+      canRealignToSubunits: true,
+      handleRealignToSubunits,
     };
     const { getByLabelText, getByRole, getByText, container } = render(<GeneralControls {...props} idPrefix="test-controls" />);
     // Check for root id
@@ -69,10 +75,15 @@ describe('GeneralControls', () => {
     expect(setSyncEnabled).toHaveBeenCalledWith(false);
 
     // Test realign button
-    const realignBtn = getByRole('button', { name: /Re-align/i });
+    const realignBtn = getByRole('button', { name: /Re-align :/i });
     fireEvent.click(realignBtn);
     expect(handleRealignToChains).toHaveBeenCalled();
     expect(realignBtn).not.toBeDisabled();
+
+    const realignSubunitBtn = getByRole('button', { name: /Realign to Subunits:/i });
+    fireEvent.click(realignSubunitBtn);
+    expect(handleRealignToSubunits).toHaveBeenCalled();
+    expect(realignSubunitBtn).not.toBeDisabled();
 
     // Test disabled state
     const { getByRole: getByRole2 } = render(
@@ -100,6 +111,11 @@ describe('GeneralControls', () => {
       selectedChainIdAligned: B,
       realignmentExists: false,
       handleRealignToChains: vi.fn(),
+      selectedSubunitAlignedTo: 'Large',
+      selectedSubunitAligned: 'Small',
+      subunitRealignmentExists: false,
+      canRealignToSubunits: true,
+      handleRealignToSubunits: vi.fn(),
     };
 
     const { getByLabelText } = render(<GeneralControls {...props} />);

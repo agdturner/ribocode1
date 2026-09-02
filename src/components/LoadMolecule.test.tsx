@@ -38,14 +38,23 @@ describe('LoadDataRow', () => {
         selectedSubunit: 'All' as import('../utils/subunit').RibosomeSubunitType,
         onSelectSubunit: vi.fn(),
         subunitSelectDisabled: false,
+        subunitZoomLabel: 'All',
+        onSubunitZoom: vi.fn(),
+        subunitZoomDisabled: false,
         chainInfo: { chainLabels: new Map([['A', 'Chain A'], ['B', 'Chain B']]) },
         selectedChainId: 'A',
         onSelectChainId: vi.fn(),
         chainSelectDisabled: false,
+        chainZoomLabel: 'Chain A',
+        onChainZoom: vi.fn(),
+        chainZoomDisabled: false,
         residueInfo: { residueLabels: new Map([['1', { id: '1', name: 'Residue 1', compId: 'ALA', seqNumber: 1, insCode: '' }]]), residueToAtomIds: { '1': ['a1'] } },
         selectedResidueId: '1',
         onSelectResidueId: vi.fn(),
         residueSelectDisabled: false,
+        residueZoomLabel: 'Residue 1',
+        onResidueZoom: vi.fn(),
+        residueZoomDisabled: false,
         onAddRepresentationClick: vi.fn(),
         addRepresentationDisabled: false,
         fogEnabled: false,
@@ -92,6 +101,39 @@ describe('LoadDataRow', () => {
         render(<LoadDataRow {...baseProps} isLoaded={true} />);
         fireEvent.click(screen.getByLabelText('Add Representation'));
         expect(baseProps.onAddRepresentationClick).toHaveBeenCalled();
+    });
+
+    it('renders select and zoom controls in selector-then-zoom order', () => {
+        const { container } = render(<LoadDataRow {...baseProps} isLoaded={true} />);
+        const controls = container.querySelector('.load-data-controls');
+        expect(controls).toBeInTheDocument();
+
+        const rowText = Array.from(controls!.children).map(el => (el.textContent || '').trim());
+        const findRowIndex = (needle: string) => rowText.findIndex(text => text.includes(needle));
+
+        const subunitSelectIndex = findRowIndex('Select Subunit');
+        const subunitZoomIndex = findRowIndex('Zoom to Subunit:');
+        const chainSelectIndex = findRowIndex('Select Chain');
+        const chainZoomIndex = findRowIndex('Zoom to Chain:');
+        const residueSelectIndex = findRowIndex('Select Residue');
+        const residueZoomIndex = findRowIndex('Zoom to Residue:');
+
+        expect(subunitSelectIndex).toBeGreaterThanOrEqual(0);
+        expect(subunitZoomIndex).toBeGreaterThan(subunitSelectIndex);
+        expect(chainSelectIndex).toBeGreaterThan(subunitZoomIndex);
+        expect(chainZoomIndex).toBeGreaterThan(chainSelectIndex);
+        expect(residueSelectIndex).toBeGreaterThan(chainZoomIndex);
+        expect(residueZoomIndex).toBeGreaterThan(residueSelectIndex);
+    });
+
+    it('calls subunit, chain, and residue zoom handlers when zoom buttons are clicked', () => {
+        render(<LoadDataRow {...baseProps} isLoaded={true} />);
+        fireEvent.click(screen.getByText('Zoom to Subunit: All'));
+        fireEvent.click(screen.getByText('Zoom to Chain: Chain A'));
+        fireEvent.click(screen.getByText('Zoom to Residue: Residue 1'));
+        expect(baseProps.onSubunitZoom).toHaveBeenCalled();
+        expect(baseProps.onChainZoom).toHaveBeenCalled();
+        expect(baseProps.onResidueZoom).toHaveBeenCalled();
     });
 
     it('renders long loaded filenames in the wrapping label element', () => {

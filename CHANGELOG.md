@@ -1,4 +1,11 @@
-## [v0.11.0] - Unreleased
+## [v0.12.0] - 2026-09-02
+Release summary: this release improves alignment and camera-sync reliability in dual-viewer workflows, and updates Mol* interaction behavior so right-clicking empty canvas space no longer resets zoom to full extent.
+- Fixed `Select Subunit` filtering so chain options are populated from real inferred subunit mappings (`All`, `Large`, `Small`, `Other`) instead of a fallback default bucket.
+- Added `Zoom to Subunit` controls for each viewer/molecule panel, using the selected subunit chain set for camera focus.
+- Added `Re-align to Subunit` in General Controls, enabled only when valid non-`All` subunits are selected on both datasets and disabled after an already-applied subunit pair.
+- Added dedicated Playwright E2E coverage for subunit re-alignment button state transitions in `e2e/subunit-realign.e2e.spec.ts`.
+
+## [v0.11.0] - 2026-08-14
 - Added a preferred in-place chain re-alignment path that applies rigid transforms directly to existing aligned structures in both viewers.
 - Kept the existing reload-based `ReAligned` path as an automatic fallback if in-place transform application is unavailable or fails.
 - Updated chain-fit atom selection to use atom types present in the selected chains, instead of relying on a narrow static default subset.
@@ -12,6 +19,7 @@
 - Added in-place re-alignment pair tracking to prevent repeated transform stacking when the same chain pair is re-aligned again.
 - Corrected Mol* equal-count alignment centroid mapping so `centroid` (moving) and `centroidReference` (reference) match the trajectory transform convention `R * (p - centroid) + centroidReference`.
 - Added regression coverage for sync directionality and repeated re-align guarding across unit, integration, and E2E tests.
+- Disabled empty-space camera reset on right-click by overriding Mol* `camera-focus-loci` reset bindings, so background right-click no longer zooms out to full extent.
 
 ## [v0.10.0] - 2026-07-28
 - Moved viewer rendering to the top of each column so the two Mol* canvases stay visually aligned even when control content differs between columns.

@@ -57,6 +57,11 @@ interface GeneralControlsProps {
   selectedChainIdAligned: string;
   realignmentExists: boolean;
   handleRealignToChains: () => void;
+  selectedSubunitAlignedTo: string;
+  selectedSubunitAligned: string;
+  subunitRealignmentExists: boolean;
+  canRealignToSubunits: boolean;
+  handleRealignToSubunits: () => void;
   idPrefix?: string;
 }
 
@@ -83,6 +88,11 @@ const GeneralControls: React.FC<GeneralControlsProps> = ({
   selectedChainIdAligned,
   realignmentExists,
   handleRealignToChains,
+  selectedSubunitAlignedTo,
+  selectedSubunitAligned,
+  subunitRealignmentExists,
+  canRealignToSubunits,
+  handleRealignToSubunits,
   idPrefix = 'generalcontrols',
 }) => (
   <div className="General-Controls" id={idPrefix ? `${idPrefix}-${idSuffix}` : idSuffix}>
@@ -139,6 +149,17 @@ const GeneralControls: React.FC<GeneralControlsProps> = ({
       setSyncEnabled={setSyncEnabled}
       id={idPrefix ? `${idPrefix}-${syncSelectIdSuffix}` : syncSelectIdSuffix}
     />
+    <button
+      disabled={!canRealignToSubunits || subunitRealignmentExists}
+      onClick={handleRealignToSubunits}
+      id={`${idPrefix}-realign-subunit-btn`}
+    >
+      {canRealignToSubunits
+        ? subunitRealignmentExists
+          ? `Already realigned subunits: ${selectedSubunitAlignedTo} -> ${selectedSubunitAligned}`
+          : `Realign to Subunits: ${selectedSubunitAlignedTo} -> ${selectedSubunitAligned}`
+        : 'Realign to Subunits'}
+    </button>
     <button
       disabled={!selectedChainIdAlignedTo || !selectedChainIdAligned || realignmentExists}
       onClick={handleRealignToChains}

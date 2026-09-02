@@ -9,7 +9,7 @@
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { PluginUIContext } from 'molstar/lib/mol-plugin-ui/context';
-import { StructureSelection } from 'molstar/lib/mol-model/structure';
+import { StructureElement, StructureSelection } from 'molstar/lib/mol-model/structure';
 import { QueryContext } from 'molstar/lib/mol-model/structure/query/context';
 import { MolScriptBuilder } from 'molstar/lib/mol-script/language/builder';
 import { compile } from 'molstar/lib/mol-script/runtime/query/base';
@@ -99,6 +99,57 @@ export function focusLociOnChain(
     plugin.managers.camera.focusLoci(loci, focusOptions);
     if (syncPlugin) {
         const syncLoci = getChainLociFn(syncPlugin, syncStructureRef ?? structureRef, syncChainId ?? chainId);
+        if (syncLoci) {
+            syncPlugin.managers.camera.focusLoci(syncLoci, focusOptions);
+        }
+    }
+}
+
+/**
+ * Computes a loci that spans all supplied chain IDs by unioning chain loci.
+ */
+export function getSubunitLoci(
+    plugin: PluginUIContext,
+    structureRef: string,
+    chainIds: string[]
+) {
+    if (!Array.isArray(chainIds) || chainIds.length === 0) return null;
+    let mergedLoci: any = null;
+    for (const chainId of chainIds) {
+        const loci = getChainLoci(plugin, structureRef, chainId);
+        if (!loci) continue;
+        if (!mergedLoci) {
+            mergedLoci = loci;
+            continue;
+        }
+        if (mergedLoci.kind === 'element-loci' && loci.kind === 'element-loci') {
+            mergedLoci = StructureElement.Loci.union(mergedLoci, loci);
+        }
+    }
+    return mergedLoci;
+}
+
+/**
+ * Focus the camera on a subunit (set of chains), with optional sync to another plugin.
+ */
+export function focusLociOnSubunit(
+    plugin: PluginUIContext,
+    structureRef: string,
+    chainIds: string[],
+    syncPlugin?: PluginUIContext,
+    zoomExtraRadius?: number,
+    zoomMinRadius?: number,
+    syncStructureRef?: string,
+    syncChainIds?: string[]
+) {
+    const loci = getSubunitLoci(plugin, structureRef, chainIds);
+    if (!loci) return;
+    const focusOptions = (zoomExtraRadius !== undefined && zoomMinRadius !== undefined)
+        ? { extraRadius: zoomExtraRadius, minRadius: zoomMinRadius }
+        : undefined;
+    plugin.managers.camera.focusLoci(loci, focusOptions);
+    if (syncPlugin) {
+        const syncLoci = getSubunitLoci(syncPlugin, syncStructureRef ?? structureRef, syncChainIds ?? chainIds);
         if (syncLoci) {
             syncPlugin.managers.camera.focusLoci(syncLoci, focusOptions);
         }

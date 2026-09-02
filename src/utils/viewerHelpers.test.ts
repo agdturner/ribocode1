@@ -15,6 +15,7 @@ import { focusLociOnChain, focusLociOnResidue } from '../utils/structure';
 vi.mock('../utils/structure', () => ({
   focusLociOnChain: vi.fn(),
   focusLociOnResidue: vi.fn(),
+  focusLociOnSubunit: vi.fn(),
 }));
 
 describe('viewerHelpers', () => {
