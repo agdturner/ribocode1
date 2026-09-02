@@ -9,7 +9,7 @@
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { vi } from 'vitest';
-import { makeFogSetters, makeCameraSetters, createZoomHandler, makeZoomHandler } from './viewerHelpers';
+import { makeFogSetters, makeClippingSetters, createZoomHandler, makeZoomHandler } from './viewerHelpers';
 import { focusLociOnChain, focusLociOnResidue, focusLociOnResidues } from '../utils/structure';
 
 vi.mock('../utils/structure', () => ({
@@ -32,14 +32,14 @@ describe('viewerHelpers', () => {
     expect(fog.far).toBe(200);
   });
 
-  it('makeCameraSetters returns correct setter functions', () => {
-    let camera = { near: 0.1, far: 1000 };
-    const setCamera = (fn: any) => { camera = fn(camera); };
-    const setters = makeCameraSetters(setCamera);
-    setters.setNear(5);
-    expect(camera.near).toBe(5);
-    setters.setFar(500);
-    expect(camera.far).toBe(500);
+  it('makeClippingSetters returns correct setter functions', () => {
+    let clipping = { minNear: 1, clipRadius: 100 };
+    const setClipping = (fn: any) => { clipping = fn(clipping); };
+    const setters = makeClippingSetters(setClipping);
+    setters.setMinNear(5);
+    expect(clipping.minNear).toBe(5);
+    setters.setClipRadius(80);
+    expect(clipping.clipRadius).toBe(80);
   });
 
   it('createZoomHandler returns an object with handleButtonClick', () => {

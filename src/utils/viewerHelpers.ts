@@ -20,7 +20,17 @@ export function makeFogSetters(setFog: React.Dispatch<React.SetStateAction<{ ena
     };
 }
 
-// Helper for camera setters
+// Helper for clipping setters (Mol* cameraClipping: minNear + clipRadius)
+export function makeClippingSetters(
+    setClipping: React.Dispatch<React.SetStateAction<{ minNear: number; clipRadius: number }>>
+) {
+    return {
+        setMinNear: (val: number) => setClipping(clipping => ({ ...clipping, minNear: val })),
+        setClipRadius: (val: number) => setClipping(clipping => ({ ...clipping, clipRadius: val })),
+    };
+}
+
+// Backward-compatible alias for older camera naming.
 export function makeCameraSetters(setCamera: React.Dispatch<React.SetStateAction<{ near: number; far: number }>>) {
     return {
         setNear: (val: number) => setCamera(camera => ({ ...camera, near: val })),

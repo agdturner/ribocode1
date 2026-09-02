@@ -63,10 +63,10 @@ describe('LoadDataRow', () => {
         onFogEnabledChange: vi.fn(),
         onFogNearChange: vi.fn(),
         onFogFarChange: vi.fn(),
-        cameraNear: 0.1,
-        cameraFar: 1000,
-        onCameraNearChange: vi.fn(),
-        onCameraFarChange: vi.fn(),
+        clippingMinNear: 0.1,
+        clippingRadius: 100,
+        onClippingMinNearChange: vi.fn(),
+        onClippingRadiusChange: vi.fn(),
         idPrefix: 'test-viewer-a',
     };
 

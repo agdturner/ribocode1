@@ -56,7 +56,7 @@ import { StateTransforms } from 'molstar/lib/mol-plugin-state/transforms';
 import { Mat4 } from 'molstar/lib/mol-math/linear-algebra';
 import type { LoadedMolecule, ViewerKey, MoleculeMode } from './types/ribocode';
 import { A, B } from './constants/ribocode';
-import { makeFogSetters, makeCameraSetters, makeZoomHandler } from './utils/viewerHelpers';
+import { makeFogSetters, makeClippingSetters, makeZoomHandler } from './utils/viewerHelpers';
 import { selectedAtomTypes } from './constants/ribocode';
 import { parseRpNameTableBySpecies } from './utils/rpNameTable';
 import { extractUniProtAccessionsFromText, fetchUniProtGeneNamesBatched, parseChainToMoleculeNameFromCifText, parseChainToUniProtFromCifText, UniProtGeneNameCache } from './utils/uniprot';
@@ -926,25 +926,47 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const [fogA, setFogA] = useState({ enabled: false, near: 0, far: 100 });
     const [fogB, setFogB] = useState({ enabled: false, near: 0, far: 100 });
     
-    // Camera state grouped by viewer
-    const [cameraA, setCameraA] = useState({ near: 0.1, far: 1000 });
-    const [cameraB, setCameraB] = useState({ near: 0.1, far: 1000 });
+    // Per-viewer clipping state mapped to Mol* cameraClipping settings.
+    const [clippingA, setClippingA] = useState({ minNear: 1, clipRadius: 100 });
+    const [clippingB, setClippingB] = useState({ minNear: 1, clipRadius: 100 });
     
     // Zoom state (if needed, can also be grouped)
     const [zoomExtraRadius, setZoomExtraRadius] = useState(0);
     const [zoomMinRadius, setZoomMinRadius] = useState(0);
 
-    // updateFog function (adapt as needed)
-    const updateFog = (
-        pluginARef: any,
-        pluginBRef: any,
-        fogAState = fogA,
-        fogBState = fogB,
-        cameraAState = cameraA,
-        cameraBState = cameraB
-    ) => {
-        // ...implement fog update logic using grouped state...
-    };
+    const updateFog = useCallback((pluginARef: any, pluginBRef: any, enabled: boolean, near: number, far: number, clippingMinNear: number, clippingRadius: number) => {
+        const safeMinNear = Math.max(0.1, Number(clippingMinNear));
+        const safeRadius = Math.max(0, Math.min(99, Number(clippingRadius)));
+        [pluginARef, pluginBRef].forEach((pluginRef: any) => {
+            const plugin = pluginRef?.canvas3d ? pluginRef : pluginRef?.current;
+            if (!plugin?.canvas3d) return;
+            const currentCamera = plugin.canvas3d.props?.camera ?? {};
+            const currentCameraClipping = plugin.canvas3d.props?.cameraClipping ?? {};
+            plugin.canvas3d.setProps({
+                camera: {
+                    ...currentCamera,
+                    fog: enabled,
+                    fogNear: Number(near),
+                    fogFar: Number(far),
+                },
+                cameraClipping: {
+                    ...currentCameraClipping,
+                    far: true,
+                    minNear: safeMinNear,
+                    radius: safeRadius,
+                },
+            });
+            plugin.canvas3d.requestDraw?.();
+        });
+    }, []);
+
+    useEffect(() => {
+        updateFog(viewerA.ref.current, null, fogA.enabled, fogA.near, fogA.far, clippingA.minNear, clippingA.clipRadius);
+    }, [viewerAReady, fogA, clippingA, updateFog]);
+
+    useEffect(() => {
+        updateFog(viewerB.ref.current, null, fogB.enabled, fogB.near, fogB.far, clippingB.minNear, clippingB.clipRadius);
+    }, [viewerBReady, fogB, clippingB, updateFog]);
 
     // Toggle visibility for moleculeAlignedTo in viewer A.
     const toggleViewerAAlignedTo = {
@@ -2454,8 +2476,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueZoomDisabled: residueZoomDisabledAlignedTo,
                                     fog: fogA,
                                     setFog: makeFogSetters(setFogA),
-                                    camera: cameraA,
-                                    setCamera: makeCameraSetters(setCameraA),
+                                    clipping: clippingA,
+                                    setClipping: makeClippingSetters(setClippingA),
                                     updateFog,
                                     handleFileChange,
                                     Aligned: AlignedTo,
@@ -2506,8 +2528,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueZoomDisabled: residueZoomDisabledAligned,
                                     fog: fogA,
                                     setFog: makeFogSetters(setFogA),
-                                    camera: cameraA,
-                                    setCamera: makeCameraSetters(setCameraA),
+                                    clipping: clippingA,
+                                    setClipping: makeClippingSetters(setClippingA),
                                     updateFog,
                                     handleFileChange,
                                     Aligned: Aligned,
@@ -2646,8 +2668,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueZoomDisabled: residueZoomDisabledAlignedTo,
                                     fog: fogB,
                                     setFog: makeFogSetters(setFogB),
-                                    camera: cameraB,
-                                    setCamera: makeCameraSetters(setCameraB),
+                                    clipping: clippingB,
+                                    setClipping: makeClippingSetters(setClippingB),
                                     updateFog,
                                     handleFileChange,
                                     Aligned: AlignedTo,
@@ -2698,8 +2720,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueZoomDisabled: residueZoomDisabledAligned,
                                     fog: fogB,
                                     setFog: makeFogSetters(setFogB),
-                                    camera: cameraB,
-                                    setCamera: makeCameraSetters(setCameraB),
+                                    clipping: clippingB,
+                                    setClipping: makeClippingSetters(setClippingB),
                                     updateFog,
                                     handleFileChange,
                                     Aligned: Aligned,

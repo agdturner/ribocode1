@@ -14,6 +14,7 @@ Release summary: this release improves alignment and camera-sync reliability in 
 - Set Select/Zoom controls to be collapsed by default, and positioned the toggle immediately above `Show/Hide Advanced Mol* Controls`.
 - Updated toggle button layout so `Show/Hide Advanced Mol* Controls` always appears below `Show/Hide Select and Zoom Controls` (stacked vertically).
 - Moved per-molecule representation toggle rows (`MoleculeUI` visibility controls) to render immediately below each Mol* viewer, before `Load Molecule` controls.
+- Fixed per-viewer clipping controls to drive Mol* `cameraClipping` parameters (`radius` and `minNear`) so slider changes now match visible clipping behavior in native Mol* Settings.
 
 ## [v0.11.0] - 2026-08-14
 - Added a preferred in-place chain re-alignment path that applies rigid transforms directly to existing aligned structures in both viewers.

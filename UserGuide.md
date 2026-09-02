@@ -37,6 +37,7 @@ The UI layout is as follows:
      - `Load AlignedTo` button for loading the dataset to align to (`AlignedTo`)
      - `Add Representation` control
      - `Load Colours` button
+   - `Clipping` controls (directly above `Select and Zoom Controls`): `Min Near`, `Clip Radius`, and `Reset Clipping`
    - `Show Select and Zoom Controls` button (collapsed by default)
    - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, and `AlignedTo Chain Finder`)
    - `Show Advanced Mol* Controls` button (toggles advanced Mol* interface for power users)
@@ -51,6 +52,7 @@ The UI layout is as follows:
      - `Load Aligned` button for loading the dataset to be aligned (`Aligned`)
      - `Add Representation` control
      - `Load Colours` button
+   - `Clipping` controls (directly above `Select and Zoom Controls`): `Min Near`, `Clip Radius`, and `Reset Clipping`
    - `Show Select and Zoom Controls` button (collapsed by default)
    - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, and `Aligned Chain Finder`)
    - `Show Advanced Mol* Controls` button (toggles advanced Mol* interface for power users)

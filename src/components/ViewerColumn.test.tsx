@@ -41,10 +41,10 @@ const loadDataRowProps = {
     onFogEnabledChange: vi.fn(),
     onFogNearChange: vi.fn(),
     onFogFarChange: vi.fn(),
-    cameraNear: 0.1,
-    cameraFar: 100,
-    onCameraNearChange: vi.fn(),
-    onCameraFarChange: vi.fn(),
+    clippingMinNear: 0.1,
+    clippingRadius: 100,
+    onClippingMinNearChange: vi.fn(),
+    onClippingRadiusChange: vi.fn(),
 };
 // Minimal valid props for MoleculeUI
 const minimalMoleculeUIProps = {
@@ -243,6 +243,9 @@ describe('ViewerColumn', () => {
         expect(rootChildren[1]?.classList.contains('molecule-row')).toBe(true);
         expect(rootChildren[2]?.classList.contains('molecule-row')).toBe(true);
 
+        const clippingControls = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clipping-controls`);
+        expect(clippingControls).toBeInTheDocument();
+
         const children = Array.from(root?.children ?? []);
         const selectZoomToggleIndex = children.findIndex((child) => child.id === `${idPrefix}-${viewerColumnIdSuffix}-A-select-zoom-controls-toggle-btn`);
         const toggleIndex = children.findIndex((child) => child.id === `${idPrefix}-${viewerColumnIdSuffix}-A-advanced-molstar-controls-toggle-btn`);
@@ -257,6 +260,58 @@ describe('ViewerColumn', () => {
         const updatedChildren = Array.from(root?.children ?? []);
         const panelIndex = updatedChildren.findIndex((child) => child.id === `${idPrefix}-${viewerColumnIdSuffix}-A-advanced-molstar-controls-panel`);
         expect(panelIndex).toBeGreaterThan(toggleIndex);
+    });
+
+    it('renders clipping controls above select/zoom toggle and wires minNear/clipRadius callbacks', () => {
+        const idPrefix = 'test-root';
+        const onClippingMinNearChange = vi.fn();
+        const onClippingRadiusChange = vi.fn();
+        const loadDataRowPropsWithCamera = {
+            ...loadDataRowProps,
+            clippingMinNear: 1,
+            clippingRadius: 100,
+            onClippingMinNearChange,
+            onClippingRadiusChange,
+        };
+
+        render(
+            <ViewerColumn
+                viewerKey="A"
+                loadDataRowPropsAlignedTo={loadDataRowPropsWithCamera}
+                loadDataRowPropsAligned={loadDataRowPropsWithCamera}
+                moleculeUIAlignedToProps={moleculeUIAlignedToProps}
+                moleculeUIAlignedProps={moleculeUIAlignedProps}
+                realignedMoleculeListProps={realignedMoleculeListProps}
+                molstarContainerProps={molstarContainerProps}
+                idPrefix={idPrefix}
+            />
+        );
+
+        const root = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A`);
+        const children = Array.from(root?.children ?? []);
+        const clippingIndex = children.findIndex((child) => child.id === `${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clipping-controls`);
+        const selectZoomToggleIndex = children.findIndex((child) => child.id === `${idPrefix}-${viewerColumnIdSuffix}-A-select-zoom-controls-toggle-btn`);
+        expect(clippingIndex).toBeGreaterThan(-1);
+        expect(selectZoomToggleIndex).toBeGreaterThan(clippingIndex);
+
+        const nearRange = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clip-near-range`) as HTMLInputElement;
+        const farRange = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clip-far-range`) as HTMLInputElement;
+        const resetBtn = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clip-reset-btn`) as HTMLButtonElement;
+
+        expect(nearRange).toBeInTheDocument();
+        expect(farRange).toBeInTheDocument();
+        expect(resetBtn).toBeInTheDocument();
+        expect(document.body.textContent).toContain('Matches Mol* clipping settings');
+
+        fireEvent.change(nearRange, { target: { value: '0.5' } });
+        expect(onClippingMinNearChange).toHaveBeenCalledWith(0.5);
+
+        fireEvent.change(farRange, { target: { value: '80' } });
+        expect(onClippingRadiusChange).toHaveBeenCalledWith(80);
+
+        fireEvent.click(resetBtn);
+        expect(onClippingMinNearChange).toHaveBeenCalledWith(1);
+        expect(onClippingRadiusChange).toHaveBeenCalledWith(100);
     });
 
     it('keeps representation visibility toggles local to one viewer even when sync is enabled', async () => {
@@ -289,6 +344,9 @@ describe('ViewerColumn', () => {
             chainZoomLabel: '',
             onChainZoom: vi.fn(),
             chainZoomDisabled: false,
+            subunitZoomLabel: '',
+            onSubunitZoom: vi.fn(),
+            subunitZoomDisabled: false,
             residueZoomLabel: '',
             onResidueZoom: vi.fn(),
             residueZoomDisabled: false,
@@ -382,8 +440,8 @@ describe('ViewerColumn', () => {
             residueZoomDisabled: true,
             fog: { enabled: false, near: 0, far: 100 },
             setFog: { setEnabled: vi.fn(), setNear: vi.fn(), setFar: vi.fn() },
-            camera: { near: 0.1, far: 1000 },
-            setCamera: { setNear: vi.fn(), setFar: vi.fn() },
+            clipping: { minNear: 1, clipRadius: 100 },
+            setClipping: { setMinNear: vi.fn(), setClipRadius: vi.fn() },
             updateFog: vi.fn(),
             handleFileChange: vi.fn(),
             Aligned: 'Aligned',

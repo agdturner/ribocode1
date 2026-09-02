@@ -28,10 +28,10 @@ export const idSuffix = 'load-molecule';
 
 /**
  * Props for LoadDataRow component.
- * @param cameraNear Camera near clipping plane distance.
- * @param cameraFar Camera far clipping plane distance.
- * @param onCameraNearChange Function to handle changes to camera near distance.
- * @param onCameraFarChange Function to handle changes to camera far distance.
+ * @param clippingMinNear Minimum near clipping plane distance.
+ * @param clippingRadius Clipping radius controlling visible scene amount.
+ * @param onClippingMinNearChange Function to handle changes to minimum near clipping distance.
+ * @param onClippingRadiusChange Function to handle changes to clipping radius.
  * @param viewerTitle The title of the viewer.
  * @param isLoaded Whether the data is loaded.
  * @param onFileInputClick Function to handle file input button click.
@@ -123,11 +123,11 @@ interface LoadDataRowProps {
     onFogEnabledChange: (enabled: boolean) => void;
     onFogNearChange: (value: number) => void;
     onFogFarChange: (value: number) => void;
-    // Camera near/far controls
-    cameraNear: number;
-    cameraFar: number;
-    onCameraNearChange: (value: number) => void;
-    onCameraFarChange: (value: number) => void;
+    // Clipping controls
+    clippingMinNear: number;
+    clippingRadius: number;
+    onClippingMinNearChange: (value: number) => void;
+    onClippingRadiusChange: (value: number) => void;
     // Test mode override
     testMode?: boolean;
     showSelectZoomControls?: boolean;
@@ -296,10 +296,10 @@ function getFilteredChainLabels(selectedSubunit: RibosomeSubunitType, chainLabel
  * @returns The LoadDataRow component.
  */
 const LoadDataRow: React.FC<LoadDataRowProps> = ({
-    cameraNear,
-    cameraFar,
-    onCameraNearChange,
-    onCameraFarChange,
+    clippingMinNear,
+    clippingRadius,
+    onClippingMinNearChange,
+    onClippingRadiusChange,
     viewerTitle,
     isLoaded,
     loadedFilename,
@@ -518,8 +518,8 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                     min={0.001}
                     max={10}
                     step={0.001}
-                    value={cameraNear}
-                    onChange={e => onCameraNearChange(Number(e.target.value))}
+                    value={clippingMinNear}
+                    onChange={e => onClippingMinNearChange(Number(e.target.value))}
                     style={{ width: 70, marginLeft: 4 }}
                 />
             </label>
@@ -530,8 +530,8 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                     min={1}
                     max={1000}
                     step={1}
-                    value={cameraFar}
-                    onChange={e => onCameraFarChange(Number(e.target.value))}
+                    value={clippingRadius}
+                    onChange={e => onClippingRadiusChange(Number(e.target.value))}
                     style={{ width: 70, marginLeft: 4 }}
                 />
             </label>
@@ -594,11 +594,11 @@ interface LoadDataRowProps {
     onFogEnabledChange: (enabled: boolean) => void;
     onFogNearChange: (value: number) => void;
     onFogFarChange: (value: number) => void;
-    // Camera near/far controls
-    cameraNear: number;
-    cameraFar: number;
-    onCameraNearChange: (value: number) => void;
-    onCameraFarChange: (value: number) => void;
+    // Clipping controls
+    clippingMinNear: number;
+    clippingRadius: number;
+    onClippingMinNearChange: (value: number) => void;
+    onClippingRadiusChange: (value: number) => void;
     // Test mode override
     testMode?: boolean;
     showSelectZoomControls?: boolean;

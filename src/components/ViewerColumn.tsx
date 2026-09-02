@@ -66,10 +66,10 @@ export interface LoadDataRowPropsInput {
 		setNear: (val: number) => void;
 		setFar: (val: number) => void;
 	};
-	camera: { near: number; far: number };
-	setCamera: {
-		setNear: (val: number) => void;
-		setFar: (val: number) => void;
+	clipping: { minNear: number; clipRadius: number };
+	setClipping: {
+		setMinNear: (val: number) => void;
+		setClipRadius: (val: number) => void;
 	};
 	updateFog: (...args: any[]) => void;
 	handleFileChange: (...args: any[]) => void;
@@ -127,8 +127,8 @@ export function getLoadDataRowProps({
 	residueZoomDisabled,
 	fog,
 	setFog,
-	camera,
-	setCamera,
+	clipping,
+	setClipping,
 	updateFog,
 	handleFileChange,
 	Aligned,
@@ -256,25 +256,25 @@ export function getLoadDataRowProps({
 		fogFar: fog.far,
 		onFogEnabledChange: (val: boolean) => {
 			setFog.setEnabled(val);
-			updateFog(viewer.ref.current, otherViewer.ref.current, val, fog.near, fog.far, camera.near, camera.far);
+			updateFog(viewer.ref.current, null, val, fog.near, fog.far, clipping.minNear, clipping.clipRadius);
 		},
 		onFogNearChange: (val: number) => {
 			setFog.setNear(val);
-			updateFog(viewer.ref.current, otherViewer.ref.current, fog.enabled, val, fog.far, camera.near, camera.far);
+			updateFog(viewer.ref.current, null, fog.enabled, val, fog.far, clipping.minNear, clipping.clipRadius);
 		},
 		onFogFarChange: (val: number) => {
 			setFog.setFar(val);
-			updateFog(viewer.ref.current, otherViewer.ref.current, fog.enabled, fog.near, val, camera.near, camera.far);
+			updateFog(viewer.ref.current, null, fog.enabled, fog.near, val, clipping.minNear, clipping.clipRadius);
 		},
-		cameraNear: camera.near,
-		cameraFar: camera.far,
-		onCameraNearChange: (val: number) => {
-			setCamera.setNear(val);
-			updateFog(viewer.ref.current, otherViewer.ref.current, fog.enabled, fog.near, fog.far, val, camera.far);
+		clippingMinNear: clipping.minNear,
+		clippingRadius: clipping.clipRadius,
+		onClippingMinNearChange: (val: number) => {
+			setClipping.setMinNear(val);
+			updateFog(viewer.ref.current, null, fog.enabled, fog.near, fog.far, val, clipping.clipRadius);
 		},
-		onCameraFarChange: (val: number) => {
-			setCamera.setFar(val);
-			updateFog(viewer.ref.current, otherViewer.ref.current, fog.enabled, fog.near, fog.far, camera.near, val);
+		onClippingRadiusChange: (val: number) => {
+			setClipping.setClipRadius(val);
+			updateFog(viewer.ref.current, null, fog.enabled, fog.near, fog.far, clipping.minNear, val);
 		},
 		subunitToChainIds,
 		idPrefix: viewer && viewer.key ? `viewer-${viewer.key}` : (viewer && viewer.moleculeAligned ? `viewer-${viewer.moleculeAligned.name?.replace(/\s+/g, '-').toLowerCase()}` : 'viewer-unknown'),
@@ -660,6 +660,8 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 		};
 	const activeLoadProps = viewerKey === 'A' ? loadDataRowPropsAlignedTo : loadDataRowPropsAligned;
 	const activeSelectZoomIdPrefix = viewerKey === 'A' ? `${viewerIdPrefix}-alignedto` : `${viewerIdPrefix}-aligned`;
+	const clippingNear = Number(activeLoadProps?.clippingMinNear ?? 1);
+	const clippingFar = Number(activeLoadProps?.clippingRadius ?? 100);
 
 	       return (
 		       <div className="Column" id={viewerIdPrefix}>
@@ -679,6 +681,68 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 					   {viewerKey === 'B' && (
 					   <LoadDataRow {...loadDataRowPropsAligned} showSelectZoomControls={false} testMode={testMode} idPrefix={`${viewerIdPrefix}-aligned`} />
 					   )}
+		       <div className="load-data-controls" id={`${activeSelectZoomIdPrefix}-clipping-controls`}>
+				   <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+					   <strong>Clipping</strong>
+					   <span
+						   style={{ fontSize: 12, opacity: 0.8 }}
+						   title="Matches Mol* clipping settings: Min Near controls minimum near plane distance, Clip Radius controls how much of the scene is shown."
+					   >
+						   Matches Mol* clipping settings
+					   </span>
+					   <label htmlFor={`${activeSelectZoomIdPrefix}-clip-near-range`}>Min Near:</label>
+					   <input
+						   id={`${activeSelectZoomIdPrefix}-clip-near-range`}
+						   type="range"
+						   min={0.1}
+						   max={100}
+						   step={0.1}
+						   value={clippingNear}
+						   onChange={(e) => activeLoadProps?.onClippingMinNearChange?.(Number(e.target.value))}
+					   />
+					   <input
+						   id={`${activeSelectZoomIdPrefix}-clip-near-number`}
+						   type="number"
+						   min={0.1}
+						   max={100}
+						   step={0.1}
+						   value={clippingNear}
+						   onChange={(e) => activeLoadProps?.onClippingMinNearChange?.(Number(e.target.value))}
+						   style={{ width: 80 }}
+					   />
+					   <label htmlFor={`${activeSelectZoomIdPrefix}-clip-far-range`}>Clip Radius:</label>
+					   <input
+						   id={`${activeSelectZoomIdPrefix}-clip-far-range`}
+						   type="range"
+						   min={0}
+						   max={99}
+						   step={1}
+						   value={clippingFar}
+						   onChange={(e) => activeLoadProps?.onClippingRadiusChange?.(Number(e.target.value))}
+					   />
+					   <input
+						   id={`${activeSelectZoomIdPrefix}-clip-far-number`}
+						   type="number"
+						   min={0}
+						   max={99}
+						   step={1}
+						   value={clippingFar}
+						   onChange={(e) => activeLoadProps?.onClippingRadiusChange?.(Number(e.target.value))}
+						   style={{ width: 90 }}
+					   />
+					   <button
+						   type="button"
+						   className="msp-btn msp-form-control"
+						   id={`${activeSelectZoomIdPrefix}-clip-reset-btn`}
+						   onClick={() => {
+							   activeLoadProps?.onClippingMinNearChange?.(1);
+							   activeLoadProps?.onClippingRadiusChange?.(100);
+						   }}
+					   >
+						   Reset Clipping
+					   </button>
+				   </div>
+		       </div>
 		       <button
 			   id={`${viewerIdPrefix}-select-zoom-controls-toggle-btn`}
 			   data-testid={`${viewerIdPrefix}-select-zoom-controls-toggle-btn`}
