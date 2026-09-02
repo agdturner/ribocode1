@@ -238,6 +238,9 @@
 .molstar-advanced-controls-toggle {
 	margin-top: 8px;
 	margin-bottom: 8px;
+	display: block;
+	width: 100%;
+	text-align: left;
 }
 
 .molstar-advanced-controls-panel {

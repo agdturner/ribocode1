@@ -572,6 +572,10 @@ describe('App integration: AlignedTo and Aligned loading', () => {
   it('renders chain zoom controls disabled before chain selection', async () => {
     render(<App />);
 
+    const toggle = document.getElementById('viewer-column-A-select-zoom-controls-toggle-btn') as HTMLButtonElement | null;
+    expect(toggle).toBeInTheDocument();
+    fireEvent.click(toggle!);
+
     await waitFor(() => {
       const zoomChainButtons = Array.from(
         document.querySelectorAll('#viewer-column-A button#viewer-column-A-alignedto-zoom-chain-btn')
@@ -662,6 +666,9 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     }, { timeout: 5000 });
     fireEvent.change(alignedInput!, { target: { files: [loadTestFile('6xu8.cif')] } });
     fireEvent.click(alignedLoadBtn!);
+
+    fireEvent.click(document.getElementById('viewer-column-A-select-zoom-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-B-select-zoom-controls-toggle-btn') as HTMLButtonElement);
 
     await waitFor(() => {
       expect(document.getElementById('viewer-column-A-alignedto-subunit-select')).toBeInTheDocument();
@@ -773,6 +780,42 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     expect(pluginB.canvas3d.camera.state.target).toEqual([4, 5, 6]);
     expect(pluginB.canvas3d.camera.state.up).toEqual([0, 1, 0]);
     expect(pluginB.canvas3d.camera.state.radius).toBe(84);
+  });
+
+  it('round-trips multiple selected residues in session uiState', async () => {
+    render(<App />);
+    await waitFor(() => expect(screen.getByRole('banner')).toBeInTheDocument());
+
+    const onSessionLoaded = (globalThis as any).__onSessionLoaded as ((session: any, files: Record<string, File>) => Promise<void>) | undefined;
+    expect(onSessionLoaded).toBeDefined();
+
+    const session = {
+      viewerA: { moleculeAlignedTo: { filename: '4ug0.cif' } },
+      viewerB: { moleculeAligned: { filename: '6xu8.cif' } },
+      uiState: {
+        selections: {
+          alignedTo: { subunit: 'Large', chainId: 'A', residueIds: ['10', '20'], residueId: '10' },
+          aligned: { subunit: 'Small', chainId: 'B', residueIds: ['20'], residueId: '20' },
+        },
+      },
+    };
+    const files = {
+      '4ug0.cif': loadTestFile('4ug0.cif'),
+      '6xu8.cif': loadTestFile('6xu8.cif'),
+    };
+
+    await onSessionLoaded!(session, files);
+
+    const getSessionState = (globalThis as any).__getSessionState as (() => any) | undefined;
+    expect(getSessionState).toBeDefined();
+
+    await waitFor(() => {
+      const restored = getSessionState!();
+      expect(restored.uiState.selections.alignedTo.residueIds).toEqual(['10', '20']);
+      expect(restored.uiState.selections.alignedTo.residueId).toBe('10');
+      expect(restored.uiState.selections.aligned.residueIds).toEqual(['20']);
+      expect(restored.uiState.selections.aligned.residueId).toBe('20');
+    }, { timeout: 5000 });
   });
 
   it('restores saved additional representations on session load (regression)', async () => {

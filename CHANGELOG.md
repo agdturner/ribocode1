@@ -4,6 +4,14 @@ Release summary: this release improves alignment and camera-sync reliability in 
 - Added `Zoom to Subunit` controls for each viewer/molecule panel, using the selected subunit chain set for camera focus.
 - Added `Re-align to Subunit` in General Controls, enabled only when valid non-`All` subunits are selected on both datasets and disabled after an already-applied subunit pair.
 - Added dedicated Playwright E2E coverage for subunit re-alignment button state transitions in `e2e/subunit-realign.e2e.spec.ts`.
+- Updated `Select Residue` to support multi-residue selection per viewer, while keeping residue zoom/session compatibility via first-selected residue fallback.
+- Fixed residue-code extraction so labels use meaningful residue/nucleotide codes from residue/atom comp IDs instead of malformed fallbacks (e.g. preventing `ATOM` -> `ATO`).
+- Added residue code normalization for RNA/protein conventions and updated residue label order to `number code` (for example `12 A`, `70 GLY`).
+- Added focused unit/integration regression coverage for residue label lookup, multi-selection persistence (`residueIds` + legacy `residueId`), and session round-tripping.
+- Reordered per-column controls so representation actions (`Representation` selector/add button and `Load Colours`) appear before Select/Zoom controls.
+- Added per-column `Show/Hide Select and Zoom Controls` toggle that controls Subunit/Chain/Residue selectors, zoom buttons, and Chain Finder together.
+- Set Select/Zoom controls to be collapsed by default, and positioned the toggle immediately above `Show/Hide Advanced Mol* Controls`.
+- Updated toggle button layout so `Show/Hide Advanced Mol* Controls` always appears below `Show/Hide Select and Zoom Controls` (stacked vertically).
 
 ## [v0.11.0] - 2026-08-14
 - Added a preferred in-place chain re-alignment path that applies rigid transforms directly to existing aligned structures in both viewers.

@@ -43,7 +43,7 @@ describe('useUpdateResidueInfo', () => {
       getResidueInfo: vi.fn(() => ({ residueLabels: mockResidueLabels, residueToAtomIds: mockResidueToAtomIds })),
     };
     const setResidueInfo = vi.fn();
-    const setSelectedResidueId = vi.fn();
+    const setSelectedResidueIds = vi.fn();
     renderHook(() =>
       useUpdateResidueInfo(
         viewerRef as any,
@@ -51,8 +51,8 @@ describe('useUpdateResidueInfo', () => {
         molstar,
         'A',
         setResidueInfo,
-        '',
-        setSelectedResidueId,
+        [],
+        setSelectedResidueIds,
         'TestLabel'
       )
     );
@@ -61,12 +61,12 @@ describe('useUpdateResidueInfo', () => {
     const updater = setResidueInfo.mock.calls[0][0];
     const result = updater({ residueLabels: new Map(), residueToAtomIds: {} });
     expect(result).toEqual({ residueLabels: mockResidueLabels, residueToAtomIds: mockResidueToAtomIds });
-    expect(setSelectedResidueId).toHaveBeenCalledWith('1');
+    expect(setSelectedResidueIds).toHaveBeenCalledWith(['1']);
   });
 
   it('does nothing if viewerRef.current is null', () => {
     const setResidueInfo = vi.fn();
-    const setSelectedResidueId = vi.fn();
+    const setSelectedResidueIds = vi.fn();
     renderHook(() =>
       useUpdateResidueInfo(
         { current: null } as any,
@@ -74,12 +74,12 @@ describe('useUpdateResidueInfo', () => {
         {},
         'A',
         setResidueInfo,
-        '',
-        setSelectedResidueId,
+        [],
+        setSelectedResidueIds,
         'TestLabel'
       )
     );
     expect(setResidueInfo).not.toHaveBeenCalled();
-    expect(setSelectedResidueId).not.toHaveBeenCalled();
+    expect(setSelectedResidueIds).not.toHaveBeenCalled();
   });
 });

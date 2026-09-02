@@ -49,8 +49,8 @@ describe('LoadDataRow', () => {
         onChainZoom: vi.fn(),
         chainZoomDisabled: false,
         residueInfo: { residueLabels: new Map([['1', { id: '1', name: 'Residue 1', compId: 'ALA', seqNumber: 1, insCode: '' }]]), residueToAtomIds: { '1': ['a1'] } },
-        selectedResidueId: '1',
-        onSelectResidueId: vi.fn(),
+        selectedResidueIds: ['1'],
+        onSelectResidueIds: vi.fn(),
         residueSelectDisabled: false,
         residueZoomLabel: 'Residue 1',
         onResidueZoom: vi.fn(),
@@ -115,15 +115,38 @@ describe('LoadDataRow', () => {
         const subunitZoomIndex = findRowIndex('Zoom to Subunit:');
         const chainSelectIndex = findRowIndex('Select Chain');
         const chainZoomIndex = findRowIndex('Zoom to Chain:');
-        const residueSelectIndex = findRowIndex('Select Residue');
+        const residueSelectIndex = findRowIndex('Select Residues');
         const residueZoomIndex = findRowIndex('Zoom to Residue:');
+        const loadColoursIndex = findRowIndex('Load Colours');
+        const representationIndex = findRowIndex('Representation:');
 
+        expect(representationIndex).toBeGreaterThanOrEqual(0);
+        expect(loadColoursIndex).toBeGreaterThan(representationIndex);
+        expect(subunitSelectIndex).toBeGreaterThan(representationIndex);
         expect(subunitSelectIndex).toBeGreaterThanOrEqual(0);
         expect(subunitZoomIndex).toBeGreaterThan(subunitSelectIndex);
         expect(chainSelectIndex).toBeGreaterThan(subunitZoomIndex);
         expect(chainZoomIndex).toBeGreaterThan(chainSelectIndex);
         expect(residueSelectIndex).toBeGreaterThan(chainZoomIndex);
         expect(residueZoomIndex).toBeGreaterThan(residueSelectIndex);
+    });
+
+    it('hides select and zoom controls when showSelectZoomControls is false', () => {
+        const { queryByText } = render(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                showSelectZoomControls={false}
+            />
+        );
+        expect(queryByText('Select Subunit')).not.toBeInTheDocument();
+        expect(queryByText('Zoom to Subunit: All')).not.toBeInTheDocument();
+        expect(queryByText('Select Chain')).not.toBeInTheDocument();
+        expect(queryByText('Zoom to Chain: Chain A')).not.toBeInTheDocument();
+        expect(queryByText('Select Residues')).not.toBeInTheDocument();
+        expect(queryByText('Zoom to Residue: Residue 1')).not.toBeInTheDocument();
+        expect(queryByText('Load Colours')).toBeInTheDocument();
+        expect(queryByText(/Representation:/)).toBeInTheDocument();
     });
 
     it('calls subunit, chain, and residue zoom handlers when zoom buttons are clicked', () => {

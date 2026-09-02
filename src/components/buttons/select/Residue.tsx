@@ -16,16 +16,16 @@ import { ResidueLabelInfo } from 'src/utils/residue';
  * Props for the ResidueSelectButton component.
  * @property disabled Whether the select button is disabled.
  * @property residueLabels The map of residue IDs to labels to select from.
- * @property selectedResidueId The currently selected residue ID.
- * @property onSelect Callback function when a residue ID is selected.
+ * @property selectedResidueIds The currently selected residue IDs.
+ * @property onSelect Callback function when residue IDs are selected.
  * @property label Optional label for the select button.
  * @property id A unique identifier for the select button.
  */
 export interface ResidueSelectButtonProps {
 	disabled: boolean;
 	residueLabels: Map<string, ResidueLabelInfo>;
-	selectedResidueId?: string;
-	onSelect: (residueId: string) => void;
+	selectedResidueIds?: string[];
+	onSelect: (residueIds: string[]) => void;
 	label?: string;
 	id: string;
 }
@@ -40,8 +40,8 @@ export interface ResidueSelectButtonProps {
  *
  * @param disabled Whether the select button is disabled.
  * @param residueLabels Map from residue ID → ResidueLabelInfo.
- * @param selectedResidueId The currently selected residue ID.
- * @param onSelect Callback invoked with the selected residue ID.
+ * @param selectedResidueIds The currently selected residue IDs.
+ * @param onSelect Callback invoked with selected residue IDs.
  * @param label Optional label for the select element.
  * @param id A unique identifier for the select element.
  * @returns The ResidueSelectButton component.
@@ -49,7 +49,7 @@ export interface ResidueSelectButtonProps {
 const ResidueSelectButton: React.FC<ResidueSelectButtonProps> = ({
 	disabled,
 	residueLabels,
-	selectedResidueId,
+	selectedResidueIds = [],
 	onSelect,
 	label,
 	id
@@ -61,15 +61,19 @@ const ResidueSelectButton: React.FC<ResidueSelectButtonProps> = ({
 	);
 	return (
 		<label>
-			{label || 'Select Residue'}
+			{label || 'Select Residues'}
 			<select
 				className="msp-select msp-form-control"
-				value={selectedResidueId ?? ''}
-				onChange={e => onSelect(e.target.value)}
+				multiple
+				size={Math.min(Math.max(4, orderedEntries.length), 10)}
+				value={selectedResidueIds}
+				onChange={e => {
+					const values = Array.from(e.target.selectedOptions).map(opt => opt.value);
+					onSelect(values);
+				}}
 				disabled={disabled}
 				id={id ?? selectIdSuffix}
 			>
-				<option value="" disabled>...</option>
 				{orderedEntries.map(([residueId, info]) => (
 					<option key={residueId} value={residueId}>{info.name}</option>
 				))}

@@ -55,8 +55,8 @@ export const idSuffix = 'load-molecule';
  * @param onSelectChainId Function to handle chain ID selection.
  * @param chainSelectDisabled Whether the chain select button is disabled.
  * @param residueInfo Information about residues for selection.
- * @param selectedResidueId Currently selected residue ID.
- * @param onSelectResidueId Function to handle residue ID selection.
+ * @param selectedResidueIds Currently selected residue IDs.
+ * @param onSelectResidueIds Function to handle residue ID selection.
  * @param residueSelectDisabled Whether the residue select button is disabled.
  * @param representationTypeSelector Optional custom representation type selector component.
  * @param onAddRepresentationClick Function to handle add representation button click.
@@ -106,8 +106,8 @@ interface LoadDataRowProps {
         residueLabels: Map<string, ResidueLabelInfo>;
         residueToAtomIds: Record<string, string[]>;
     };
-    selectedResidueId: string;
-    onSelectResidueId: (id: string) => void;
+    selectedResidueIds: string[];
+    onSelectResidueIds: (ids: string[]) => void;
     residueSelectDisabled: boolean;
     residueZoomLabel: string;
     onResidueZoom: () => void;
@@ -130,8 +130,121 @@ interface LoadDataRowProps {
     onCameraFarChange: (value: number) => void;
     // Test mode override
     testMode?: boolean;
+    showSelectZoomControls?: boolean;
     idPrefix: string;
 }
+
+    export interface SelectZoomControlsProps {
+        subunitToChainIds: Map<string, Set<string>>;
+        selectedSubunit: RibosomeSubunitType;
+        onSelectSubunit: (subunit: RibosomeSubunitType) => void;
+        subunitSelectDisabled: boolean;
+        subunitZoomLabel: string;
+        onSubunitZoom: () => void;
+        subunitZoomDisabled: boolean;
+        chainInfo: { chainLabels: Map<string, string>; };
+        selectedChainId: string;
+        onSelectChainId: (id: string) => void;
+        chainSelectDisabled: boolean;
+        chainZoomLabel: string;
+        onChainZoom: () => void;
+        chainZoomDisabled: boolean;
+        residueInfo: {
+            residueLabels: Map<string, ResidueLabelInfo>;
+            residueToAtomIds: Record<string, string[]>;
+        };
+        selectedResidueIds: string[];
+        onSelectResidueIds: (ids: string[]) => void;
+        residueSelectDisabled: boolean;
+        residueZoomLabel: string;
+        onResidueZoom: () => void;
+        residueZoomDisabled: boolean;
+        idPrefix: string;
+    }
+
+    export const SelectZoomControls: React.FC<SelectZoomControlsProps> = ({
+        subunitToChainIds,
+        selectedSubunit,
+        onSelectSubunit,
+        subunitSelectDisabled,
+        subunitZoomLabel,
+        onSubunitZoom,
+        subunitZoomDisabled,
+        chainInfo,
+        selectedChainId,
+        onSelectChainId,
+        chainSelectDisabled,
+        chainZoomLabel,
+        onChainZoom,
+        chainZoomDisabled,
+        residueInfo,
+        selectedResidueIds,
+        onSelectResidueIds,
+        residueSelectDisabled,
+        residueZoomLabel,
+        onResidueZoom,
+        residueZoomDisabled,
+        idPrefix,
+    }) => (
+        <>
+            <div className="load-data-control-row">
+                <SubunitSelectButton
+                    disabled={subunitSelectDisabled}
+                    selectedSubunit={selectedSubunit}
+                    onSelect={onSelectSubunit}
+                    id={`${idPrefix}-subunit-select`}
+                />
+            </div>
+            <div className="load-data-control-row">
+                <button
+                    onClick={onSubunitZoom}
+                    disabled={subunitZoomDisabled}
+                    className="msp-btn msp-form-control"
+                    id={`${idPrefix}-zoom-subunit-btn`}
+                >
+                    Zoom to Subunit: {subunitZoomLabel}
+                </button>
+            </div>
+            <div className="load-data-control-row">
+                <ChainSelectButton
+                     disabled={chainSelectDisabled || !selectedSubunit}
+                     chainLabels={getFilteredChainLabels(selectedSubunit, chainInfo.chainLabels, subunitToChainIds)}
+                     selectedChainId={selectedChainId}
+                     onSelect={onSelectChainId}
+                     id={`${idPrefix}-chain-select`}
+                />
+            </div>
+            <div className="load-data-control-row">
+                <button
+                    onClick={onChainZoom}
+                    disabled={chainZoomDisabled}
+                    className="msp-btn msp-form-control"
+                    id={`${idPrefix}-zoom-chain-btn`}
+                >
+                    Zoom to Chain: {chainZoomLabel}
+                </button>
+            </div>
+            <div className="load-data-control-row">
+                <ResidueSelectButton
+                    disabled={residueSelectDisabled || !selectedChainId}
+                    residueLabels={residueInfo.residueLabels}
+                    selectedResidueIds={selectedResidueIds}
+                    onSelect={onSelectResidueIds}
+                    id={`${idPrefix}-residue-select`}
+                />
+            </div>
+            <div className="load-data-control-row">
+                <button
+                    onClick={onResidueZoom}
+                    disabled={residueZoomDisabled}
+                    className="msp-btn msp-form-control"
+                    id={`${idPrefix}-zoom-residue-btn`}
+                >
+                    Zoom to Residue: {residueZoomLabel}
+                </button>
+            </div>
+        </>
+    );
 
 
 // Helper to filter chain labels by subunit selection
@@ -168,8 +281,8 @@ function getFilteredChainLabels(selectedSubunit: RibosomeSubunitType, chainLabel
  * @param onSelectChainId Function to handle chain ID selection.
  * @param chainSelectDisabled Whether the chain select button is disabled.
  * @param residueInfo Information about residues for selection.
- * @param selectedResidueId Currently selected residue ID.
- * @param onSelectResidueId Function to handle residue ID selection.
+ * @param selectedResidueIds Currently selected residue IDs.
+ * @param onSelectResidueIds Function to handle residue ID selection.
  * @param residueSelectDisabled Whether the residue select button is disabled.
  * @param representationTypeSelector Optional custom representation type selector component.
  * @param onAddRepresentationClick Function to handle add representation button click.
@@ -217,8 +330,8 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     onChainZoom,
     chainZoomDisabled,
     residueInfo,
-    selectedResidueId,
-    onSelectResidueId,
+    selectedResidueIds,
+    onSelectResidueIds,
     residueSelectDisabled,
     residueZoomLabel,
     onResidueZoom,
@@ -233,6 +346,7 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     onFogNearChange,
     onFogFarChange,
     testMode,
+    showSelectZoomControls = true,
     idPrefix
 }) => (
 
@@ -270,62 +384,48 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
         )}
         <div className="load-data-controls">
             <div className="load-data-control-row">
-                <SubunitSelectButton
-                    disabled={subunitSelectDisabled}
-                    selectedSubunit={selectedSubunit}
-                    onSelect={onSelectSubunit}
-                    id={`${idPrefix}-subunit-select`}
-                />
+                {representationTypeSelector ? (
+                    <span className="rep-type-controls">
+                        {representationTypeSelector}
+                        <button
+                            onClick={onAddRepresentationClick}
+                            disabled={addRepresentationDisabled}
+                            aria-label="Add Representation"
+                            className="msp-btn msp-form-control"
+                            id={`${idPrefix}-add-representation-btn`}
+                        >
+                            +
+                        </button>
+                    </span>
+                ) : (
+                    <span className="rep-type-controls">
+                        <label htmlFor="representation-type">
+                            Representation:
+                        </label>
+                        <select
+                            id={`${idPrefix}-${repTypeSelectIdSuffix}`}
+                            value={representationType}
+                            onChange={e => onRepresentationTypeChange(e.target.value as AllowedRepresentationType)}
+                            disabled={representationTypeDisabled}
+                            className="msp-select msp-form-control"
+                        >
+                            {allowedRepresentationTypes.map(type => (
+                                <option key={type} value={type}>{type.replace(/-/g, ' ')}</option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={onAddRepresentationClick}
+                            disabled={addRepresentationDisabled}
+                            aria-label="Add Representation"
+                            className="msp-btn msp-form-control"
+                            id={`${idPrefix}-add-representation-btn`}
+                        >
+                            +
+                        </button>
+                    </span>
+                )}
             </div>
             <div className="load-data-control-row">
-                <button
-                    onClick={onSubunitZoom}
-                    disabled={subunitZoomDisabled}
-                    className="msp-btn msp-form-control"
-                    id={`${idPrefix}-zoom-subunit-btn`}
-                >
-                    Zoom to Subunit: {subunitZoomLabel}
-                </button>
-            </div>
-            <div className="load-data-control-row">
-                <ChainSelectButton
-                     disabled={chainSelectDisabled || !selectedSubunit}
-                     chainLabels={getFilteredChainLabels(selectedSubunit, chainInfo.chainLabels, subunitToChainIds)}
-                     selectedChainId={selectedChainId}
-                     onSelect={onSelectChainId}
-                     id={`${idPrefix}-chain-select`}
-                />
-            </div>
-            <div className="load-data-control-row">
-                <button
-                    onClick={onChainZoom}
-                    disabled={chainZoomDisabled}
-                    className="msp-btn msp-form-control"
-                    id={`${idPrefix}-zoom-chain-btn`}
-                >
-                    Zoom to Chain: {chainZoomLabel}
-                </button>
-            </div>
-            <div className="load-data-control-row">
-                <ResidueSelectButton
-                    disabled={residueSelectDisabled || !selectedChainId}
-                    residueLabels={residueInfo.residueLabels}
-                    selectedResidueId={selectedResidueId}
-                    onSelect={onSelectResidueId}
-                    id={`${idPrefix}-residue-select`}
-                />
-            </div>
-            <div className="load-data-control-row">
-                <button
-                    onClick={onResidueZoom}
-                    disabled={residueZoomDisabled}
-                    className="msp-btn msp-form-control"
-                    id={`${idPrefix}-zoom-residue-btn`}
-                >
-                    Zoom to Residue: {residueZoomLabel}
-                </button>
-            </div>
-            <div>
                 <button
                     type="button"
                     onClick={onAddColorsClick}
@@ -346,45 +446,31 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                     id={`${idPrefix}-colours-file-input`}
                 />
             </div>
-            {representationTypeSelector ? (
-                <span className="rep-type-controls">
-                    {representationTypeSelector}
-                    <button
-                        onClick={onAddRepresentationClick}
-                        disabled={addRepresentationDisabled}
-                        aria-label="Add Representation"
-                        className="msp-btn msp-form-control"
-                        id={`${idPrefix}-add-representation-btn`}
-                    >
-                        +
-                    </button>
-                </span>
-            ) : (
-                <span className="rep-type-controls">
-                    <label htmlFor="representation-type">
-                        Representation:
-                    </label>
-                    <select
-                        id={`${idPrefix}-${repTypeSelectIdSuffix}`}
-                        value={representationType}
-                        onChange={e => onRepresentationTypeChange(e.target.value as AllowedRepresentationType)}
-                        disabled={representationTypeDisabled}
-                        className="msp-select msp-form-control"
-                    >
-                        {allowedRepresentationTypes.map(type => (
-                            <option key={type} value={type}>{type.replace(/-/g, ' ')}</option>
-                        ))}
-                    </select>
-                    <button
-                        onClick={onAddRepresentationClick}
-                        disabled={addRepresentationDisabled}
-                        aria-label="Add Representation"
-                        className="msp-btn msp-form-control"
-                        id={`${idPrefix}-add-representation-btn`}
-                    >
-                        +
-                    </button>
-                </span>
+            {showSelectZoomControls && (
+                    <SelectZoomControls
+                        subunitToChainIds={subunitToChainIds}
+                        selectedSubunit={selectedSubunit}
+                        onSelectSubunit={onSelectSubunit}
+                        subunitSelectDisabled={subunitSelectDisabled}
+                        subunitZoomLabel={subunitZoomLabel}
+                        onSubunitZoom={onSubunitZoom}
+                        subunitZoomDisabled={subunitZoomDisabled}
+                        chainInfo={chainInfo}
+                        selectedChainId={selectedChainId}
+                        onSelectChainId={onSelectChainId}
+                        chainSelectDisabled={chainSelectDisabled}
+                        chainZoomLabel={chainZoomLabel}
+                        onChainZoom={onChainZoom}
+                        chainZoomDisabled={chainZoomDisabled}
+                        residueInfo={residueInfo}
+                        selectedResidueIds={selectedResidueIds}
+                        onSelectResidueIds={onSelectResidueIds}
+                        residueSelectDisabled={residueSelectDisabled}
+                        residueZoomLabel={residueZoomLabel}
+                        onResidueZoom={onResidueZoom}
+                        residueZoomDisabled={residueZoomDisabled}
+                        idPrefix={idPrefix}
+                    />
             )}
         </div>
         {/*
@@ -491,8 +577,8 @@ interface LoadDataRowProps {
         residueLabels: Map<string, ResidueLabelInfo>;
         residueToAtomIds: Record<string, string[]>;
     };
-    selectedResidueId: string;
-    onSelectResidueId: (id: string) => void;
+    selectedResidueIds: string[];
+    onSelectResidueIds: (ids: string[]) => void;
     residueSelectDisabled: boolean;
     residueZoomLabel: string;
     onResidueZoom: () => void;
@@ -515,6 +601,7 @@ interface LoadDataRowProps {
     onCameraFarChange: (value: number) => void;
     // Test mode override
     testMode?: boolean;
+    showSelectZoomControls?: boolean;
     idPrefix: string;
 }
 

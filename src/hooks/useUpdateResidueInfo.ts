@@ -23,8 +23,8 @@ import { ResidueLabelInfo } from '../utils/residue';
  * @param molstar - Molstar viewer instance.
  * @param selectedChainId - Selected chain ID.
  * @param setResidueInfo - Setter for residue info state.
- * @param selectedResidueId - Currently selected residue ID (read-only, via ref).
- * @param setSelectedResidueId - Setter for selected residue ID.
+ * @param selectedResidueIds - Currently selected residue IDs (read-only, via ref).
+ * @param setSelectedResidueIds - Setter for selected residue IDs.
  * @param label - Optional label for logging/debugging.
  */
 export function useUpdateResidueInfo(
@@ -33,14 +33,14 @@ export function useUpdateResidueInfo(
   molstar: any,
   selectedChainId: string,
   setResidueInfo: React.Dispatch<React.SetStateAction<{ residueLabels: Map<string, ResidueLabelInfo>; residueToAtomIds: Record<string, string[]> }>>,
-  selectedResidueId: string,
-  setSelectedResidueId: React.Dispatch<React.SetStateAction<string>>,
+    selectedResidueIds: string[],
+    setSelectedResidueIds: (ids: string[]) => void,
   label?: string
 ) {
-  // Use a ref so we can read the latest selectedResidueId inside the effect
+  // Use a ref so we can read the latest selectedResidueIds inside the effect
   // without adding it to the dependency array (which would cause infinite loops).
-  const selectedResidueIdRef = useRef(selectedResidueId);
-  selectedResidueIdRef.current = selectedResidueId;
+  const selectedResidueIdsRef = useRef(selectedResidueIds);
+  selectedResidueIdsRef.current = selectedResidueIds;
 
   useEffect(() => {
     if (!viewerRef.current || !structureRef || !selectedChainId) return;
@@ -103,9 +103,18 @@ export function useUpdateResidueInfo(
       });
       // Reset selection when the current residue ID is not in the new chain.
       // Also auto-select the first residue when nothing is selected.
-      const currentId = selectedResidueIdRef.current;
-      if (residueLabels.size > 0 && (!currentId || !residueLabels.has(currentId))) {
-        setSelectedResidueId(Array.from(residueLabels.keys())[0] as string);
+      const currentIds = selectedResidueIdsRef.current;
+      const validIds = currentIds.filter(id => residueLabels.has(id));
+      if (validIds.length !== currentIds.length) {
+        if (validIds.length > 0) {
+          setSelectedResidueIds(validIds);
+        } else if (residueLabels.size > 0) {
+          setSelectedResidueIds([Array.from(residueLabels.keys())[0] as string]);
+        } else {
+          setSelectedResidueIds([]);
+        }
+      } else if (validIds.length === 0 && residueLabels.size > 0) {
+        setSelectedResidueIds([Array.from(residueLabels.keys())[0] as string]);
       }
       // Debug logging disabled to avoid console spam; uncomment if needed:
       // if (label) console.log(`[useUpdateResidueInfo][${label}] residueLabels:`, residueLabels);
@@ -113,7 +122,7 @@ export function useUpdateResidueInfo(
       // eslint-disable-next-line no-console
       console.warn(`[useUpdateResidueInfo][${label}] failed:`, err);
     }
-  // selectedResidueId intentionally omitted — accessed via ref to avoid loops
+  // selectedResidueIds intentionally omitted — accessed via ref to avoid loops
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewerRef, structureRef, molstar, selectedChainId, setResidueInfo, setSelectedResidueId, label]);
+  }, [viewerRef, structureRef, molstar, selectedChainId, setResidueInfo, setSelectedResidueIds, label]);
 }

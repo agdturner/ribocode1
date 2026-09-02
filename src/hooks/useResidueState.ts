@@ -20,14 +20,18 @@ export interface ResidueInfo {
 /**
  * Custom React hook for managing residue state.
  * @param initialSelected The initial selected residue ID, default is an empty string.
- * @returns An object containing residueInfo, setResidueInfo, selectedResidueId, and setSelectedResidueId.
+ * @returns Residue info plus multi-selection and convenience first-selected accessors.
  */
 export function useResidueState(initialSelected: string = '') {
   const [residueInfo, setResidueInfo] = useState<ResidueInfo>({ residueLabels: new Map(), residueToAtomIds: {} });
-  const [selectedResidueId, setSelectedResidueId] = useState<string>(initialSelected);
+  const [selectedResidueIds, setSelectedResidueIds] = useState<string[]>(initialSelected ? [initialSelected] : []);
+  const selectedResidueId = selectedResidueIds[0] ?? '';
+  const setSelectedResidueId = (id: string) => setSelectedResidueIds(id ? [id] : []);
   return {
     residueInfo,
     setResidueInfo,
+    selectedResidueIds,
+    setSelectedResidueIds,
     selectedResidueId,
     setSelectedResidueId,
   };

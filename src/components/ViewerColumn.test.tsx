@@ -30,8 +30,8 @@ const loadDataRowProps = {
     onSelectChainId: vi.fn(),
     chainSelectDisabled: false,
     residueInfo: { residueLabels: new Map(), residueToAtomIds: {} },
-    selectedResidueId: '',
-    onSelectResidueId: vi.fn(),
+    selectedResidueIds: [],
+    onSelectResidueIds: vi.fn(),
     residueSelectDisabled: false,
     onAddRepresentationClick: vi.fn(),
     addRepresentationDisabled: false,
@@ -175,6 +175,39 @@ describe('ViewerColumn', () => {
         expect(reClosedPanel).toBeNull();
     });
 
+    it('toggles Select and Zoom controls and chain finder visibility', () => {
+        const idPrefix = 'test-root';
+        const loadDataRowPropsWithChains = {
+            ...loadDataRowProps,
+            chainInfo: { chainLabels: new Map([['A', 'Chain A']]) },
+        };
+        render(
+            <ViewerColumn
+                viewerKey="A"
+                loadDataRowPropsAlignedTo={loadDataRowPropsWithChains}
+                loadDataRowPropsAligned={loadDataRowPropsWithChains}
+                moleculeUIAlignedToProps={moleculeUIAlignedToProps}
+                moleculeUIAlignedProps={moleculeUIAlignedProps}
+                realignedMoleculeListProps={realignedMoleculeListProps}
+                molstarContainerProps={molstarContainerProps}
+                idPrefix={idPrefix}
+            />
+        );
+
+        const toggleButton = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-select-zoom-controls-toggle-btn`);
+        expect(toggleButton).toBeInTheDocument();
+        expect(toggleButton).toHaveTextContent('Show Select and Zoom Controls');
+        expect(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-chain-table-container`)).toBeNull();
+
+        fireEvent.click(toggleButton as HTMLElement);
+        expect(toggleButton).toHaveTextContent('Hide Select and Zoom Controls');
+        expect(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-chain-table-container`)).toBeInTheDocument();
+
+        fireEvent.click(toggleButton as HTMLElement);
+        expect(toggleButton).toHaveTextContent('Show Select and Zoom Controls');
+        expect(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-chain-table-container`)).toBeNull();
+    });
+
     it('renders Mol* viewer above controls so both columns stay top-aligned', () => {
         const idPrefix = 'test-root';
         const loadDataRowPropsWithChains = {
@@ -196,22 +229,22 @@ describe('ViewerColumn', () => {
 
         const root = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A`);
         const molstarContainer = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-molstar-container`);
-        const chainFinder = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-chain-table-container`);
+        const selectZoomToggle = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-select-zoom-controls-toggle-btn`);
         const toggleButton = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-advanced-molstar-controls-toggle-btn`);
 
         expect(root).toBeInTheDocument();
         expect(molstarContainer).toBeInTheDocument();
-        expect(chainFinder).toBeInTheDocument();
+        expect(selectZoomToggle).toBeInTheDocument();
         expect(toggleButton).toBeInTheDocument();
 
         expect(root?.firstElementChild?.id).toBe(`${idPrefix}-${viewerColumnIdSuffix}-A-molstar-container`);
 
         const children = Array.from(root?.children ?? []);
-        const chainFinderIndex = children.findIndex((child) => child.id === `${idPrefix}-${viewerColumnIdSuffix}-A-chain-table-container`);
+        const selectZoomToggleIndex = children.findIndex((child) => child.id === `${idPrefix}-${viewerColumnIdSuffix}-A-select-zoom-controls-toggle-btn`);
         const toggleIndex = children.findIndex((child) => child.id === `${idPrefix}-${viewerColumnIdSuffix}-A-advanced-molstar-controls-toggle-btn`);
 
-        expect(chainFinderIndex).toBeGreaterThan(-1);
-        expect(toggleIndex).toBeGreaterThan(chainFinderIndex);
+        expect(selectZoomToggleIndex).toBeGreaterThan(-1);
+        expect(toggleIndex).toBeGreaterThan(selectZoomToggleIndex);
 
         fireEvent.click(toggleButton as HTMLElement);
         const advancedPanel = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-advanced-molstar-controls-panel`);
@@ -338,8 +371,8 @@ describe('ViewerColumn', () => {
             onChainZoom: vi.fn(),
             chainZoomDisabled: false,
             residueInfo: { residueLabels: new Map(), residueToAtomIds: {} },
-            selectedResidueId: '',
-            setSelectedResidueId: vi.fn(),
+            selectedResidueIds: [],
+            setSelectedResidueIds: vi.fn(),
             residueZoomLabel: '',
             onResidueZoom: vi.fn(),
             residueZoomDisabled: true,

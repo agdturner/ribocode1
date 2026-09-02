@@ -20,6 +20,51 @@ export interface ResidueLabelInfo {
     insCode: string; // insertion code, if any
 }
 
+const RNA_ONE_LETTER_CODES = new Set(['A', 'C', 'G', 'U', 'I', 'T', 'N']);
+const AMINO_ACID_THREE_LETTER_CODES = new Set([
+    'ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLN', 'GLU', 'GLY', 'HIS', 'ILE',
+    'LEU', 'LYS', 'MET', 'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL',
+    'SEC', 'PYL',
+]);
+
+const MODIFIED_NUCLEOTIDE_TO_BASE: Record<string, string> = {
+    ADE: 'A', CYT: 'C', GUA: 'G', URA: 'U', URI: 'U',
+    DA: 'A', DC: 'C', DG: 'G', DT: 'T', DU: 'U',
+    PSU: 'U', H2U: 'U', '5MU': 'U', OMG: 'G', M2G: 'G', M7G: 'G',
+    '1MA': 'A', M2A: 'A', '5MC': 'C', M5C: 'C', '2MG': 'G', YYG: 'G',
+};
+
+const NON_RESIDUE_TOKENS = new Set(['ATOM', 'HETATM', '.', '?']);
+
+function readColumnValue(column: any, index: number): string {
+    if (!column) return '';
+    if (typeof column.value === 'function') {
+        const v = column.value(index);
+        return v == null ? '' : String(v);
+    }
+    if (Array.isArray(column.value)) {
+        const v = column.value[index];
+        return v == null ? '' : String(v);
+    }
+    return '';
+}
+
+function normalizeResidueCode(rawCompId: string): string {
+    const code = String(rawCompId || '').trim().toUpperCase();
+    if (!code) return '?';
+    if (NON_RESIDUE_TOKENS.has(code)) return '';
+    if (RNA_ONE_LETTER_CODES.has(code)) return code;
+    if (MODIFIED_NUCLEOTIDE_TO_BASE[code]) return MODIFIED_NUCLEOTIDE_TO_BASE[code];
+    if (AMINO_ACID_THREE_LETTER_CODES.has(code)) return code;
+    if (code.length === 1) return code;
+    return code;
+}
+
+function formatResidueLabel(code: string, seqNum: string, insCode: string): string {
+    const base = `${seqNum} ${code}`.trim();
+    return insCode ? `${base} (${insCode})` : base;
+}
+
 /**
  * Get residue labels and mapping from residue IDs to atom IDs for a given chain in a molecule.
  * @param structure The structure object containing units and model hierarchy.
@@ -54,6 +99,7 @@ export function getResidueInfo(
     //console.log('[getResidueInfo] Using model:', model);
     const chains = model.atomicHierarchy.chains;
     const residues = model.atomicHierarchy.residues;
+    const atoms = model.atomicHierarchy.atoms;
     // Find chain index for the requested chainId
     let chainIdx: number | undefined = undefined;
     if (chains && chains.auth_asym_id && typeof chains.auth_asym_id.value === 'function') {
@@ -98,6 +144,8 @@ export function getResidueInfo(
             let auth_seq_id = '';
             let group_PDB = '';
             let insCode = '';
+            let atom_label_comp_id = '';
+            let atom_auth_comp_id = '';
             // Canonical (label) fields
             if (residues && residues.label_comp_id && typeof residues.label_comp_id.value === 'function') {
                 label_comp_id = residues.label_comp_id.value(resIdx) || '';
@@ -132,17 +180,27 @@ export function getResidueInfo(
             } else if (residues && residues.pdbx_PDB_ins_code && Array.isArray(residues.pdbx_PDB_ins_code.value)) {
                 insCode = residues.pdbx_PDB_ins_code.value[resIdx] || '';
             }
-            // Fallback logic for residue name (Mol* style): label_comp_id > auth_comp_id > group_PDB
-            let residueName = label_comp_id || auth_comp_id || group_PDB || '?';
+
+            // Atom-level fallback: residue table can be missing comp_id while atom table still has it.
+            atom_label_comp_id = readColumnValue(atoms?.label_comp_id, atomIdx) || readColumnValue(atoms?.label_comp_id, i);
+            atom_auth_comp_id = readColumnValue(atoms?.auth_comp_id, atomIdx) || readColumnValue(atoms?.auth_comp_id, i);
+
+            // Fallback logic for residue name (Mol* style): prefer residue/atom comp ids, never group_PDB token.
+            const rawResidueName =
+                label_comp_id ||
+                auth_comp_id ||
+                atom_label_comp_id ||
+                atom_auth_comp_id ||
+                group_PDB ||
+                '?';
+            const residueName = normalizeResidueCode(rawResidueName);
             let seqNum = label_seq_id || auth_seq_id || '';
-            let label = `${residueName} ${seqNum}`.trim();
-            if (insCode) {
-                label += ` (${insCode})`;
-            }
+            const displayCode = residueName || '?';
+            const label = formatResidueLabel(displayCode, seqNum, insCode);
             residueLabels.set(residueId, {
                 id: residueId,
                 name: label,
-                compId: residueName,
+                compId: displayCode,
                 seqNumber: Number(seqNum),
                 insCode: insCode
             });

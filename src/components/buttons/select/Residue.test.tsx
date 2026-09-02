@@ -26,12 +26,12 @@ describe('ResidueSelectButton', () => {
             <ResidueSelectButton
                 disabled={false}
                 residueLabels={residueLabels}
-                selectedResidueId={''}
+                selectedResidueIds={[]}
                 onSelect={() => {}}
                 id="test-residue-select"
             />
         );
-        expect(getByLabelText('Select Residue')).toBeInTheDocument();
+        expect(getByLabelText('Select Residues')).toBeInTheDocument();
         expect(getByText('GLY 10')).toBeInTheDocument();
         expect(getByText('ALA 20')).toBeInTheDocument();
         expect(getByText('SER 30')).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe('ResidueSelectButton', () => {
             <ResidueSelectButton
                 disabled={false}
                 residueLabels={residueLabels}
-                selectedResidueId={''}
+                selectedResidueIds={[]}
                 onSelect={() => {}}
                 label="Pick Residue"
                 id="custom-residue-select"
@@ -51,34 +51,38 @@ describe('ResidueSelectButton', () => {
         expect(getByLabelText('Pick Residue')).toBeInTheDocument();
     });
 
-    it('shows selected residue by ID (not by name string)', () => {
+    it('shows selected residues by ID (not by name string)', () => {
         const { getByLabelText } = render(
             <ResidueSelectButton
                 disabled={false}
                 residueLabels={residueLabels}
-                selectedResidueId={'20'}
+                selectedResidueIds={['20', '30']}
                 onSelect={() => {}}
                 id="select-residue-test"
             />
         );
-        // The <select> value is now the residue ID, not the display name
-        expect((getByLabelText('Select Residue') as HTMLSelectElement).value).toBe('20');
+        const select = getByLabelText('Select Residues') as HTMLSelectElement;
+        const selected = Array.from(select.selectedOptions).map(o => o.value);
+        expect(selected).toEqual(['20', '30']);
     });
 
-    it('calls onSelect with residueId when option is chosen', () => {
+    it('calls onSelect with residueIds when options are chosen', () => {
         const onSelect = vi.fn();
         const { getByLabelText } = render(
             <ResidueSelectButton
                 disabled={false}
                 residueLabels={residueLabels}
-                selectedResidueId={''}
+                selectedResidueIds={[]}
                 onSelect={onSelect}
                 id="test-residue-select-onselect"
             />
         );
-        // Fire change with the residue ID as value (options use IDs as values)
-        fireEvent.change(getByLabelText('Select Residue'), { target: { value: '30' } });
-        expect(onSelect).toHaveBeenCalledWith('30');
+        const select = getByLabelText('Select Residues') as HTMLSelectElement;
+        Array.from(select.options).forEach(option => {
+            option.selected = option.value === '20' || option.value === '30';
+        });
+        fireEvent.change(select);
+        expect(onSelect).toHaveBeenCalledWith(['20', '30']);
     });
 
     it('is disabled when disabled prop is true', () => {
@@ -86,12 +90,12 @@ describe('ResidueSelectButton', () => {
             <ResidueSelectButton
                 disabled={true}
                 residueLabels={residueLabels}
-                selectedResidueId={''}
+                selectedResidueIds={[]}
                 onSelect={() => {}}
                 id="test-residue-select-disabled"
             />
         );
-        expect(getByLabelText('Select Residue')).toBeDisabled();
+        expect(getByLabelText('Select Residues')).toBeDisabled();
     });
 
     it('renders options in ascending sequence-number order', () => {
@@ -105,12 +109,12 @@ describe('ResidueSelectButton', () => {
             <ResidueSelectButton
                 disabled={false}
                 residueLabels={unorderedLabels}
-                selectedResidueId={''}
+                selectedResidueIds={[]}
                 onSelect={() => {}}
                 id="residue-order-test"
             />
         );
-        const options = getAllByRole('option').filter(o => (o as HTMLOptionElement).value !== '');
+        const options = getAllByRole('option');
         expect(options.map(o => (o as HTMLOptionElement).value)).toEqual(['10', '20', '30']);
     });
 
@@ -124,12 +128,12 @@ describe('ResidueSelectButton', () => {
             <ResidueSelectButton
                 disabled={false}
                 residueLabels={labelsWithInsCode}
-                selectedResidueId={''}
+                selectedResidueIds={[]}
                 onSelect={() => {}}
                 id="residue-inscode-test"
             />
         );
-        const options = getAllByRole('option').filter(o => (o as HTMLOptionElement).value !== '');
+        const options = getAllByRole('option');
         expect(options.map(o => (o as HTMLOptionElement).value)).toEqual(['70', '70A', '70B']);
     });
 
@@ -138,12 +142,12 @@ describe('ResidueSelectButton', () => {
             <ResidueSelectButton
                 disabled={false}
                 residueLabels={residueLabels}
-                selectedResidueId={''}
+                selectedResidueIds={[]}
                 onSelect={() => {}}
                 id="my-residue-id"
             />
         );
-        expect((getByLabelText('Select Residue') as HTMLSelectElement).id).toBe('my-residue-id');
+        expect((getByLabelText('Select Residues') as HTMLSelectElement).id).toBe('my-residue-id');
     });
 });
 

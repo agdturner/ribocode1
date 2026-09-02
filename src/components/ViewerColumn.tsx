@@ -9,7 +9,7 @@
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import React from 'react';
-import LoadDataRow from './LoadMolecule';
+import LoadDataRow, { SelectZoomControls } from './LoadMolecule';
 import MoleculeUI from './Molecule';
 import RealignedMoleculeList from './RealignedMoleculeList';
 import MolstarContainer from './MolstarContainer';
@@ -55,8 +55,8 @@ export interface LoadDataRowPropsInput {
 	onChainZoom: () => void;
 	chainZoomDisabled: boolean;
 	residueInfo: any;
-	selectedResidueId: any;
-	setSelectedResidueId: (val: any) => void;
+	selectedResidueIds: string[];
+	setSelectedResidueIds: (val: string[]) => void;
 	residueZoomLabel: string;
 	onResidueZoom: () => void;
 	residueZoomDisabled: boolean;
@@ -120,8 +120,8 @@ export function getLoadDataRowProps({
 	onChainZoom,
 	chainZoomDisabled,
 	residueInfo,
-	selectedResidueId,
-	setSelectedResidueId,
+	selectedResidueIds,
+	setSelectedResidueIds,
 	residueZoomLabel,
 	onResidueZoom,
 	residueZoomDisabled,
@@ -245,8 +245,8 @@ export function getLoadDataRowProps({
 		chainZoomDisabled,
 		chainSelectDisabled: !isMoleculeAlignedToLoaded,
 		residueInfo,
-		selectedResidueId,
-		onSelectResidueId: setSelectedResidueId,
+		selectedResidueIds,
+		onSelectResidueIds: setSelectedResidueIds,
 		residueZoomLabel,
 		onResidueZoom,
 		residueZoomDisabled,
@@ -640,6 +640,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 }) => {
 	const viewerIdPrefix = idPrefix ? `${idPrefix}-${idSuffix}-${viewerKey}` : `${idSuffix}-${viewerKey}`;
 	const [showAdvancedMolstarControls, setShowAdvancedMolstarControls] = React.useState(false);
+	const [showSelectZoomControls, setShowSelectZoomControls] = React.useState(false);
 	const chainTableProps = viewerKey === 'A'
 		? {
 			chainLabels: loadDataRowPropsAlignedTo?.chainInfo?.chainLabels as Map<string, string>,
@@ -657,6 +658,9 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 			query: alignedChainFinderQuery,
 			onQueryChange: onAlignedChainFinderQueryChange,
 		};
+	const activeLoadProps = viewerKey === 'A' ? loadDataRowPropsAlignedTo : loadDataRowPropsAligned;
+	const activeSelectZoomIdPrefix = viewerKey === 'A' ? `${viewerIdPrefix}-alignedto` : `${viewerIdPrefix}-aligned`;
+
 	       return (
 		       <div className="Column" id={viewerIdPrefix}>
 		       <MolstarContainer
@@ -667,23 +671,62 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 		       />
 					   {/* Only render the correct loader in each column as per requirements */}
 					   {viewerKey === 'A' && (
-						   <LoadDataRow {...loadDataRowPropsAlignedTo} testMode={testMode} idPrefix={`${viewerIdPrefix}-alignedto`} />
+					   <LoadDataRow {...loadDataRowPropsAlignedTo} showSelectZoomControls={false} testMode={testMode} idPrefix={`${viewerIdPrefix}-alignedto`} />
 					   )}
 					   {viewerKey === 'B' && (
-						   <LoadDataRow {...loadDataRowPropsAligned} testMode={testMode} idPrefix={`${viewerIdPrefix}-aligned`} />
+					   <LoadDataRow {...loadDataRowPropsAligned} showSelectZoomControls={false} testMode={testMode} idPrefix={`${viewerIdPrefix}-aligned`} />
 					   )}
 			       <MoleculeUI key={moleculeUIAlignedToProps.key} {...(() => { const { key, ...rest } = moleculeUIAlignedToProps; return rest; })()} idPrefix={viewerIdPrefix} />
 			       <MoleculeUI key={moleculeUIAlignedProps.key} {...(() => { const { key, ...rest } = moleculeUIAlignedProps; return rest; })()} idPrefix={viewerIdPrefix} />
 			       <RealignedMoleculeList {...realignedMoleculeListProps} idPrefix={viewerIdPrefix} />
-			       <ChainSelectionTable
-				   chainLabels={chainTableProps.chainLabels || new Map<string, string>()}
-				   selectedChainId={chainTableProps.selectedChainId}
-				   onSelectChainId={chainTableProps.onSelectChainId || (() => {})}
-				   title={chainTableProps.title}
-				   query={chainTableProps.query}
-				   onQueryChange={chainTableProps.onQueryChange}
-				   idPrefix={viewerIdPrefix}
-			       />
+		       <button
+			   id={`${viewerIdPrefix}-select-zoom-controls-toggle-btn`}
+			   data-testid={`${viewerIdPrefix}-select-zoom-controls-toggle-btn`}
+			   className="molstar-file-btn molstar-advanced-controls-toggle"
+			   type="button"
+			   onClick={() => setShowSelectZoomControls((current) => !current)}
+		       >
+			   {showSelectZoomControls ? 'Hide Select and Zoom Controls' : 'Show Select and Zoom Controls'}
+		       </button>
+			       {showSelectZoomControls && (
+			   <>
+				   <div className="load-data-controls" id={`${activeSelectZoomIdPrefix}-select-zoom-controls`}>
+					   <SelectZoomControls
+						   subunitToChainIds={activeLoadProps.subunitToChainIds}
+						   selectedSubunit={activeLoadProps.selectedSubunit}
+						   onSelectSubunit={activeLoadProps.onSelectSubunit}
+						   subunitSelectDisabled={activeLoadProps.subunitSelectDisabled}
+						   subunitZoomLabel={activeLoadProps.subunitZoomLabel}
+						   onSubunitZoom={activeLoadProps.onSubunitZoom}
+						   subunitZoomDisabled={activeLoadProps.subunitZoomDisabled}
+						   chainInfo={activeLoadProps.chainInfo}
+						   selectedChainId={activeLoadProps.selectedChainId}
+						   onSelectChainId={activeLoadProps.onSelectChainId}
+						   chainSelectDisabled={activeLoadProps.chainSelectDisabled}
+						   chainZoomLabel={activeLoadProps.chainZoomLabel}
+						   onChainZoom={activeLoadProps.onChainZoom}
+						   chainZoomDisabled={activeLoadProps.chainZoomDisabled}
+						   residueInfo={activeLoadProps.residueInfo}
+						   selectedResidueIds={activeLoadProps.selectedResidueIds}
+						   onSelectResidueIds={activeLoadProps.onSelectResidueIds}
+						   residueSelectDisabled={activeLoadProps.residueSelectDisabled}
+						   residueZoomLabel={activeLoadProps.residueZoomLabel}
+						   onResidueZoom={activeLoadProps.onResidueZoom}
+						   residueZoomDisabled={activeLoadProps.residueZoomDisabled}
+						   idPrefix={activeSelectZoomIdPrefix}
+					   />
+				   </div>
+				   <ChainSelectionTable
+					   chainLabels={chainTableProps.chainLabels || new Map<string, string>()}
+					   selectedChainId={chainTableProps.selectedChainId}
+					   onSelectChainId={chainTableProps.onSelectChainId || (() => {})}
+					   title={chainTableProps.title}
+					   query={chainTableProps.query}
+					   onQueryChange={chainTableProps.onQueryChange}
+					   idPrefix={viewerIdPrefix}
+				   />
+			   </>
+			       )}
 			       <button
 				   id={`${viewerIdPrefix}-advanced-molstar-controls-toggle-btn`}
 				   data-testid={`${viewerIdPrefix}-advanced-molstar-controls-toggle-btn`}

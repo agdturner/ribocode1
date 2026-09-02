@@ -84,11 +84,110 @@ describe('getResidueInfo', () => {
         const labelInfo = result.residueLabels.get('10');
         expect(labelInfo).toEqual({
             id: '10',
-            name: 'GLY 10',
+            name: '10 GLY',
             compId: 'GLY',
             seqNumber: 10,
             insCode: ''
         });
         expect(result.residueToAtomIds['10']).toEqual(['5']);
+    });
+
+    it('formats RNA residues as one-letter code plus residue number', () => {
+        const structure = {
+            units: [
+                {
+                    kind: 0,
+                    model: {
+                        atomicHierarchy: {
+                            chains: {
+                                auth_asym_id: { value: (i: number) => ['R'][i] },
+                                _rowCount: 1
+                            },
+                            residues: {
+                                auth_seq_id: { value: (i: number) => [12][i] },
+                                label_comp_id: { value: (i: number) => ['A'][i] },
+                                label_seq_id: { value: (i: number) => [12][i] },
+                                auth_comp_id: { value: (i: number) => ['A'][i] },
+                                group_PDB: { value: (i: number) => ['A'][i] },
+                                pdbx_PDB_ins_code: { value: (i: number) => [''][i] }
+                            }
+                        }
+                    },
+                    chainIndex: { 9: 0 },
+                    residueIndex: { 9: 0 },
+                    elements: [9]
+                }
+            ]
+        };
+        const result = getResidueInfo(structure, 'R');
+        const labelInfo = result.residueLabels.get('12');
+        expect(labelInfo?.name).toBe('12 A');
+    });
+
+    it('maps canonical three-letter RNA residue names to one-letter labels', () => {
+        const structure = {
+            units: [
+                {
+                    kind: 0,
+                    model: {
+                        atomicHierarchy: {
+                            chains: {
+                                auth_asym_id: { value: (i: number) => ['R'][i] },
+                                _rowCount: 1
+                            },
+                            residues: {
+                                auth_seq_id: { value: (i: number) => [15][i] },
+                                label_comp_id: { value: (i: number) => ['ADE'][i] },
+                                label_seq_id: { value: (i: number) => [15][i] },
+                                auth_comp_id: { value: (i: number) => ['ADE'][i] },
+                                group_PDB: { value: (i: number) => ['ADE'][i] },
+                                pdbx_PDB_ins_code: { value: (i: number) => [''][i] }
+                            }
+                        }
+                    },
+                    chainIndex: { 11: 0 },
+                    residueIndex: { 11: 0 },
+                    elements: [11]
+                }
+            ]
+        };
+        const result = getResidueInfo(structure, 'R');
+        expect(result.residueLabels.get('15')?.name).toBe('15 A');
+    });
+
+    it('does not truncate ATOM token and falls back to atom-level comp_id', () => {
+        const structure = {
+            units: [
+                {
+                    kind: 0,
+                    model: {
+                        atomicHierarchy: {
+                            chains: {
+                                auth_asym_id: { value: (i: number) => ['A'][i] },
+                                _rowCount: 1
+                            },
+                            residues: {
+                                auth_seq_id: { value: (i: number) => [42][i] },
+                                label_comp_id: { value: (i: number) => [''][i] },
+                                label_seq_id: { value: (i: number) => [42][i] },
+                                auth_comp_id: { value: (i: number) => [''][i] },
+                                group_PDB: { value: (i: number) => ['ATOM'][i] },
+                                pdbx_PDB_ins_code: { value: (i: number) => [''][i] }
+                            },
+                            atoms: {
+                                label_comp_id: { value: (i: number) => ['GLY'][i] },
+                                auth_comp_id: { value: (i: number) => ['GLY'][i] }
+                            }
+                        }
+                    },
+                    chainIndex: { 3: 0 },
+                    residueIndex: { 3: 0 },
+                    elements: [3]
+                }
+            ]
+        };
+        const result = getResidueInfo(structure, 'A');
+        expect(result.residueLabels.get('42')?.name).toBe('42 GLY');
+        expect(result.residueLabels.get('42')?.compId).toBe('GLY');
     });
 });
