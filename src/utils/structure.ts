@@ -93,16 +93,83 @@ export function highlightLociOnChain(
         const loci = getChainLociFn(targetPlugin, targetStructureRef, targetChainId);
         if (!loci) return;
         const lociSelects = targetPlugin.managers.interactivity?.lociSelects;
+        if (lociSelects?.select) {
+            lociSelects.select({ loci }, false);
+            return;
+        }
         if (lociSelects?.selectOnly) {
             lociSelects.selectOnly({ loci }, false);
             return;
         }
-        targetPlugin.managers.interactivity?.lociHighlights?.highlightOnly?.({ loci }, false);
+        targetPlugin.managers.interactivity?.lociHighlights?.highlight?.({ loci }, false);
     };
 
     applyHighlight(plugin, structureRef, chainId);
     if (syncPlugin) {
         applyHighlight(syncPlugin, syncStructureRef ?? structureRef, syncChainId ?? chainId);
+    }
+}
+
+/**
+ * Remove persistent chain highlight from selection markers.
+ */
+export function unhighlightLociOnChain(
+    plugin: PluginUIContext,
+    structureRef: string,
+    chainId: string,
+    syncPlugin?: PluginUIContext,
+    getChainLociFn: (plugin: PluginUIContext, structureRef: string, chainId: string) => any = getChainLoci,
+    syncStructureRef?: string,
+    syncChainId?: string
+) {
+    const removeHighlight = (targetPlugin: PluginUIContext, targetStructureRef: string, targetChainId: string) => {
+        const loci = getChainLociFn(targetPlugin, targetStructureRef, targetChainId);
+        if (!loci) return;
+        const lociSelects = targetPlugin.managers.interactivity?.lociSelects;
+        if (lociSelects?.deselect) {
+            lociSelects.deselect({ loci }, false);
+            return;
+        }
+        if (lociSelects?.deselectAll) {
+            lociSelects.deselectAll();
+        }
+    };
+
+    removeHighlight(plugin, structureRef, chainId);
+    if (syncPlugin) {
+        removeHighlight(syncPlugin, syncStructureRef ?? structureRef, syncChainId ?? chainId);
+    }
+}
+
+/**
+ * Inspect a chain loci using Mol* structure focus manager.
+ * This drives focus/history/details behavior rather than a simple marker highlight.
+ */
+export function inspectLociOnChain(
+    plugin: PluginUIContext,
+    structureRef: string,
+    chainId: string,
+    syncPlugin?: PluginUIContext,
+    getChainLociFn: (plugin: PluginUIContext, structureRef: string, chainId: string) => any = getChainLoci,
+    syncStructureRef?: string,
+    syncChainId?: string
+) {
+    const applyFocus = (targetPlugin: PluginUIContext, targetStructureRef: string, targetChainId: string) => {
+        const loci = getChainLociFn(targetPlugin, targetStructureRef, targetChainId);
+        if (!loci) return;
+        const focusManager = targetPlugin.managers.structure?.focus;
+        if (focusManager?.setFromLoci) {
+            focusManager.setFromLoci(loci);
+            return;
+        }
+        if (focusManager?.set) {
+            focusManager.set({ loci, label: `chain:${targetChainId}` });
+        }
+    };
+
+    applyFocus(plugin, structureRef, chainId);
+    if (syncPlugin) {
+        applyFocus(syncPlugin, syncStructureRef ?? structureRef, syncChainId ?? chainId);
     }
 }
 
@@ -187,10 +254,81 @@ export function focusLociOnSubunit(
 }
 
 /**
- * Highlight/focus a subunit (set of chains) using Mol* structure focus channel,
- * independent of selection and highlight marker channels.
+ * Highlight a subunit (set of chains) using Mol* interactivity highlight markers.
+ * This is a simple visual emphasis mode without focus/details semantics.
  */
 export function highlightLociOnSubunit(
+    plugin: PluginUIContext,
+    structureRef: string,
+    chainIds: string[],
+    syncPlugin?: PluginUIContext,
+    syncStructureRef?: string,
+    syncChainIds?: string[]
+) {
+    const applyHighlight = (
+        targetPlugin: PluginUIContext,
+        targetStructureRef: string,
+        targetChainIds: string[]
+    ) => {
+        const loci = getSubunitLoci(targetPlugin, targetStructureRef, targetChainIds);
+        if (!loci) return;
+        const lociSelects = targetPlugin.managers.interactivity?.lociSelects;
+        if (lociSelects?.select) {
+            lociSelects.select({ loci }, false);
+            return;
+        }
+        if (lociSelects?.selectOnly) {
+            lociSelects.selectOnly({ loci }, false);
+            return;
+        }
+        targetPlugin.managers.interactivity?.lociHighlights?.highlight?.({ loci }, false);
+    };
+
+    applyHighlight(plugin, structureRef, chainIds);
+    if (syncPlugin) {
+        applyHighlight(syncPlugin, syncStructureRef ?? structureRef, syncChainIds ?? chainIds);
+    }
+}
+
+/**
+ * Remove persistent subunit highlight from selection markers.
+ */
+export function unhighlightLociOnSubunit(
+    plugin: PluginUIContext,
+    structureRef: string,
+    chainIds: string[],
+    syncPlugin?: PluginUIContext,
+    syncStructureRef?: string,
+    syncChainIds?: string[]
+) {
+    const removeHighlight = (
+        targetPlugin: PluginUIContext,
+        targetStructureRef: string,
+        targetChainIds: string[]
+    ) => {
+        const loci = getSubunitLoci(targetPlugin, targetStructureRef, targetChainIds);
+        if (!loci) return;
+        const lociSelects = targetPlugin.managers.interactivity?.lociSelects;
+        if (lociSelects?.deselect) {
+            lociSelects.deselect({ loci }, false);
+            return;
+        }
+        if (lociSelects?.deselectAll) {
+            lociSelects.deselectAll();
+        }
+    };
+
+    removeHighlight(plugin, structureRef, chainIds);
+    if (syncPlugin) {
+        removeHighlight(syncPlugin, syncStructureRef ?? structureRef, syncChainIds ?? chainIds);
+    }
+}
+
+/**
+ * Inspect a subunit (set of chains) using Mol* structure focus manager.
+ * This is the chemistry-details/focus behavior.
+ */
+export function inspectLociOnSubunit(
     plugin: PluginUIContext,
     structureRef: string,
     chainIds: string[],
@@ -350,18 +488,114 @@ export function highlightLociOnResidues(
     ) => {
         const loci = getResiduesLoci(targetPlugin, targetStructureRef, targetChainId, targetResidueIds, targetResidueInsCodes);
         if (!loci) return;
-        const lociHighlights = targetPlugin.managers.interactivity?.lociHighlights;
-        if (lociHighlights?.highlightOnly) {
-            lociHighlights.highlightOnly({ loci }, false);
+        const lociSelects = targetPlugin.managers.interactivity?.lociSelects;
+        if (lociSelects?.select) {
+            lociSelects.select({ loci }, false);
             return;
         }
-        // Fallback for environments where highlight manager is unavailable.
-        targetPlugin.managers.interactivity?.lociSelects?.selectOnly?.({ loci }, false);
+        if (lociSelects?.selectOnly) {
+            lociSelects.selectOnly({ loci }, false);
+            return;
+        }
+        targetPlugin.managers.interactivity?.lociHighlights?.highlight?.({ loci }, false);
     };
 
     applyHighlight(plugin, structureRef, chainId, residueIds, residueInsCodes);
     if (syncPlugin) {
         applyHighlight(
+            syncPlugin,
+            syncStructureRef ?? structureRef,
+            syncChainId ?? chainId,
+            syncResidueIds ?? residueIds,
+            syncResidueInsCodes ?? residueInsCodes
+        );
+    }
+}
+
+/**
+ * Remove persistent residue highlight from selection markers.
+ */
+export function unhighlightLociOnResidues(
+    plugin: PluginUIContext,
+    structureRef: string,
+    chainId: string,
+    residueIds: string[],
+    residueInsCodes?: Record<string, string | undefined>,
+    syncPlugin?: PluginUIContext,
+    syncStructureRef?: string,
+    syncChainId?: string,
+    syncResidueIds?: string[],
+    syncResidueInsCodes?: Record<string, string | undefined>
+) {
+    const removeHighlight = (
+        targetPlugin: PluginUIContext,
+        targetStructureRef: string,
+        targetChainId: string,
+        targetResidueIds: string[],
+        targetResidueInsCodes?: Record<string, string | undefined>
+    ) => {
+        const loci = getResiduesLoci(targetPlugin, targetStructureRef, targetChainId, targetResidueIds, targetResidueInsCodes);
+        if (!loci) return;
+        const lociSelects = targetPlugin.managers.interactivity?.lociSelects;
+        if (lociSelects?.deselect) {
+            lociSelects.deselect({ loci }, false);
+            return;
+        }
+        if (lociSelects?.deselectAll) {
+            lociSelects.deselectAll();
+        }
+    };
+
+    removeHighlight(plugin, structureRef, chainId, residueIds, residueInsCodes);
+    if (syncPlugin) {
+        removeHighlight(
+            syncPlugin,
+            syncStructureRef ?? structureRef,
+            syncChainId ?? chainId,
+            syncResidueIds ?? residueIds,
+            syncResidueInsCodes ?? residueInsCodes
+        );
+    }
+}
+
+/**
+ * Inspect one or many residues in a chain using Mol* structure focus manager.
+ * This drives focus/history/details behavior rather than marker-only highlight.
+ */
+export function inspectLociOnResidues(
+    plugin: PluginUIContext,
+    structureRef: string,
+    chainId: string,
+    residueIds: string[],
+    residueInsCodes?: Record<string, string | undefined>,
+    syncPlugin?: PluginUIContext,
+    syncStructureRef?: string,
+    syncChainId?: string,
+    syncResidueIds?: string[],
+    syncResidueInsCodes?: Record<string, string | undefined>
+) {
+    const applyFocus = (
+        targetPlugin: PluginUIContext,
+        targetStructureRef: string,
+        targetChainId: string,
+        targetResidueIds: string[],
+        targetResidueInsCodes?: Record<string, string | undefined>
+    ) => {
+        const loci = getResiduesLoci(targetPlugin, targetStructureRef, targetChainId, targetResidueIds, targetResidueInsCodes);
+        if (!loci) return;
+        const focusManager = targetPlugin.managers.structure?.focus;
+        if (focusManager?.setFromLoci) {
+            focusManager.setFromLoci(loci);
+            return;
+        }
+        if (focusManager?.set) {
+            focusManager.set({ loci, label: `residues:${targetChainId}:${targetResidueIds.join(',')}` });
+        }
+    };
+
+    applyFocus(plugin, structureRef, chainId, residueIds, residueInsCodes);
+    if (syncPlugin) {
+        applyFocus(
             syncPlugin,
             syncStructureRef ?? structureRef,
             syncChainId ?? chainId,

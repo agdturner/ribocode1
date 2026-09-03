@@ -9,8 +9,8 @@
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { vi } from 'vitest';
-import { makeFogSetters, makeClippingSetters, createZoomHandler, makeZoomHandler, createChainHighlightHandler, createChainHighlightToggleHandler, createResidueHighlightToggleHandler, createSubunitHighlightToggleHandler } from './viewerHelpers';
-import { focusLociOnChain, focusLociOnResidue, focusLociOnResidues, highlightLociOnChain, highlightLociOnResidues, highlightLociOnSubunit } from '../utils/structure';
+import { makeFogSetters, makeClippingSetters, createZoomHandler, makeZoomHandler, createChainHighlightHandler, createChainHighlightToggleHandler, createResidueHighlightToggleHandler, createSubunitHighlightToggleHandler, createChainInspectToggleHandler, createResidueInspectToggleHandler, createSubunitInspectToggleHandler } from './viewerHelpers';
+import { focusLociOnChain, focusLociOnResidue, focusLociOnResidues, highlightLociOnChain, highlightLociOnResidues, highlightLociOnSubunit, inspectLociOnChain, inspectLociOnResidues, inspectLociOnSubunit, unhighlightLociOnChain, unhighlightLociOnResidues, unhighlightLociOnSubunit } from '../utils/structure';
 
 vi.mock('../utils/structure', () => ({
   focusLociOnChain: vi.fn(),
@@ -20,6 +20,12 @@ vi.mock('../utils/structure', () => ({
   highlightLociOnChain: vi.fn(),
   highlightLociOnResidues: vi.fn(),
   highlightLociOnSubunit: vi.fn(),
+  inspectLociOnChain: vi.fn(),
+  inspectLociOnResidues: vi.fn(),
+  inspectLociOnSubunit: vi.fn(),
+  unhighlightLociOnChain: vi.fn(),
+  unhighlightLociOnResidues: vi.fn(),
+  unhighlightLociOnSubunit: vi.fn(),
 }));
 
 describe('viewerHelpers', () => {
@@ -303,8 +309,9 @@ describe('viewerHelpers', () => {
     expect(clearHighlightsA).not.toHaveBeenCalled();
   });
 
-  it('toggles highlight off when currently on and clears both viewers if synced', async () => {
+  it('toggles highlight off when currently on and removes chain highlight loci on both viewers if synced', async () => {
     vi.mocked(highlightLociOnChain).mockClear();
+    vi.mocked(unhighlightLociOnChain).mockClear();
     const deselectAllA = vi.fn();
     const clearHighlightsA = vi.fn();
     const deselectAllB = vi.fn();
@@ -336,9 +343,18 @@ describe('viewerHelpers', () => {
 
     await handler.handleButtonClick();
 
-    expect(deselectAllA).toHaveBeenCalled();
+    expect(unhighlightLociOnChain).toHaveBeenCalledWith(
+      pluginRef.current,
+      'struct-a',
+      'A',
+      syncPluginRef.current,
+      undefined,
+      'struct-b',
+      'B'
+    );
+    expect(deselectAllA).not.toHaveBeenCalled();
     expect(clearHighlightsA).not.toHaveBeenCalled();
-    expect(deselectAllB).toHaveBeenCalled();
+    expect(deselectAllB).not.toHaveBeenCalled();
     expect(clearHighlightsB).not.toHaveBeenCalled();
     expect(highlightLociOnChain).not.toHaveBeenCalled();
     expect(setIsHighlighted).toHaveBeenCalledWith(false);
@@ -383,6 +399,7 @@ describe('viewerHelpers', () => {
 
   it('toggles residue highlight off when currently on', async () => {
     vi.mocked(highlightLociOnResidues).mockClear();
+    vi.mocked(unhighlightLociOnResidues).mockClear();
     const deselectAll = vi.fn();
     const clearHighlights = vi.fn();
     const pluginRef = {
@@ -405,8 +422,20 @@ describe('viewerHelpers', () => {
 
     await handler.handleButtonClick();
 
+    expect(unhighlightLociOnResidues).toHaveBeenCalledWith(
+      pluginRef.current,
+      'struct-a',
+      'A',
+      ['10'],
+      { '10': '' },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
     expect(deselectAll).not.toHaveBeenCalled();
-    expect(clearHighlights).toHaveBeenCalled();
+    expect(clearHighlights).not.toHaveBeenCalled();
     expect(highlightLociOnResidues).not.toHaveBeenCalled();
     expect(setIsHighlighted).toHaveBeenCalledWith(false);
   });
@@ -445,8 +474,9 @@ describe('viewerHelpers', () => {
     expect(setIsHighlighted).toHaveBeenCalledWith(true);
   });
 
-  it('toggles subunit highlight off and clears only focus channel', async () => {
+  it('toggles subunit highlight off and removes subunit highlight loci only', async () => {
     vi.mocked(highlightLociOnSubunit).mockClear();
+    vi.mocked(unhighlightLociOnSubunit).mockClear();
     const deselectAll = vi.fn();
     const clearHighlights = vi.fn();
     const clearFocus = vi.fn();
@@ -471,10 +501,107 @@ describe('viewerHelpers', () => {
 
     await handler.handleButtonClick();
 
-    expect(clearFocus).toHaveBeenCalled();
+    expect(unhighlightLociOnSubunit).toHaveBeenCalledWith(
+      pluginRef.current,
+      'struct-a',
+      ['A'],
+      undefined,
+      undefined,
+      undefined
+    );
+    expect(clearFocus).not.toHaveBeenCalled();
     expect(deselectAll).not.toHaveBeenCalled();
     expect(clearHighlights).not.toHaveBeenCalled();
     expect(highlightLociOnSubunit).not.toHaveBeenCalled();
     expect(setIsHighlighted).toHaveBeenCalledWith(false);
+  });
+
+  it('toggles chain inspect on and uses focus manager path', async () => {
+    vi.mocked(inspectLociOnChain).mockClear();
+    const pluginRef = { current: { id: 'plugin-a', managers: { structure: { focus: { clear: vi.fn() } } } } };
+    const setIsInspecting = vi.fn();
+    const handler = createChainInspectToggleHandler(
+      pluginRef as any,
+      'struct-a',
+      'A',
+      false,
+      setIsInspecting,
+      false
+    );
+
+    await handler.handleButtonClick();
+
+    expect(inspectLociOnChain).toHaveBeenCalledWith(
+      pluginRef.current,
+      'struct-a',
+      'A',
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
+    expect(setIsInspecting).toHaveBeenCalledWith(true);
+  });
+
+  it('toggles residue inspect off and clears focus channel', async () => {
+    vi.mocked(inspectLociOnResidues).mockClear();
+    const clearFocus = vi.fn();
+    const pluginRef = {
+      current: {
+        id: 'plugin-a',
+        managers: {
+          interactivity: { lociHighlights: { clearHighlights: vi.fn() } },
+          structure: { focus: { clear: clearFocus } }
+        },
+      },
+    };
+    const setIsInspecting = vi.fn();
+    const handler = createResidueInspectToggleHandler(
+      pluginRef as any,
+      'struct-a',
+      'A',
+      ['10'],
+      { '10': '' },
+      true,
+      setIsInspecting,
+      false
+    );
+
+    await handler.handleButtonClick();
+
+    expect(clearFocus).toHaveBeenCalled();
+    expect(inspectLociOnResidues).not.toHaveBeenCalled();
+    expect(setIsInspecting).toHaveBeenCalledWith(false);
+  });
+
+  it('toggles subunit inspect on and uses focus manager path', async () => {
+    vi.mocked(inspectLociOnSubunit).mockClear();
+    const pluginRef = {
+      current: {
+        id: 'plugin-a',
+        managers: { structure: { focus: { clear: vi.fn() } } },
+      },
+    };
+    const setIsInspecting = vi.fn();
+    const handler = createSubunitInspectToggleHandler(
+      pluginRef as any,
+      'struct-a',
+      ['A', 'B'],
+      false,
+      setIsInspecting,
+      false
+    );
+
+    await handler.handleButtonClick();
+
+    expect(inspectLociOnSubunit).toHaveBeenCalledWith(
+      pluginRef.current,
+      'struct-a',
+      ['A', 'B'],
+      undefined,
+      undefined,
+      undefined
+    );
+    expect(setIsInspecting).toHaveBeenCalledWith(true);
   });
 });

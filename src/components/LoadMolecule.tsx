@@ -92,6 +92,9 @@ interface LoadDataRowProps {
     onSubunitHighlight: () => void;
     subunitHighlightOn?: boolean;
     subunitHighlightDisabled: boolean;
+    onSubunitInspect: () => void;
+    subunitInspectOn?: boolean;
+    subunitInspectDisabled: boolean;
     onSubunitZoom: () => void;
     subunitZoomDisabled: boolean;
     // Chain
@@ -103,6 +106,9 @@ interface LoadDataRowProps {
     onChainHighlight: () => void;
     chainHighlightOn?: boolean;
     chainHighlightDisabled: boolean;
+    onChainInspect: () => void;
+    chainInspectOn?: boolean;
+    chainInspectDisabled: boolean;
     onChainZoom: () => void;
     chainZoomDisabled: boolean;
     // Residue
@@ -117,6 +123,9 @@ interface LoadDataRowProps {
     onResidueHighlight: () => void;
     residueHighlightOn?: boolean;
     residueHighlightDisabled: boolean;
+    onResidueInspect: () => void;
+    residueInspectOn?: boolean;
+    residueInspectDisabled: boolean;
     onResidueZoom: () => void;
     residueZoomDisabled: boolean;
     zoomExtraRadius?: number;
@@ -154,6 +163,9 @@ interface LoadDataRowProps {
         onSubunitHighlight: () => void;
         subunitHighlightOn?: boolean;
         subunitHighlightDisabled: boolean;
+        onSubunitInspect: () => void;
+        subunitInspectOn?: boolean;
+        subunitInspectDisabled: boolean;
         onSubunitZoom: () => void;
         subunitZoomDisabled: boolean;
         chainInfo: { chainLabels: Map<string, string>; };
@@ -164,6 +176,9 @@ interface LoadDataRowProps {
         onChainHighlight: () => void;
         chainHighlightOn?: boolean;
         chainHighlightDisabled: boolean;
+        onChainInspect: () => void;
+        chainInspectOn?: boolean;
+        chainInspectDisabled: boolean;
         onChainZoom: () => void;
         chainZoomDisabled: boolean;
         residueInfo: {
@@ -177,6 +192,9 @@ interface LoadDataRowProps {
         onResidueHighlight: () => void;
         residueHighlightOn?: boolean;
         residueHighlightDisabled: boolean;
+        onResidueInspect: () => void;
+        residueInspectOn?: boolean;
+        residueInspectDisabled: boolean;
         onResidueZoom: () => void;
         residueZoomDisabled: boolean;
         zoomExtraRadius?: number;
@@ -195,6 +213,9 @@ interface LoadDataRowProps {
         onSubunitHighlight,
         subunitHighlightOn = false,
         subunitHighlightDisabled,
+        onSubunitInspect,
+        subunitInspectOn = false,
+        subunitInspectDisabled,
         onSubunitZoom,
         subunitZoomDisabled,
         chainInfo,
@@ -205,6 +226,9 @@ interface LoadDataRowProps {
         onChainHighlight,
         chainHighlightOn = false,
         chainHighlightDisabled,
+        onChainInspect,
+        chainInspectOn = false,
+        chainInspectDisabled,
         onChainZoom,
         chainZoomDisabled,
         residueInfo,
@@ -215,6 +239,9 @@ interface LoadDataRowProps {
         onResidueHighlight,
         residueHighlightOn = false,
         residueHighlightDisabled,
+        onResidueInspect,
+        residueInspectOn = false,
+        residueInspectDisabled,
         onResidueZoom,
         residueZoomDisabled,
         zoomExtraRadius = 0,
@@ -264,7 +291,18 @@ interface LoadDataRowProps {
                     className="msp-btn msp-form-control"
                     id={`${idPrefix}-highlight-subunit-btn`}
                 >
-                    Highlight Subunit: {subunitHighlightOn ? 'On' : 'Off'}
+                    Highlight Subunit (Basic): {subunitHighlightOn ? 'On' : 'Off'}
+                </button>
+            </div>
+            <div className="load-data-control-row">
+                <button
+                    onClick={onSubunitInspect}
+                    disabled={subunitInspectDisabled}
+                    aria-pressed={subunitInspectOn}
+                    className="msp-btn msp-form-control"
+                    id={`${idPrefix}-inspect-subunit-btn`}
+                >
+                    Inspect Subunit: {subunitInspectOn ? 'On' : 'Off'}
                 </button>
             </div>
             <div className="load-data-control-row">
@@ -299,6 +337,17 @@ interface LoadDataRowProps {
             </div>
             <div className="load-data-control-row">
                 <button
+                    onClick={onChainInspect}
+                    disabled={chainInspectDisabled}
+                    aria-pressed={chainInspectOn}
+                    className="msp-btn msp-form-control"
+                    id={`${idPrefix}-inspect-chain-btn`}
+                >
+                    Inspect Chain: {chainInspectOn ? 'On' : 'Off'}
+                </button>
+            </div>
+            <div className="load-data-control-row">
+                <button
                     onClick={onChainZoom}
                     disabled={chainZoomDisabled}
                     className="msp-btn msp-form-control"
@@ -325,6 +374,17 @@ interface LoadDataRowProps {
                     id={`${idPrefix}-highlight-residue-btn`}
                 >
                     Highlight Residues: {residueHighlightOn ? 'On' : 'Off'}
+                </button>
+            </div>
+            <div className="load-data-control-row">
+                <button
+                    onClick={onResidueInspect}
+                    disabled={residueInspectDisabled}
+                    aria-pressed={residueInspectOn}
+                    className="msp-btn msp-form-control"
+                    id={`${idPrefix}-inspect-residue-btn`}
+                >
+                    Inspect Residues: {residueInspectOn ? 'On' : 'Off'}
                 </button>
             </div>
             <div className="load-data-control-row">
@@ -417,6 +477,9 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     onSubunitHighlight,
     subunitHighlightOn = false,
     subunitHighlightDisabled,
+    onSubunitInspect,
+    subunitInspectOn = false,
+    subunitInspectDisabled,
     onSubunitZoom,
     subunitZoomDisabled,
     chainInfo,
@@ -427,6 +490,9 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     onChainHighlight,
     chainHighlightOn = false,
     chainHighlightDisabled,
+    onChainInspect,
+    chainInspectOn = false,
+    chainInspectDisabled,
     onChainZoom,
     chainZoomDisabled,
     residueInfo,
@@ -437,6 +503,9 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     onResidueHighlight,
     residueHighlightOn = false,
     residueHighlightDisabled,
+    onResidueInspect,
+    residueInspectOn = false,
+    residueInspectDisabled,
     onResidueZoom,
     residueZoomDisabled,
     zoomExtraRadius = 0,
@@ -563,6 +632,9 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                         onSubunitHighlight={onSubunitHighlight}
                         subunitHighlightOn={subunitHighlightOn}
                         subunitHighlightDisabled={subunitHighlightDisabled}
+                        onSubunitInspect={onSubunitInspect}
+                        subunitInspectOn={subunitInspectOn}
+                        subunitInspectDisabled={subunitInspectDisabled}
                         onSubunitZoom={onSubunitZoom}
                         subunitZoomDisabled={subunitZoomDisabled}
                         chainInfo={chainInfo}
@@ -573,6 +645,9 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                         onChainHighlight={onChainHighlight}
                         chainHighlightOn={chainHighlightOn}
                         chainHighlightDisabled={chainHighlightDisabled}
+                        onChainInspect={onChainInspect}
+                        chainInspectOn={chainInspectOn}
+                        chainInspectDisabled={chainInspectDisabled}
                         onChainZoom={onChainZoom}
                         chainZoomDisabled={chainZoomDisabled}
                         residueInfo={residueInfo}
@@ -583,6 +658,9 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                         onResidueHighlight={onResidueHighlight}
                         residueHighlightOn={residueHighlightOn}
                         residueHighlightDisabled={residueHighlightDisabled}
+                        onResidueInspect={onResidueInspect}
+                        residueInspectOn={residueInspectOn}
+                        residueInspectDisabled={residueInspectDisabled}
                         onResidueZoom={onResidueZoom}
                         residueZoomDisabled={residueZoomDisabled}
                         zoomExtraRadius={zoomExtraRadius}
@@ -685,6 +763,9 @@ interface LoadDataRowProps {
     onSubunitHighlight: () => void;
     subunitHighlightOn?: boolean;
     subunitHighlightDisabled: boolean;
+    onSubunitInspect: () => void;
+    subunitInspectOn?: boolean;
+    subunitInspectDisabled: boolean;
     onSubunitZoom: () => void;
     subunitZoomDisabled: boolean;
     // Chain
@@ -694,7 +775,11 @@ interface LoadDataRowProps {
     chainSelectDisabled: boolean;
     chainZoomLabel: string;
     onChainHighlight: () => void;
+    chainHighlightOn?: boolean;
     chainHighlightDisabled: boolean;
+    onChainInspect: () => void;
+    chainInspectOn?: boolean;
+    chainInspectDisabled: boolean;
     onChainZoom: () => void;
     chainZoomDisabled: boolean;
     // Residue
@@ -709,6 +794,9 @@ interface LoadDataRowProps {
     onResidueHighlight: () => void;
     residueHighlightOn?: boolean;
     residueHighlightDisabled: boolean;
+    onResidueInspect: () => void;
+    residueInspectOn?: boolean;
+    residueInspectDisabled: boolean;
     onResidueZoom: () => void;
     residueZoomDisabled: boolean;
     // Optional representation type selector

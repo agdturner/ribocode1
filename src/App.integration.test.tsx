@@ -49,6 +49,19 @@ vi.mock('./utils/structure', () => ({
     const byRef = (globalThis as any).__mockStructureRepsByRef || {};
     return byRef[structureRef] || [];
   }),
+  focusLociOnChain: vi.fn(),
+  focusLociOnResidue: vi.fn(),
+  focusLociOnResidues: vi.fn(),
+  focusLociOnSubunit: vi.fn(),
+  highlightLociOnChain: vi.fn(),
+  highlightLociOnResidues: vi.fn(),
+  highlightLociOnSubunit: vi.fn(),
+  unhighlightLociOnChain: vi.fn(),
+  unhighlightLociOnResidues: vi.fn(),
+  unhighlightLociOnSubunit: vi.fn(),
+  inspectLociOnChain: vi.fn(),
+  inspectLociOnResidues: vi.fn(),
+  inspectLociOnSubunit: vi.fn(),
 }));
 
 vi.mock('./utils/data', () => ({
@@ -155,7 +168,7 @@ vi.mock('./hooks/useUpdateChainInfo', () => ({
   useUpdateChainInfo: vi.fn((pluginRef: any, structureRef: string | null, _molstar: any, setChainInfo: any, setSubunitToChainIds: any) => {
     const { useEffect } = require('react');
     useEffect(() => {
-      if (!pluginRef?.current || !structureRef) return;
+      if (!pluginRef?.current) return;
       setChainInfo({ chainLabels: new Map([['A', 'Chain A'], ['B', 'Chain B']]) });
       setSubunitToChainIds(new Map([
         ['All', new Set(['A', 'B'])],
@@ -164,6 +177,22 @@ vi.mock('./hooks/useUpdateChainInfo', () => ({
         ['Other', new Set()],
       ]));
     }, [pluginRef?.current, structureRef]);
+  }),
+}));
+
+vi.mock('./hooks/useUpdateResidueInfo', () => ({
+  useUpdateResidueInfo: vi.fn((pluginRef: any, structureRef: string | null, _molstar: any, selectedChainId: string, setResidueInfo: any) => {
+    const { useEffect } = require('react');
+    useEffect(() => {
+      if (!pluginRef?.current || !selectedChainId) return;
+      setResidueInfo({
+        residueLabels: new Map([
+          ['10', { id: '10', name: 'GLY 10', compId: 'GLY', seqNumber: 10, insCode: '' }],
+          ['20', { id: '20', name: 'ALA 20', compId: 'ALA', seqNumber: 20, insCode: '' }],
+        ]),
+        residueToAtomIds: { '10': ['1'], '20': ['2'] },
+      });
+    }, [pluginRef?.current, structureRef, selectedChainId]);
   }),
 }));
 

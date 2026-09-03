@@ -48,6 +48,9 @@ export interface LoadDataRowPropsInput {
 	onSubunitHighlight: () => void;
 	subunitHighlightOn?: boolean;
 	subunitHighlightDisabled: boolean;
+	onSubunitInspect: () => void;
+	subunitInspectOn?: boolean;
+	subunitInspectDisabled: boolean;
 	onSubunitZoom: () => void;
 	subunitZoomDisabled: boolean;
 	subunitToChainIds: any;
@@ -58,6 +61,9 @@ export interface LoadDataRowPropsInput {
 	onChainHighlight: () => void;
 	chainHighlightOn?: boolean;
 	chainHighlightDisabled: boolean;
+	onChainInspect: () => void;
+	chainInspectOn?: boolean;
+	chainInspectDisabled: boolean;
 	onChainZoom: () => void;
 	chainZoomDisabled: boolean;
 	residueInfo: any;
@@ -67,6 +73,9 @@ export interface LoadDataRowPropsInput {
 	onResidueHighlight: () => void;
 	residueHighlightOn?: boolean;
 	residueHighlightDisabled: boolean;
+	onResidueInspect: () => void;
+	residueInspectOn?: boolean;
+	residueInspectDisabled: boolean;
 	onResidueZoom: () => void;
 	residueZoomDisabled: boolean;
 	zoomExtraRadius: number;
@@ -127,6 +136,9 @@ export function getLoadDataRowProps({
 	onSubunitHighlight,
 	subunitHighlightOn,
 	subunitHighlightDisabled,
+	onSubunitInspect,
+	subunitInspectOn,
+	subunitInspectDisabled,
 	onSubunitZoom,
 	subunitZoomDisabled,
 	subunitToChainIds,
@@ -137,6 +149,9 @@ export function getLoadDataRowProps({
 	onChainHighlight,
 	chainHighlightOn,
 	chainHighlightDisabled,
+	onChainInspect,
+	chainInspectOn,
+	chainInspectDisabled,
 	onChainZoom,
 	chainZoomDisabled,
 	residueInfo,
@@ -146,6 +161,9 @@ export function getLoadDataRowProps({
 	onResidueHighlight,
 	residueHighlightOn,
 	residueHighlightDisabled,
+	onResidueInspect,
+	residueInspectOn,
+	residueInspectDisabled,
 	onResidueZoom,
 	residueZoomDisabled,
 	zoomExtraRadius,
@@ -265,6 +283,9 @@ export function getLoadDataRowProps({
 		onSubunitHighlight,
 		subunitHighlightOn,
 		subunitHighlightDisabled,
+		onSubunitInspect,
+		subunitInspectOn,
+		subunitInspectDisabled,
 		onSubunitZoom,
 		subunitZoomDisabled,
 		subunitSelectDisabled: !isMoleculeAlignedToLoaded,
@@ -275,6 +296,9 @@ export function getLoadDataRowProps({
 		onChainHighlight,
 		chainHighlightOn,
 		chainHighlightDisabled,
+		onChainInspect,
+		chainInspectOn,
+		chainInspectDisabled,
 		onChainZoom,
 		chainZoomDisabled,
 		chainSelectDisabled: !isMoleculeAlignedToLoaded,
@@ -285,6 +309,9 @@ export function getLoadDataRowProps({
 		onResidueHighlight,
 		residueHighlightOn,
 		residueHighlightDisabled,
+		onResidueInspect,
+		residueInspectOn,
+		residueInspectDisabled,
 		onResidueZoom,
 		residueZoomDisabled,
 		zoomExtraRadius,
@@ -809,6 +836,9 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   onSubunitHighlight={activeLoadProps.onSubunitHighlight}
 						   subunitHighlightOn={activeLoadProps.subunitHighlightOn}
 						   subunitHighlightDisabled={activeLoadProps.subunitHighlightDisabled}
+						   onSubunitInspect={activeLoadProps.onSubunitInspect}
+						   subunitInspectOn={activeLoadProps.subunitInspectOn}
+						   subunitInspectDisabled={activeLoadProps.subunitInspectDisabled}
 						   onSubunitZoom={activeLoadProps.onSubunitZoom}
 						   subunitZoomDisabled={activeLoadProps.subunitZoomDisabled}
 						   chainInfo={activeLoadProps.chainInfo}
@@ -819,6 +849,9 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   onChainHighlight={activeLoadProps.onChainHighlight}
 						   chainHighlightOn={activeLoadProps.chainHighlightOn}
 						   chainHighlightDisabled={activeLoadProps.chainHighlightDisabled}
+						   onChainInspect={activeLoadProps.onChainInspect}
+						   chainInspectOn={activeLoadProps.chainInspectOn}
+						   chainInspectDisabled={activeLoadProps.chainInspectDisabled}
 						   onChainZoom={activeLoadProps.onChainZoom}
 						   chainZoomDisabled={activeLoadProps.chainZoomDisabled}
 						   residueInfo={activeLoadProps.residueInfo}
@@ -829,6 +862,9 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   onResidueHighlight={activeLoadProps.onResidueHighlight}
 						   residueHighlightOn={activeLoadProps.residueHighlightOn}
 						   residueHighlightDisabled={activeLoadProps.residueHighlightDisabled}
+						   onResidueInspect={activeLoadProps.onResidueInspect}
+						   residueInspectOn={activeLoadProps.residueInspectOn}
+						   residueInspectDisabled={activeLoadProps.residueInspectDisabled}
 						   onResidueZoom={activeLoadProps.onResidueZoom}
 						   residueZoomDisabled={activeLoadProps.residueZoomDisabled}
 						   zoomExtraRadius={activeLoadProps.zoomExtraRadius}

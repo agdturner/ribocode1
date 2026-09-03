@@ -10,7 +10,7 @@
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { vi } from 'vitest';
-import { fireEvent, render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import ViewerColumn, { getMoleculeUIAlignedProps, idSuffix as viewerColumnIdSuffix } from './ViewerColumn';
 import { idSuffix as moleculeIdSuffix } from './Molecule';
 import { getLoadDataRowProps } from './ViewerColumn';
@@ -28,12 +28,19 @@ const loadDataRowProps = {
     onSubunitHighlight: vi.fn(),
     subunitHighlightOn: false,
     subunitHighlightDisabled: false,
+    onSubunitInspect: vi.fn(),
+    subunitInspectOn: false,
+    subunitInspectDisabled: false,
     chainInfo: { chainLabels: new Map() },
     selectedChainId: '',
     onSelectChainId: vi.fn(),
     chainSelectDisabled: false,
     onChainHighlight: vi.fn(),
+    chainHighlightOn: false,
     chainHighlightDisabled: true,
+    onChainInspect: vi.fn(),
+    chainInspectOn: false,
+    chainInspectDisabled: true,
     residueInfo: { residueLabels: new Map(), residueToAtomIds: {} },
     selectedResidueIds: [],
     onSelectResidueIds: vi.fn(),
@@ -41,6 +48,9 @@ const loadDataRowProps = {
     onResidueHighlight: vi.fn(),
     residueHighlightOn: false,
     residueHighlightDisabled: true,
+    onResidueInspect: vi.fn(),
+    residueInspectOn: false,
+    residueInspectDisabled: true,
     onAddRepresentationClick: vi.fn(),
     addRepresentationDisabled: false,
     fogEnabled: false,
@@ -214,6 +224,49 @@ describe('ViewerColumn', () => {
         fireEvent.click(toggleButton as HTMLElement);
         expect(toggleButton).toHaveTextContent('Show Select and Zoom Controls');
         expect(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-chain-table-container`)).toBeNull();
+    });
+
+    it('forwards inspect handlers to SelectZoomControls in active panel', () => {
+        const idPrefix = 'test-root';
+        const onSubunitInspect = vi.fn();
+        const onChainInspect = vi.fn();
+        const onResidueInspect = vi.fn();
+        const loadDataRowPropsWithInspect = {
+            ...loadDataRowProps,
+            chainInfo: { chainLabels: new Map([['A', 'Chain A']]) },
+            selectedChainId: 'A',
+            selectedResidueIds: ['1'],
+            residueInfo: { residueLabels: new Map([['1', { id: '1', name: 'Residue 1', compId: 'ALA', seqNumber: 1, insCode: '' }]]), residueToAtomIds: { '1': ['a1'] } },
+            onSubunitInspect,
+            onChainInspect,
+            onResidueInspect,
+            subunitInspectDisabled: false,
+            chainInspectDisabled: false,
+            residueInspectDisabled: false,
+        };
+
+        render(
+            <ViewerColumn
+                viewerKey="A"
+                loadDataRowPropsAlignedTo={loadDataRowPropsWithInspect}
+                loadDataRowPropsAligned={loadDataRowPropsWithInspect}
+                moleculeUIAlignedToProps={moleculeUIAlignedToProps}
+                moleculeUIAlignedProps={moleculeUIAlignedProps}
+                realignedMoleculeListProps={realignedMoleculeListProps}
+                molstarContainerProps={molstarContainerProps}
+                idPrefix={idPrefix}
+            />
+        );
+
+        fireEvent.click(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-select-zoom-controls-toggle-btn`) as HTMLElement);
+
+        fireEvent.click(screen.getByText('Inspect Subunit: Off'));
+        fireEvent.click(screen.getByText('Inspect Chain: Off'));
+        fireEvent.click(screen.getByText('Inspect Residues: Off'));
+
+        expect(onSubunitInspect).toHaveBeenCalled();
+        expect(onChainInspect).toHaveBeenCalled();
+        expect(onResidueInspect).toHaveBeenCalled();
     });
 
     it('renders Mol* viewer above controls so both columns stay top-aligned', () => {
@@ -437,6 +490,9 @@ describe('ViewerColumn', () => {
             onSubunitHighlight: vi.fn(),
             subunitHighlightOn: false,
             subunitHighlightDisabled: false,
+            onSubunitInspect: vi.fn(),
+            subunitInspectOn: false,
+            subunitInspectDisabled: false,
             onSubunitZoom: vi.fn(),
             subunitZoomDisabled: false,
             subunitToChainIds: new Map(),
@@ -445,7 +501,11 @@ describe('ViewerColumn', () => {
             setSelectedChainId: vi.fn(),
             chainZoomLabel: 'Chain A',
             onChainHighlight: vi.fn(),
+            chainHighlightOn: false,
             chainHighlightDisabled: false,
+            onChainInspect: vi.fn(),
+            chainInspectOn: false,
+            chainInspectDisabled: false,
             onChainZoom: vi.fn(),
             chainZoomDisabled: false,
             residueInfo: { residueLabels: new Map(), residueToAtomIds: {} },
@@ -455,6 +515,9 @@ describe('ViewerColumn', () => {
             onResidueHighlight: vi.fn(),
             residueHighlightOn: false,
             residueHighlightDisabled: true,
+            onResidueInspect: vi.fn(),
+            residueInspectOn: false,
+            residueInspectDisabled: true,
             onResidueZoom: vi.fn(),
             residueZoomDisabled: true,
             fog: { enabled: false, near: 0, far: 100 },
@@ -537,6 +600,9 @@ describe('ViewerColumn', () => {
             onSubunitHighlight: vi.fn(),
             subunitHighlightOn: false,
             subunitHighlightDisabled: false,
+            onSubunitInspect: vi.fn(),
+            subunitInspectOn: false,
+            subunitInspectDisabled: false,
             onSubunitZoom: vi.fn(),
             subunitZoomDisabled: false,
             subunitToChainIds: new Map(),
@@ -545,7 +611,11 @@ describe('ViewerColumn', () => {
             setSelectedChainId: vi.fn(),
             chainZoomLabel: 'Chain A',
             onChainHighlight: vi.fn(),
+            chainHighlightOn: false,
             chainHighlightDisabled: false,
+            onChainInspect: vi.fn(),
+            chainInspectOn: false,
+            chainInspectDisabled: false,
             onChainZoom: vi.fn(),
             chainZoomDisabled: false,
             residueInfo: { residueLabels: new Map(), residueToAtomIds: {} },
@@ -555,6 +625,9 @@ describe('ViewerColumn', () => {
             onResidueHighlight: vi.fn(),
             residueHighlightOn: false,
             residueHighlightDisabled: true,
+            onResidueInspect: vi.fn(),
+            residueInspectOn: false,
+            residueInspectDisabled: true,
             onResidueZoom: vi.fn(),
             residueZoomDisabled: true,
             fog: { enabled: false, near: 0, far: 100 },

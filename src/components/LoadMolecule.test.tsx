@@ -42,6 +42,9 @@ describe('LoadDataRow', () => {
         onSubunitHighlight: vi.fn(),
         subunitHighlightOn: false,
         subunitHighlightDisabled: false,
+        onSubunitInspect: vi.fn(),
+        subunitInspectOn: false,
+        subunitInspectDisabled: false,
         onSubunitZoom: vi.fn(),
         subunitZoomDisabled: false,
         chainInfo: { chainLabels: new Map([['A', 'Chain A'], ['B', 'Chain B']]) },
@@ -52,6 +55,9 @@ describe('LoadDataRow', () => {
         onChainHighlight: vi.fn(),
         chainHighlightOn: false,
         chainHighlightDisabled: false,
+        onChainInspect: vi.fn(),
+        chainInspectOn: false,
+        chainInspectDisabled: false,
         onChainZoom: vi.fn(),
         chainZoomDisabled: false,
         residueInfo: { residueLabels: new Map([['1', { id: '1', name: 'Residue 1', compId: 'ALA', seqNumber: 1, insCode: '' }]]), residueToAtomIds: { '1': ['a1'] } },
@@ -62,6 +68,9 @@ describe('LoadDataRow', () => {
         onResidueHighlight: vi.fn(),
         residueHighlightOn: false,
         residueHighlightDisabled: false,
+        onResidueInspect: vi.fn(),
+        residueInspectOn: false,
+        residueInspectDisabled: false,
         onResidueZoom: vi.fn(),
         residueZoomDisabled: false,
         onAddRepresentationClick: vi.fn(),
@@ -160,19 +169,25 @@ describe('LoadDataRow', () => {
         expect(queryByText(/Representation:/)).toBeInTheDocument();
     });
 
-    it('calls subunit/chain/residue highlight and zoom handlers when buttons are clicked', () => {
+    it('calls subunit/chain/residue basic highlight, inspect, and zoom handlers when buttons are clicked', () => {
         render(<LoadDataRow {...baseProps} isLoaded={true} />);
-        fireEvent.click(screen.getByText('Highlight Subunit: Off'));
+        fireEvent.click(screen.getByText('Highlight Subunit (Basic): Off'));
+        fireEvent.click(screen.getByText('Inspect Subunit: Off'));
         fireEvent.click(screen.getByText('Zoom to Subunit: All'));
         fireEvent.click(screen.getByText('Highlight Chain: Off'));
+        fireEvent.click(screen.getByText('Inspect Chain: Off'));
         fireEvent.click(screen.getByText('Zoom to Chain: Chain A'));
         fireEvent.click(screen.getByText('Highlight Residues: Off'));
+        fireEvent.click(screen.getByText('Inspect Residues: Off'));
         fireEvent.click(screen.getByText('Zoom to Residue: Residue 1'));
         expect(baseProps.onSubunitHighlight).toHaveBeenCalled();
+        expect(baseProps.onSubunitInspect).toHaveBeenCalled();
         expect(baseProps.onSubunitZoom).toHaveBeenCalled();
         expect(baseProps.onChainHighlight).toHaveBeenCalled();
+        expect(baseProps.onChainInspect).toHaveBeenCalled();
         expect(baseProps.onChainZoom).toHaveBeenCalled();
         expect(baseProps.onResidueHighlight).toHaveBeenCalled();
+        expect(baseProps.onResidueInspect).toHaveBeenCalled();
         expect(baseProps.onResidueZoom).toHaveBeenCalled();
     });
 
@@ -189,5 +204,21 @@ describe('LoadDataRow', () => {
         expect(label).toBeInTheDocument();
         expect(label).toHaveTextContent(veryLongFilename);
         expect(label).toHaveClass('loaded-filename');
+    });
+
+    it('renders inspect toggles as On when corresponding props are true', () => {
+        render(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                chainInspectOn={true}
+                residueInspectOn={true}
+                subunitInspectOn={true}
+            />
+        );
+
+        expect(screen.getByText('Inspect Subunit: On')).toBeInTheDocument();
+        expect(screen.getByText('Inspect Chain: On')).toBeInTheDocument();
+        expect(screen.getByText('Inspect Residues: On')).toBeInTheDocument();
     });
 });
