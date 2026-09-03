@@ -23,9 +23,9 @@ The Ribocode User Interface (UI) is best displayed on a screen at a width of 120
 The UI layout is as follows:
  - Title containing the version with a link to this README.
  - `General Controls`
-   - `Resdue Zoom` controls
    - `Select Sync` control for synchronization
-   - `Show UniProt accession in chain labels` toggle for chain selector labels
+  - `Show UniProt accession in chain labels` toggle for chain selector labels
+  - `UniProt cache` status counters (`cached`, `pending`, `in-flight`)
    - `Re-align to Chains` control
  - Column `A`
    - `Mol* Viewer A`
@@ -39,7 +39,7 @@ The UI layout is as follows:
      - `Load Colours` button
    - `Clipping` controls (directly above `Select and Zoom Controls`): `Min Near`, `Clip Radius`, and `Reset Clipping`
    - `Show Select and Zoom Controls` button (collapsed by default)
-   - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, and `AlignedTo Chain Finder`)
+  - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, `Residue Zoom` settings, and `AlignedTo Chain Finder`)
    - `Show Advanced Mol* Controls` button (toggles advanced Mol* interface for power users)
    - `Advanced Mol* Controls` panel (shown only when expanded; includes Sequence, Left Panel, Structure Tools, and Log sections)
  - Column `B`
@@ -54,14 +54,14 @@ The UI layout is as follows:
      - `Load Colours` button
    - `Clipping` controls (directly above `Select and Zoom Controls`): `Min Near`, `Clip Radius`, and `Reset Clipping`
    - `Show Select and Zoom Controls` button (collapsed by default)
-   - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, and `Aligned Chain Finder`)
+  - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, `Residue Zoom` settings, and `Aligned Chain Finder`)
    - `Show Advanced Mol* Controls` button (toggles advanced Mol* interface for power users)
    - `Advanced Mol* Controls` panel (shown only when expanded; includes Sequence, Left Panel, Structure Tools, and Log sections)
 ```
 +-------------------------------------------------------------+
 |           RiboCode Mol* Viewer, Version, README             |
 +-------------------------------------------------------------+
-|     [General Controls: Residue Zoom | Sync | Re-align]      |
+| [General Controls: UniProt labels/status | Sync | Re-align] |
 +------------------------------+------------------------------+
 |          Column A            |           Column B           |
 +------------------------------+------------------------------+
@@ -124,8 +124,10 @@ Example enriched label:
 
 ### UniProt toggle behavior
 
-- `Show UniProt accession in chain labels` controls whether accession codes are shown in the chain label text.
-- This toggle affects both the dropdown and chain-finder labels.
+- `Show UniProt accession in chain labels` controls whether accession codes are shown in chain label text.
+- This global toggle appears in `General Controls` and affects both viewer columns.
+- The toggle affects both the dropdown and chain-finder labels.
+- The status line in `General Controls` reports UniProt cache progress (`cached`, `pending`, `in-flight`).
 - The toggle state is saved and restored as part of session `uiState`.
 
 
@@ -156,6 +158,7 @@ Next, the user can do several things:
 * As an `Aligned` dataset is loaded, it's atom positions are centralized and aligned with the centralized `AlignedTo` atom positions using an algorithm.
 * In `Viewer A`, the loaded `Aligned` dataset is hidden by default. Use the `Aligned` visibility (eye) button in `MoleculeUI` to show it.
 * If a chain is selected, the `Select Residue` control becomes actionable and the `Zoom to Chain` control becomes actionable to zoom to the selected chain.
+* Residue labels in `Select Residues` follow Mol* style: `code number [auth n]` (for example `GLY 70 [auth 70]`, `A 12 [auth 12]`).
 * If a residue is selected, the `Zoom to Residue` control becomes actionable to zoom to the selected residue within the chain. The selected residue will be in the viewer centre. How much is displayed around that depends on the `Residue Zoom` settings.
 * If chains are selected for both `AlignedTo` and `Aligned` molecules, the `Re-align` button can be actioned to apply chain-based re-alignment.
 * Re-aligning a different chain pair is supported repeatedly; repeating the same pair is blocked to avoid cumulative transform/rotation drift.
@@ -174,7 +177,7 @@ Please refer to the [Mol* viewer Documentation](https://molstar.org/viewer-docs/
 
 For convenience, users can save and load a session via the Session Menu. Loading a session does not load the data. For security reasons data loading is a manual process, but once the `AlignedTo` and `Aligned` data are selected, the representations are recreated and the loaded session should be in the same state as when the session was saved.
 
-Session `uiState` persists the `Show UniProt accession in chain labels` setting, so chain label formatting is restored consistently when a session is loaded.
+Session `uiState` persists `Residue Zoom` settings and the global `Show UniProt accession in chain labels` setting, so chain label formatting and residue zoom behavior are restored consistently when a session is loaded.
 
 The `Session` > `Save All` saves all the data and all the UI state so that this can be reloaded using `Session` > `Load All`.
 ---

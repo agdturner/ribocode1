@@ -285,6 +285,7 @@ const SyncButton: React.FC<SyncButtonProps> = ({
                 animationFrameRef.current = requestAnimationFrame(tick);
             }
         };
+
         if (typeof requestAnimationFrame === 'function') {
             animationFrameRef.current = requestAnimationFrame(tick);
         }
@@ -300,10 +301,9 @@ const SyncButton: React.FC<SyncButtonProps> = ({
         };
     }, [syncEnabled, viewerA, viewerB, activeViewer]);
 
-    // Return the sync select button.
     return (
         <GenericSelectButton
-            label="Select Sync"
+            label="Sync"
             options={['On', 'Off']}
             selected={syncEnabled ? 'On' : 'Off'}
             onSelect={option => setSyncEnabled(option === 'On')}

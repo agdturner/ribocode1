@@ -1,5 +1,5 @@
 /**
- * General controls for the Ribocode viewer, including data loading, representation selection, color loading, and chain/residue selection.
+ * General controls for cross-viewer actions such as sync and realignment.
  * 
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
@@ -19,12 +19,8 @@ import type { ViewerKey } from '../types/ribocode';
 export const idSuffix = 'general-controls';
 
 /**
- * Define the props for the GeneralControls component
+ * Define the props for the GeneralControls component.
  * @typedef {Object} GeneralControlsProps
- * @property {number} zoomExtraRadius - Extra radius for residue zoom.
- * @property {function} setZoomExtraRadius - Function to update the zoom extra radius.
- * @property {number} zoomMinRadius - Minimum radius for residue zoom.
- * @property {function} setZoomMinRadius - Function to update the zoom minimum radius.
  * @property {Object} viewerA - Reference to viewer A.
  * @property {Object} viewerB - Reference to viewer B.
  * @property {string} activeViewer - Key of the currently active viewer ('A' or 'B').
@@ -36,10 +32,12 @@ export const idSuffix = 'general-controls';
  * @property {function} handleRealignToChains - Function to trigger realignment based on selected chains.
  */
 interface GeneralControlsProps {
-  zoomExtraRadius: number;
-  setZoomExtraRadius: (v: number) => void;
-  zoomMinRadius: number;
-  setZoomMinRadius: (v: number) => void;
+  viewerA: any;
+  viewerB: any;
+  activeViewer: ViewerKey;
+  syncEnabled: boolean;
+  setSyncEnabled: (v: boolean) => void;
+  syncDisabled: boolean;
   showUniprotAccessionInChainLabels: boolean;
   setShowUniprotAccessionInChainLabels: (v: boolean) => void;
   uniprotLookupStatus?: {
@@ -47,16 +45,14 @@ interface GeneralControlsProps {
     pending: number;
     inFlight: number;
   };
-  viewerA: any;
-  viewerB: any;
-  activeViewer: ViewerKey;
-  syncEnabled: boolean;
-  setSyncEnabled: (v: boolean) => void;
-    syncDisabled: boolean;
   selectedChainIdAlignedTo: string;
   selectedChainIdAligned: string;
   realignmentExists: boolean;
   handleRealignToChains: () => void;
+  canRealignToResidues: boolean;
+  residueRealignmentExists: boolean;
+  residueRealignSummary: string;
+  handleRealignToResidues: () => void;
   selectedSubunitAlignedTo: string;
   selectedSubunitAligned: string;
   subunitRealignmentExists: boolean;
@@ -66,28 +62,28 @@ interface GeneralControlsProps {
 }
 
 /**
- * GeneralControls component that provides UI controls for zoom settings, synchronization, and realignment.
+ * GeneralControls component that provides synchronization and realignment controls.
  * @param {GeneralControlsProps} props - The props for the GeneralControls component.
  * @returns {JSX.Element} The GeneralControls component.
  */
 const GeneralControls: React.FC<GeneralControlsProps> = ({
-  zoomExtraRadius,
-  setZoomExtraRadius,
-  zoomMinRadius,
-  setZoomMinRadius,
-  showUniprotAccessionInChainLabels,
-  setShowUniprotAccessionInChainLabels,
-  uniprotLookupStatus,
   viewerA,
   viewerB,
   activeViewer,
   syncEnabled,
   setSyncEnabled,
   syncDisabled,
+  showUniprotAccessionInChainLabels,
+  setShowUniprotAccessionInChainLabels,
+  uniprotLookupStatus,
   selectedChainIdAlignedTo,
   selectedChainIdAligned,
   realignmentExists,
   handleRealignToChains,
+  canRealignToResidues,
+  residueRealignmentExists,
+  residueRealignSummary,
+  handleRealignToResidues,
   selectedSubunitAlignedTo,
   selectedSubunitAligned,
   subunitRealignmentExists,
@@ -96,50 +92,22 @@ const GeneralControls: React.FC<GeneralControlsProps> = ({
   idPrefix = 'generalcontrols',
 }) => (
   <div className="General-Controls" id={idPrefix ? `${idPrefix}-${idSuffix}` : idSuffix}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-      <label>
-        Residue Zoom extraRadius:
-        <input
-          type="number"
-          value={zoomExtraRadius}
-          min={0}
-          max={100}
-          step={1}
-          style={{ width: 60, marginLeft: 4 }}
-          onChange={e => setZoomExtraRadius(Number(e.target.value))}
-          id={`${idPrefix}-zoom-extra-radius`}
-        />
-      </label>
-      <label>
-        minRadius:
-        <input
-          type="number"
-          value={zoomMinRadius}
-          min={0}
-          max={100}
-          step={1}
-          style={{ width: 60, marginLeft: 4 }}
-          onChange={e => setZoomMinRadius(Number(e.target.value))}
-          id={`${idPrefix}-zoom-min-radius`}
-        />
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={showUniprotAccessionInChainLabels}
-          onChange={e => setShowUniprotAccessionInChainLabels(e.target.checked)}
-          id={`${idPrefix}-show-uniprot-accession`}
-          style={{ marginRight: 4 }}
-        />
-        Show UniProt accession in chain labels
-      </label>
-      <span
-        id={`${idPrefix}-uniprot-status`}
-        style={{ fontSize: 12, color: '#555' }}
-      >
-        UniProt cache: {uniprotLookupStatus?.completed ?? 0} cached, {uniprotLookupStatus?.pending ?? 0} pending, {uniprotLookupStatus?.inFlight ?? 0} in-flight
-      </span>
-    </div>
+    <label htmlFor={`${idPrefix}-show-uniprot-accession`}>
+      <input
+        id={`${idPrefix}-show-uniprot-accession`}
+        type="checkbox"
+        checked={showUniprotAccessionInChainLabels}
+        onChange={e => setShowUniprotAccessionInChainLabels(e.target.checked)}
+        style={{ marginRight: 4 }}
+      />
+      Show UniProt accession in chain labels
+    </label>
+    <span
+      id={`${idPrefix}-uniprot-status`}
+      style={{ fontSize: 12, color: '#555', marginLeft: 8 }}
+    >
+      UniProt cache: {uniprotLookupStatus?.completed ?? 0} cached, {uniprotLookupStatus?.pending ?? 0} pending, {uniprotLookupStatus?.inFlight ?? 0} in-flight
+    </span>
     <SyncButton
       viewerA={viewerA}
       viewerB={viewerB}
@@ -170,6 +138,17 @@ const GeneralControls: React.FC<GeneralControlsProps> = ({
           ? `Already re-aligned: ${selectedChainIdAlignedTo} → ${selectedChainIdAligned}`
           : `Re-align : ${selectedChainIdAlignedTo} → ${selectedChainIdAligned}`
         : 'Re-align to Chains'}
+    </button>
+    <button
+      disabled={!canRealignToResidues || residueRealignmentExists}
+      onClick={handleRealignToResidues}
+      id={`${idPrefix}-realign-residue-btn`}
+    >
+      {canRealignToResidues
+        ? residueRealignmentExists
+          ? `Already realigned residues: ${residueRealignSummary}`
+          : `Realign to Residues: ${residueRealignSummary}`
+        : 'Realign to Residues'}
     </button>
   </div>
 );

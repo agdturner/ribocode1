@@ -6,8 +6,9 @@ Release summary: this release improves alignment and camera-sync reliability in 
 - Added dedicated Playwright E2E coverage for subunit re-alignment button state transitions in `e2e/subunit-realign.e2e.spec.ts`.
 - Updated `Select Residue` to support multi-residue selection per viewer, while keeping session compatibility via legacy first-selected `residueId` fallback.
 - Updated `Zoom to Residue` so when multiple residues are selected the camera focuses the combined loci of all selected residues (instead of only the first).
+- Moved `Residue Zoom` (`extraRadius`, `minRadius`) and `Show UniProt accession in chain labels` to per-viewer controls directly below each viewer's `Zoom to Residue` button, with per-viewer session save/load support and legacy global-field fallback.
 - Fixed residue-code extraction so labels use meaningful residue/nucleotide codes from residue/atom comp IDs instead of malformed fallbacks (e.g. preventing `ATOM` -> `ATO`).
-- Added residue code normalization for RNA/protein conventions and updated residue label order to `number code` (for example `12 A`, `70 GLY`).
+- Added residue code normalization for RNA/protein conventions and updated residue labels to Mol*-style `code number [auth n]` (for example `A 12 [auth 12]`, `GLY 70 [auth 70]`).
 - Added focused unit/integration regression coverage for residue label lookup, multi-selection persistence (`residueIds` + legacy `residueId`), and session round-tripping.
 - Reordered per-column controls so representation actions (`Representation` selector/add button and `Load Colours`) appear before Select/Zoom controls.
 - Added per-column `Show/Hide Select and Zoom Controls` toggle that controls Subunit/Chain/Residue selectors, zoom buttons, and Chain Finder together.

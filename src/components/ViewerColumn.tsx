@@ -60,6 +60,10 @@ export interface LoadDataRowPropsInput {
 	residueZoomLabel: string;
 	onResidueZoom: () => void;
 	residueZoomDisabled: boolean;
+	zoomExtraRadius: number;
+	setZoomExtraRadius: (val: number) => void;
+	zoomMinRadius: number;
+	setZoomMinRadius: (val: number) => void;
 	fog: { enabled: boolean; near: number; far: number };
 	setFog: {
 		setEnabled: (val: boolean) => void;
@@ -67,6 +71,7 @@ export interface LoadDataRowPropsInput {
 		setFar: (val: number) => void;
 	};
 	clipping: { minNear: number; clipRadius: number };
+	clippingDefaults?: { minNear: number; clipRadius: number };
 	setClipping: {
 		setMinNear: (val: number) => void;
 		setClipRadius: (val: number) => void;
@@ -125,9 +130,14 @@ export function getLoadDataRowProps({
 	residueZoomLabel,
 	onResidueZoom,
 	residueZoomDisabled,
+	zoomExtraRadius,
+	setZoomExtraRadius,
+	zoomMinRadius,
+	setZoomMinRadius,
 	fog,
 	setFog,
 	clipping,
+	clippingDefaults,
 	setClipping,
 	updateFog,
 	handleFileChange,
@@ -250,6 +260,10 @@ export function getLoadDataRowProps({
 		residueZoomLabel,
 		onResidueZoom,
 		residueZoomDisabled,
+		zoomExtraRadius,
+		onZoomExtraRadiusChange: setZoomExtraRadius,
+		zoomMinRadius,
+		onZoomMinRadiusChange: setZoomMinRadius,
 		residueSelectDisabled: !isMoleculeAlignedToLoaded,
 		fogEnabled: fog.enabled,
 		fogNear: fog.near,
@@ -275,6 +289,13 @@ export function getLoadDataRowProps({
 		onClippingRadiusChange: (val: number) => {
 			setClipping.setClipRadius(val);
 			updateFog(viewer.ref.current, null, fog.enabled, fog.near, fog.far, clipping.minNear, val);
+		},
+		onResetClipping: () => {
+			const resetMinNear = Number(clippingDefaults?.minNear ?? clipping.minNear ?? 1);
+			const resetClipRadius = Number(clippingDefaults?.clipRadius ?? clipping.clipRadius ?? 100);
+			setClipping.setMinNear(resetMinNear);
+			setClipping.setClipRadius(resetClipRadius);
+			updateFog(viewer.ref.current, null, fog.enabled, fog.near, fog.far, resetMinNear, resetClipRadius);
 		},
 		subunitToChainIds,
 		idPrefix: viewer && viewer.key ? `viewer-${viewer.key}` : (viewer && viewer.moleculeAligned ? `viewer-${viewer.moleculeAligned.name?.replace(/\s+/g, '-').toLowerCase()}` : 'viewer-unknown'),
@@ -734,10 +755,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   type="button"
 						   className="msp-btn msp-form-control"
 						   id={`${activeSelectZoomIdPrefix}-clip-reset-btn`}
-						   onClick={() => {
-							   activeLoadProps?.onClippingMinNearChange?.(1);
-							   activeLoadProps?.onClippingRadiusChange?.(100);
-						   }}
+						   onClick={() => activeLoadProps?.onResetClipping?.()}
 					   >
 						   Reset Clipping
 					   </button>
@@ -777,6 +795,10 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   residueZoomLabel={activeLoadProps.residueZoomLabel}
 						   onResidueZoom={activeLoadProps.onResidueZoom}
 						   residueZoomDisabled={activeLoadProps.residueZoomDisabled}
+						   zoomExtraRadius={activeLoadProps.zoomExtraRadius}
+						   onZoomExtraRadiusChange={activeLoadProps.onZoomExtraRadiusChange}
+						   zoomMinRadius={activeLoadProps.zoomMinRadius}
+						   onZoomMinRadiusChange={activeLoadProps.onZoomMinRadiusChange}
 						   idPrefix={activeSelectZoomIdPrefix}
 					   />
 				   </div>

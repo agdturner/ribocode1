@@ -266,12 +266,14 @@ describe('ViewerColumn', () => {
         const idPrefix = 'test-root';
         const onClippingMinNearChange = vi.fn();
         const onClippingRadiusChange = vi.fn();
+        const onResetClipping = vi.fn();
         const loadDataRowPropsWithCamera = {
             ...loadDataRowProps,
             clippingMinNear: 1,
             clippingRadius: 100,
             onClippingMinNearChange,
             onClippingRadiusChange,
+            onResetClipping,
         };
 
         render(
@@ -310,8 +312,7 @@ describe('ViewerColumn', () => {
         expect(onClippingRadiusChange).toHaveBeenCalledWith(80);
 
         fireEvent.click(resetBtn);
-        expect(onClippingMinNearChange).toHaveBeenCalledWith(1);
-        expect(onClippingRadiusChange).toHaveBeenCalledWith(100);
+        expect(onResetClipping).toHaveBeenCalled();
     });
 
     it('keeps representation visibility toggles local to one viewer even when sync is enabled', async () => {
@@ -470,5 +471,85 @@ describe('ViewerColumn', () => {
             expect.any(String),
             true
         );
+    });
+
+    it('resets clipping to per-viewer defaults from getLoadDataRowProps', () => {
+        const setMinNear = vi.fn();
+        const setClipRadius = vi.fn();
+        const updateFog = vi.fn();
+
+        const props = getLoadDataRowProps({
+            viewer: {
+                key: 'A',
+                moleculeAligned: { filename: '6xu8.cif' },
+                moleculeAlignedTo: null,
+                isMoleculeAlignedVisible: true,
+                isMoleculeAlignedToVisible: true,
+                handleFileInputButtonClick: vi.fn(),
+                fileInputRef: { current: null },
+                ref: { current: null },
+            } as any,
+            otherViewer: {
+                key: 'B',
+                moleculeAligned: { filename: '6xu8.cif' },
+                moleculeAlignedTo: null,
+                isMoleculeAlignedVisible: true,
+                isMoleculeAlignedToVisible: true,
+                handleFileInputButtonClick: vi.fn(),
+                fileInputRef: { current: null },
+                ref: { current: null },
+            } as any,
+            molstar: { addRepresentation: vi.fn(), representationRefs: {}, repIdMap: {}, pluginRef: { current: null } },
+            otherMolstar: { addRepresentation: vi.fn(), representationRefs: {}, repIdMap: {}, pluginRef: { current: null } },
+            realignedStructRefs: {},
+            otherRealignedStructRefs: {},
+            isMoleculeAlignedLoaded: true,
+            isMoleculeAlignedToLoaded: true,
+            viewerReady: true,
+            otherViewerReady: true,
+            representationType: 'spacefill',
+            setRepresentationType: vi.fn(),
+            colorsFile: { handleButtonClick: vi.fn(), inputRef: { current: null }, handleFileChange: vi.fn() },
+            isMoleculeColoursLoaded: false,
+            structureRef: 'ref-a',
+            otherStructureRef: 'ref-b',
+            selectedSubunit: 'All',
+            setSelectedSubunit: vi.fn(),
+            subunitZoomLabel: 'All',
+            onSubunitZoom: vi.fn(),
+            subunitZoomDisabled: false,
+            subunitToChainIds: new Map(),
+            chainInfo: { chainLabels: new Map([['A', 'Chain A']]) },
+            selectedChainId: 'A',
+            setSelectedChainId: vi.fn(),
+            chainZoomLabel: 'Chain A',
+            onChainZoom: vi.fn(),
+            chainZoomDisabled: false,
+            residueInfo: { residueLabels: new Map(), residueToAtomIds: {} },
+            selectedResidueIds: [],
+            setSelectedResidueIds: vi.fn(),
+            residueZoomLabel: '',
+            onResidueZoom: vi.fn(),
+            residueZoomDisabled: true,
+            fog: { enabled: false, near: 0, far: 100 },
+            setFog: { setEnabled: vi.fn(), setNear: vi.fn(), setFar: vi.fn() },
+            clipping: { minNear: 2, clipRadius: 33 },
+            clippingDefaults: { minNear: 0.6, clipRadius: 88 },
+            setClipping: { setMinNear, setClipRadius },
+            updateFog,
+            handleFileChange: vi.fn(),
+            Aligned: 'Aligned',
+            allowedRepresentationTypes: ['spacefill'] as any,
+            syncEnabled: false,
+            realignedRepRefs: {},
+            setRealignedRepRefs: vi.fn(),
+            setRealignedStructRefs: vi.fn(),
+        });
+
+        props.onResetClipping();
+
+        expect(setMinNear).toHaveBeenCalledWith(0.6);
+        expect(setClipRadius).toHaveBeenCalledWith(88);
+        expect(updateFog).toHaveBeenCalledWith(null, null, false, 0, 100, 0.6, 88);
     });
 });

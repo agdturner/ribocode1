@@ -83,7 +83,7 @@ describe('SyncButton', () => {
                 id={syncSelectIdSuffix}
             />
         );
-        expect(getByLabelText('Select Sync')).toBeInTheDocument();
+        expect(getByLabelText('Sync')).toBeInTheDocument();
         expect(getByText('On')).toBeInTheDocument();
         expect(getByText('Off')).toBeInTheDocument();
     });
@@ -100,7 +100,7 @@ describe('SyncButton', () => {
                 id={syncSelectIdSuffix}
             />
         );
-        expect((getByLabelText('Select Sync') as HTMLSelectElement).value).toBe('Off');
+        expect((getByLabelText('Sync') as HTMLSelectElement).value).toBe('Off');
         rerender(
             <SyncButton
                 viewerA={null}
@@ -112,7 +112,7 @@ describe('SyncButton', () => {
                 id="test-sync-select"
             />
         );
-        expect((getByLabelText('Select Sync') as HTMLSelectElement).value).toBe('On');
+        expect((getByLabelText('Sync') as HTMLSelectElement).value).toBe('On');
     });
 
     it('calls setSyncEnabled when option is changed', () => {
@@ -128,9 +128,9 @@ describe('SyncButton', () => {
                 id={syncSelectIdSuffix}
             />
         );
-        fireEvent.change(getByLabelText('Select Sync'), { target: { value: 'On' } });
+        fireEvent.change(getByLabelText('Sync'), { target: { value: 'On' } });
         expect(setSyncEnabled).toHaveBeenCalledWith(true);
-        fireEvent.change(getByLabelText('Select Sync'), { target: { value: 'Off' } });
+        fireEvent.change(getByLabelText('Sync'), { target: { value: 'Off' } });
         expect(setSyncEnabled).toHaveBeenCalledWith(false);
     });
 
@@ -146,7 +146,7 @@ describe('SyncButton', () => {
                 id={syncSelectIdSuffix}
             />
         );
-        expect(getByLabelText('Select Sync')).toBeDisabled();
+        expect(getByLabelText('Sync')).toBeDisabled();
     });
 
     it('syncs active viewer camera changes as deltas to the other viewer', () => {

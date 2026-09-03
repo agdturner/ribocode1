@@ -142,6 +142,24 @@ export function useMolstarViewer(pluginRef: React.RefObject<PluginUIContext | nu
             if (!pluginRef.current) return '';
             const plugin = pluginRef.current;
             const psd = plugin.state.data;
+            const cameraSnapshotBeforeAdd = plugin.canvas3d?.camera?.getSnapshot?.();
+
+            const restoreCameraSnapshot = () => {
+                const camera = plugin.canvas3d?.camera;
+                if (!camera || !cameraSnapshotBeforeAdd) return;
+                try {
+                    camera.setState({
+                        ...camera.state,
+                        position: cameraSnapshotBeforeAdd.position,
+                        target: cameraSnapshotBeforeAdd.target,
+                        up: cameraSnapshotBeforeAdd.up,
+                        radius: cameraSnapshotBeforeAdd.radius,
+                    });
+                    plugin.canvas3d?.requestDraw?.();
+                } catch (err) {
+                    console.warn('[addRepresentation] Failed to restore camera snapshot after representation add.', err);
+                }
+            };
             // Find the structure and first polymer component
             const structs = plugin.managers.structure.hierarchy.current.structures;
             const struct = structs.find((s: { cell: { transform: { ref: string } } }) => s.cell.transform.ref === structureRef);
@@ -206,6 +224,7 @@ export function useMolstarViewer(pluginRef: React.RefObject<PluginUIContext | nu
             setRepIdMap(key, { ...(repIdMapRef.current[key] || {}), [newRepId]: potentialNewRepRef });
             setRepresentationRefs(key, allReps);
             setLastAddedRepresentationRef(key, potentialNewRepRef);
+            restoreCameraSnapshot();
             
             console.log(`[addRepresentation] Added ${type} to ${key}, repRef=${potentialNewRepRef.substring(potentialNewRepRef.length - 6)}, allReps=${allReps.length}`);
             

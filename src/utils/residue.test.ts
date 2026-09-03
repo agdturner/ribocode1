@@ -84,7 +84,7 @@ describe('getResidueInfo', () => {
         const labelInfo = result.residueLabels.get('10');
         expect(labelInfo).toEqual({
             id: '10',
-            name: '10 GLY',
+            name: 'GLY 10 [auth 10]',
             compId: 'GLY',
             seqNumber: 10,
             insCode: ''
@@ -121,7 +121,7 @@ describe('getResidueInfo', () => {
         };
         const result = getResidueInfo(structure, 'R');
         const labelInfo = result.residueLabels.get('12');
-        expect(labelInfo?.name).toBe('12 A');
+        expect(labelInfo?.name).toBe('A 12 [auth 12]');
     });
 
     it('maps canonical three-letter RNA residue names to one-letter labels', () => {
@@ -152,7 +152,7 @@ describe('getResidueInfo', () => {
             ]
         };
         const result = getResidueInfo(structure, 'R');
-        expect(result.residueLabels.get('15')?.name).toBe('15 A');
+        expect(result.residueLabels.get('15')?.name).toBe('A 15 [auth 15]');
     });
 
     it('does not truncate ATOM token and falls back to atom-level comp_id', () => {
@@ -187,7 +187,7 @@ describe('getResidueInfo', () => {
             ]
         };
         const result = getResidueInfo(structure, 'A');
-        expect(result.residueLabels.get('42')?.name).toBe('42 GLY');
+        expect(result.residueLabels.get('42')?.name).toBe('GLY 42 [auth 42]');
         expect(result.residueLabels.get('42')?.compId).toBe('GLY');
     });
 });

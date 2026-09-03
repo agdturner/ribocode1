@@ -42,8 +42,6 @@ export const idSuffix = 'load-molecule';
  * @param representationType Current representation type.
  * @param onRepresentationTypeChange Function to handle representation type change.
  * @param representationTypeDisabled Whether the representation type selector is disabled.
- * @param onAddColorsClick Function to handle add colors button click.
- * @param addColorsDisabled Whether the add colors button is disabled.
  * @param colorsInputRef Ref for the hidden colors file input element.
  * @param onColorsFileChange Function to handle colors file input change event.
  * @param subunitToChainIds Map of subunit types to their associated chain IDs.
@@ -112,6 +110,10 @@ interface LoadDataRowProps {
     residueZoomLabel: string;
     onResidueZoom: () => void;
     residueZoomDisabled: boolean;
+    zoomExtraRadius?: number;
+    onZoomExtraRadiusChange?: (value: number) => void;
+    zoomMinRadius?: number;
+    onZoomMinRadiusChange?: (value: number) => void;
     // Optional representation type selector
     representationTypeSelector?: React.ReactNode;
     onAddRepresentationClick: () => void;
@@ -159,6 +161,10 @@ interface LoadDataRowProps {
         residueZoomLabel: string;
         onResidueZoom: () => void;
         residueZoomDisabled: boolean;
+        zoomExtraRadius?: number;
+        onZoomExtraRadiusChange?: (value: number) => void;
+        zoomMinRadius?: number;
+        onZoomMinRadiusChange?: (value: number) => void;
         idPrefix: string;
     }
 
@@ -184,6 +190,10 @@ interface LoadDataRowProps {
         residueZoomLabel,
         onResidueZoom,
         residueZoomDisabled,
+        zoomExtraRadius = 0,
+        onZoomExtraRadiusChange = () => {},
+        zoomMinRadius = 0,
+        onZoomMinRadiusChange = () => {},
         idPrefix,
     }) => (
         <>
@@ -242,6 +252,30 @@ interface LoadDataRowProps {
                 >
                     Zoom to Residue: {residueZoomLabel}
                 </button>
+            </div>
+            <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <label htmlFor={`${idPrefix}-zoom-extra-radius`}>Residue Zoom extraRadius:</label>
+                <input
+                    id={`${idPrefix}-zoom-extra-radius`}
+                    type="number"
+                    value={zoomExtraRadius}
+                    min={0}
+                    max={100}
+                    step={1}
+                    style={{ width: 60 }}
+                    onChange={e => onZoomExtraRadiusChange(Number(e.target.value))}
+                />
+                <label htmlFor={`${idPrefix}-zoom-min-radius`}>minRadius:</label>
+                <input
+                    id={`${idPrefix}-zoom-min-radius`}
+                    type="number"
+                    value={zoomMinRadius}
+                    min={0}
+                    max={100}
+                    step={1}
+                    style={{ width: 60 }}
+                    onChange={e => onZoomMinRadiusChange(Number(e.target.value))}
+                />
             </div>
         </>
     );
@@ -336,6 +370,10 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     residueZoomLabel,
     onResidueZoom,
     residueZoomDisabled,
+    zoomExtraRadius = 0,
+    onZoomExtraRadiusChange = () => {},
+    zoomMinRadius = 0,
+    onZoomMinRadiusChange = () => {},
     representationTypeSelector,
     onAddRepresentationClick = () => { },
     addRepresentationDisabled = false,
@@ -469,6 +507,10 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                         residueZoomLabel={residueZoomLabel}
                         onResidueZoom={onResidueZoom}
                         residueZoomDisabled={residueZoomDisabled}
+                        zoomExtraRadius={zoomExtraRadius}
+                        onZoomExtraRadiusChange={onZoomExtraRadiusChange}
+                        zoomMinRadius={zoomMinRadius}
+                        onZoomMinRadiusChange={onZoomMinRadiusChange}
                         idPrefix={idPrefix}
                     />
             )}

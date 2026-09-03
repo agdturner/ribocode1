@@ -14,7 +14,7 @@
  */
 export interface ResidueLabelInfo {
     id: string; // residue id (auth_seq_id as string)
-    name: string; // e.g., 'LEU 70'
+    name: string; // e.g., 'LEU 70 [auth 70]'
     compId: string; // e.g., 'LEU'
     seqNumber: number; // e.g., 70
     insCode: string; // insertion code, if any
@@ -60,9 +60,11 @@ function normalizeResidueCode(rawCompId: string): string {
     return code;
 }
 
-function formatResidueLabel(code: string, seqNum: string, insCode: string): string {
-    const base = `${seqNum} ${code}`.trim();
-    return insCode ? `${base} (${insCode})` : base;
+function formatResidueLabel(code: string, labelSeqNum: string, authSeqNum: string, insCode: string): string {
+    const displaySeqBase = (labelSeqNum || authSeqNum || '?').trim();
+    const displaySeq = insCode ? `${displaySeqBase}${insCode}` : displaySeqBase;
+    const authSuffix = authSeqNum ? ` [auth ${authSeqNum}]` : '';
+    return `${code} ${displaySeq}${authSuffix}`.trim();
 }
 
 /**
@@ -196,7 +198,7 @@ export function getResidueInfo(
             const residueName = normalizeResidueCode(rawResidueName);
             let seqNum = label_seq_id || auth_seq_id || '';
             const displayCode = residueName || '?';
-            const label = formatResidueLabel(displayCode, seqNum, insCode);
+            const label = formatResidueLabel(displayCode, label_seq_id, auth_seq_id, insCode);
             residueLabels.set(residueId, {
                 id: residueId,
                 name: label,

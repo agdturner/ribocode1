@@ -89,6 +89,26 @@ interface SessionUiState {
         extraRadius: number;
         minRadius: number;
     };
+    zoomByViewer?: {
+        viewerA?: {
+            extraRadius: number;
+            minRadius: number;
+        };
+        viewerB?: {
+            extraRadius: number;
+            minRadius: number;
+        };
+    };
+    clippingByViewer?: {
+        viewerA?: {
+            minNear: number;
+            clipRadius: number;
+        };
+        viewerB?: {
+            minNear: number;
+            clipRadius: number;
+        };
+    };
     selections?: {
         alignedTo?: {
             subunit?: string;
@@ -111,6 +131,10 @@ interface SessionUiState {
     };
     uniprotGeneNames?: UniProtGeneNameCache;
     showUniprotAccessionInChainLabels?: boolean;
+    showUniprotAccessionInChainLabelsByViewer?: {
+        viewerA?: boolean;
+        viewerB?: boolean;
+    };
     chainFinderQueries?: {
         alignedTo?: string;
         aligned?: string;
@@ -120,6 +144,18 @@ interface SessionUiState {
 const UNIPROT_CACHE_STORAGE_KEY = 'ribocode-uniprot-gene-cache-v1';
 const ENABLE_IN_PLACE_CHAIN_REALIGN = true;
 const SUBUNIT_REALIGN_CHAIN_ID = '__subunit__';
+const RESIDUE_REALIGN_CHAIN_ID = '__residue__';
+const DEFAULT_CLIPPING = { minNear: 1, clipRadius: 100 };
+
+export function readClippingFromViewer(plugin: any): { minNear: number; clipRadius: number } {
+    const clipping = plugin?.canvas3d?.props?.cameraClipping ?? {};
+    const minNear = Number(clipping.minNear);
+    const radius = Number(clipping.radius);
+    return {
+        minNear: Number.isFinite(minNear) ? minNear : DEFAULT_CLIPPING.minNear,
+        clipRadius: Number.isFinite(radius) ? radius : DEFAULT_CLIPPING.clipRadius,
+    };
+}
 
 function getSelectedSubunitChainIds(
     subunitToChainIds: Map<string, Set<string>>,
@@ -144,6 +180,58 @@ function buildAtomDataForChainGroup(structure: any, chainIds: string[]) {
         ys.push(...chainData.ys);
         zs.push(...chainData.zs);
         groupedChainIds.push(...Array(chainData.xs.length).fill(SUBUNIT_REALIGN_CHAIN_ID));
+    }
+
+    return {
+        symbolTypes,
+        chainIds: groupedChainIds,
+        xs,
+        ys,
+        zs,
+    };
+}
+
+function buildAtomDataForResidueGroup(
+    structure: any,
+    residueIds: string[],
+    residueToAtomIds: Record<string, string[]>
+) {
+    const symbolTypes: string[] = [];
+    const groupedChainIds: string[] = [];
+    const xs: number[] = [];
+    const ys: number[] = [];
+    const zs: number[] = [];
+
+    const allowedAtomIdx = new Set<number>();
+    for (const residueId of residueIds) {
+        for (const atomId of residueToAtomIds[residueId] ?? []) {
+            const atomIdx = Number(atomId);
+            if (Number.isFinite(atomIdx)) allowedAtomIdx.add(atomIdx);
+        }
+    }
+    if (allowedAtomIdx.size === 0) {
+        return { symbolTypes, chainIds: groupedChainIds, xs, ys, zs };
+    }
+
+    const units = structure?.data?.units ?? structure?.units ?? [];
+    for (const unit of units) {
+        if (unit.kind !== 0) continue;
+        const model = unit.model;
+        const atoms = model?.atomicHierarchy?.atoms;
+        const conformation = model?.atomicConformation;
+        if (!atoms || !conformation) continue;
+
+        for (const atomIdx of unit.elements ?? []) {
+            if (!allowedAtomIdx.has(atomIdx)) continue;
+            const symbol = atoms.type_symbol && typeof atoms.type_symbol.value === 'function'
+                ? String(atoms.type_symbol.value(atomIdx) ?? '')
+                : '';
+            symbolTypes.push(symbol);
+            groupedChainIds.push(RESIDUE_REALIGN_CHAIN_ID);
+            xs.push(conformation.x?.[atomIdx] ?? NaN);
+            ys.push(conformation.y?.[atomIdx] ?? NaN);
+            zs.push(conformation.z?.[atomIdx] ?? NaN);
+        }
     }
 
     return {
@@ -927,12 +1015,18 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const [fogB, setFogB] = useState({ enabled: false, near: 0, far: 100 });
     
     // Per-viewer clipping state mapped to Mol* cameraClipping settings.
-    const [clippingA, setClippingA] = useState({ minNear: 1, clipRadius: 100 });
-    const [clippingB, setClippingB] = useState({ minNear: 1, clipRadius: 100 });
+    const [clippingA, setClippingA] = useState(DEFAULT_CLIPPING);
+    const [clippingB, setClippingB] = useState(DEFAULT_CLIPPING);
+    const [clippingDefaultsA, setClippingDefaultsA] = useState(DEFAULT_CLIPPING);
+    const [clippingDefaultsB, setClippingDefaultsB] = useState(DEFAULT_CLIPPING);
+    const clippingAInitializedRef = useRef(false);
+    const clippingBInitializedRef = useRef(false);
     
-    // Zoom state (if needed, can also be grouped)
-    const [zoomExtraRadius, setZoomExtraRadius] = useState(0);
-    const [zoomMinRadius, setZoomMinRadius] = useState(0);
+    // Per-viewer residue zoom options
+    const [zoomExtraRadiusA, setZoomExtraRadiusA] = useState(0);
+    const [zoomMinRadiusA, setZoomMinRadiusA] = useState(0);
+    const [zoomExtraRadiusB, setZoomExtraRadiusB] = useState(0);
+    const [zoomMinRadiusB, setZoomMinRadiusB] = useState(0);
 
     const updateFog = useCallback((pluginARef: any, pluginBRef: any, enabled: boolean, near: number, far: number, clippingMinNear: number, clippingRadius: number) => {
         const safeMinNear = Math.max(0.1, Number(clippingMinNear));
@@ -940,6 +1034,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         [pluginARef, pluginBRef].forEach((pluginRef: any) => {
             const plugin = pluginRef?.canvas3d ? pluginRef : pluginRef?.current;
             if (!plugin?.canvas3d) return;
+            if (typeof plugin.canvas3d.setProps !== 'function') return;
             const currentCamera = plugin.canvas3d.props?.camera ?? {};
             const currentCameraClipping = plugin.canvas3d.props?.cameraClipping ?? {};
             plugin.canvas3d.setProps({
@@ -959,6 +1054,26 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             plugin.canvas3d.requestDraw?.();
         });
     }, []);
+
+    useEffect(() => {
+        if (!viewerAReady || clippingAInitializedRef.current) return;
+        const plugin = viewerA.ref.current;
+        if (!plugin?.canvas3d) return;
+        const initialClipping = readClippingFromViewer(plugin);
+        setClippingA(initialClipping);
+        setClippingDefaultsA(initialClipping);
+        clippingAInitializedRef.current = true;
+    }, [viewerAReady]);
+
+    useEffect(() => {
+        if (!viewerBReady || clippingBInitializedRef.current) return;
+        const plugin = viewerB.ref.current;
+        if (!plugin?.canvas3d) return;
+        const initialClipping = readClippingFromViewer(plugin);
+        setClippingB(initialClipping);
+        setClippingDefaultsB(initialClipping);
+        clippingBInitializedRef.current = true;
+    }, [viewerBReady]);
 
     useEffect(() => {
         updateFog(viewerA.ref.current, null, fogA.enabled, fogA.near, fogA.far, clippingA.minNear, clippingA.clipRadius);
@@ -1181,8 +1296,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncResidueIds: selectedResidueIdsAlignedTo,
         residueInsCodes: selectedResidueInsCodesAlignedTo,
         syncResidueInsCodes: selectedResidueInsCodesAlignedTo,
-        zoomExtraRadius,
-        zoomMinRadius
+        zoomExtraRadius: zoomExtraRadiusA,
+        zoomMinRadius: zoomMinRadiusA
     });
     const residueZoomAAligned = makeZoomHandler({
         pluginRef: viewerA.ref,
@@ -1201,8 +1316,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncResidueIds: selectedResidueIdsAligned,
         residueInsCodes: selectedResidueInsCodesAligned,
         syncResidueInsCodes: selectedResidueInsCodesAligned,
-        zoomExtraRadius,
-        zoomMinRadius
+        zoomExtraRadius: zoomExtraRadiusA,
+        zoomMinRadius: zoomMinRadiusA
     });
     const residueZoomBAlignedTo = makeZoomHandler({
         pluginRef: viewerB.ref,
@@ -1221,8 +1336,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncResidueIds: selectedResidueIdsAlignedTo,
         residueInsCodes: selectedResidueInsCodesAlignedTo,
         syncResidueInsCodes: selectedResidueInsCodesAlignedTo,
-        zoomExtraRadius,
-        zoomMinRadius
+        zoomExtraRadius: zoomExtraRadiusB,
+        zoomMinRadius: zoomMinRadiusB
     });
     const residueZoomBAligned = makeZoomHandler({
         pluginRef: viewerB.ref,
@@ -1241,8 +1356,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncResidueIds: selectedResidueIdsAligned,
         residueInsCodes: selectedResidueInsCodesAligned,
         syncResidueInsCodes: selectedResidueInsCodesAligned,
-        zoomExtraRadius,
-        zoomMinRadius
+        zoomExtraRadius: zoomExtraRadiusB,
+        zoomMinRadius: zoomMinRadiusB
     });
 
     const selectedSubunitChainIdsAlignedTo = useMemo(
@@ -1264,8 +1379,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         sync: syncEnabled,
         syncPluginRef: viewerB.ref,
         syncStructureRef: structureRefBAlignedTo,
-        zoomExtraRadius,
-        zoomMinRadius
+        zoomExtraRadius: zoomExtraRadiusA,
+        zoomMinRadius: zoomMinRadiusA
     });
     const subunitZoomAAligned = makeZoomHandler({
         pluginRef: viewerA.ref,
@@ -1277,8 +1392,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         sync: syncEnabled,
         syncPluginRef: viewerB.ref,
         syncStructureRef: structureRefBAligned,
-        zoomExtraRadius,
-        zoomMinRadius
+        zoomExtraRadius: zoomExtraRadiusA,
+        zoomMinRadius: zoomMinRadiusA
     });
     const subunitZoomBAlignedTo = makeZoomHandler({
         pluginRef: viewerB.ref,
@@ -1290,8 +1405,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         sync: syncEnabled,
         syncPluginRef: viewerA.ref,
         syncStructureRef: structureRefAAlignedTo,
-        zoomExtraRadius,
-        zoomMinRadius
+        zoomExtraRadius: zoomExtraRadiusB,
+        zoomMinRadius: zoomMinRadiusB
     });
     const subunitZoomBAligned = makeZoomHandler({
         pluginRef: viewerB.ref,
@@ -1303,8 +1418,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         sync: syncEnabled,
         syncPluginRef: viewerA.ref,
         syncStructureRef: structureRefAAligned,
-        zoomExtraRadius,
-        zoomMinRadius
+        zoomExtraRadius: zoomExtraRadiusB,
+        zoomMinRadius: zoomMinRadiusB
     });
 
     useEffect(() => {
@@ -1428,6 +1543,16 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const subunitRealignmentExists = canRealignToSubunits
         && (realignedMoleculesA.some(mol => mol.from === subunitFromKey && mol.to === subunitToKey)
             || hasRealignPair(appliedInPlaceRealignPairs, subunitFromKey, subunitToKey));
+
+    const canRealignToResidues = !!selectedChainIdAlignedTo
+        && !!selectedChainIdAligned
+        && selectedResidueIdsAlignedTo.length > 0
+        && selectedResidueIdsAligned.length > 0;
+    const residueFromKey = `residue:${selectedChainIdAlignedTo}:${selectedResidueIdsAlignedTo.slice().sort().join(',')}`;
+    const residueToKey = `residue:${selectedChainIdAligned}:${selectedResidueIdsAligned.slice().sort().join(',')}`;
+    const residueRealignmentExists = canRealignToResidues
+        && (realignedMoleculesA.some(mol => mol.from === residueFromKey && mol.to === residueToKey)
+            || hasRealignPair(appliedInPlaceRealignPairs, residueFromKey, residueToKey));
 
     const applyStructureTransformInPlace = useCallback(async (
         plugin: PluginUIContext,
@@ -1904,6 +2029,199 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         }
     };
 
+    const handleRealignToResidues = () => {
+        if (!canRealignToResidues || residueRealignmentExists) return;
+        const pluginA = viewerA.ref.current;
+        if (!pluginA) {
+            console.warn('Viewer A not initialized.');
+            return;
+        }
+        if (!structureRefAAlignedTo) {
+            console.warn('Viewer A aligned-to structure not selected.');
+            return;
+        }
+
+        const structureAlignedTo = pluginA.managers.structure.hierarchy.current.structures.find(
+            s => s.cell.transform.ref === structureRefAAlignedTo
+        )?.cell.obj?.data;
+        const structureAligned = pluginA.managers.structure.hierarchy.current.structures.find(
+            s => s.cell.transform.ref === structureRefAAligned
+        )?.cell.obj?.data;
+
+        if (!structureAlignedTo || !structureAligned) {
+            console.warn('Could not find structure objects for selected refs.');
+            return;
+        }
+
+        const atomDataAlignedTo = buildAtomDataForResidueGroup(
+            structureAlignedTo,
+            selectedResidueIdsAlignedTo,
+            residueInfoAlignedTo.residueToAtomIds
+        );
+        const atomDataAligned = buildAtomDataForResidueGroup(
+            structureAligned,
+            selectedResidueIdsAligned,
+            residueInfoAligned.residueToAtomIds
+        );
+
+        const alignedToSummary = summarizeAtomCloud(atomDataAlignedTo.xs, atomDataAlignedTo.ys, atomDataAlignedTo.zs);
+        const alignedSummary = summarizeAtomCloud(atomDataAligned.xs, atomDataAligned.ys, atomDataAligned.zs);
+        if (alignedToSummary.finiteAtomCount === 0 || alignedSummary.finiteAtomCount === 0) {
+            console.warn('[Re-align Residue] Could not proceed: one or both selected residue sets contain no finite atom coordinates.', {
+                selectedResidueIdsAlignedTo,
+                selectedResidueIdsAligned,
+                alignedToFiniteAtomCount: alignedToSummary.finiteAtomCount,
+                alignedFiniteAtomCount: alignedSummary.finiteAtomCount,
+            });
+            return;
+        }
+
+        try {
+            const allResidueAtomTypes = new Set<string>();
+            for (const t of atomDataAligned.symbolTypes) {
+                if (typeof t === 'string' && t.length > 0) allResidueAtomTypes.add(t);
+            }
+            for (const t of atomDataAlignedTo.symbolTypes) {
+                if (typeof t === 'string' && t.length > 0) allResidueAtomTypes.add(t);
+            }
+            const selectedAtomTypesForResidueRealign = allResidueAtomTypes.size > 0
+                ? Object.fromEntries(Array.from(allResidueAtomTypes).map(atomType => [atomType, true]))
+                : selectedAtomTypes;
+
+            const result = alignDatasetUsingChains(
+                selectedAtomTypesForResidueRealign,
+                RESIDUE_REALIGN_CHAIN_ID,
+                atomDataAligned.symbolTypes,
+                atomDataAligned.chainIds,
+                atomDataAligned.xs,
+                atomDataAligned.ys,
+                atomDataAligned.zs,
+                RESIDUE_REALIGN_CHAIN_ID,
+                atomDataAlignedTo.symbolTypes,
+                atomDataAlignedTo.chainIds,
+                atomDataAlignedTo.xs,
+                atomDataAlignedTo.ys,
+                atomDataAlignedTo.zs
+            );
+
+            const isFiniteCoord = (x: number, y: number, z: number) =>
+                Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z);
+
+            const buildRigidTransformFromFit = (): Mat4 => {
+                const rot = result.rotmat;
+                if (!Array.isArray(rot) || rot.length !== 9) {
+                    throw new Error('Alignment result rotation matrix is invalid.');
+                }
+
+                const m = Mat4.identity();
+                Mat4.setValue(m, 0, 0, rot[0]);
+                Mat4.setValue(m, 0, 1, rot[1]);
+                Mat4.setValue(m, 0, 2, rot[2]);
+                Mat4.setValue(m, 1, 0, rot[3]);
+                Mat4.setValue(m, 1, 1, rot[4]);
+                Mat4.setValue(m, 1, 2, rot[5]);
+                Mat4.setValue(m, 2, 0, rot[6]);
+                Mat4.setValue(m, 2, 1, rot[7]);
+                Mat4.setValue(m, 2, 2, rot[8]);
+
+                let tx = 0;
+                let ty = 0;
+                let tz = 0;
+                let n = 0;
+                for (let i = 0; i < atomDataAligned.xs.length && i < result.alignedX.length; i++) {
+                    const x = atomDataAligned.xs[i];
+                    const y = atomDataAligned.ys[i];
+                    const z = atomDataAligned.zs[i];
+                    const xAligned = result.alignedX[i];
+                    const yAligned = result.alignedY[i];
+                    const zAligned = result.alignedZ[i];
+                    if (!isFiniteCoord(x, y, z) || !isFiniteCoord(xAligned, yAligned, zAligned)) continue;
+
+                    const xRot = rot[0] * x + rot[1] * y + rot[2] * z;
+                    const yRot = rot[3] * x + rot[4] * y + rot[5] * z;
+                    const zRot = rot[6] * x + rot[7] * y + rot[8] * z;
+                    tx += (xAligned - xRot);
+                    ty += (yAligned - yRot);
+                    tz += (zAligned - zRot);
+                    n++;
+                }
+
+                if (n === 0) {
+                    throw new Error('No finite atom pairs were available to derive rigid translation from fit result.');
+                }
+
+                Mat4.setValue(m, 0, 3, tx / n);
+                Mat4.setValue(m, 1, 3, ty / n);
+                Mat4.setValue(m, 2, 3, tz / n);
+                return m;
+            };
+
+            const applyInPlaceRealign = async (): Promise<boolean> => {
+                if (!ENABLE_IN_PLACE_CHAIN_REALIGN) return false;
+                const pluginAInPlace = viewerA.ref.current;
+                const pluginBInPlace = viewerB.ref.current;
+                if (!pluginAInPlace || !pluginBInPlace || !structureRefAAligned || !structureRefBAligned) {
+                    return false;
+                }
+
+                const baseTransform = buildRigidTransformFromFit();
+                const applyToViewer = async (plugin: PluginUIContext, structureRef: string, tag: string) => {
+                    const structureEntry = plugin.managers.structure.hierarchy.current.structures.find(
+                        s => s.cell.transform.ref === structureRef
+                    );
+                    const coordinateSystem = structureEntry?.transform?.cell.obj?.data.coordinateSystem;
+                    const matrix = coordinateSystem && !Mat4.isIdentity(coordinateSystem.matrix)
+                        ? Mat4.mul(Mat4(), coordinateSystem.matrix, baseTransform)
+                        : baseTransform;
+                    await applyStructureTransformInPlace(plugin, structureRef, matrix, tag);
+                };
+
+                await applyToViewer(pluginAInPlace, structureRefAAligned, 'ribocode-realign-residue-inplace');
+                await applyToViewer(pluginBInPlace, structureRefBAligned, 'ribocode-realign-residue-inplace');
+                return true;
+            };
+
+            const alignmentData: AlignmentData = {
+                centroidReference: result.centroidReference,
+                centroid: result.centroid,
+                rotMat: result.rotmat
+            };
+
+            (async () => {
+                const pluginAAsync = viewerA.ref.current;
+                if (!pluginAAsync) {
+                    console.warn('Viewer A not initialized.');
+                    return;
+                }
+
+                try {
+                    const appliedInPlace = await applyInPlaceRealign();
+                    if (appliedInPlace) {
+                        setAppliedInPlaceRealignPairs(prev => addRealignPair(prev, residueFromKey, residueToKey));
+                        await residueZoomBAligned.handleButtonClick();
+                        console.log('[Re-align Residue] Applied in-place transform to existing aligned structures.');
+                        return;
+                    }
+                } catch (inPlaceErr) {
+                    console.warn('[Re-align Residue] In-place transform failed; falling back to reload-based realign.', inPlaceErr);
+                }
+
+                const file = new File([alignedFile], alignedFile.name);
+                await loadMoleculeIntoViewers(file, ReAligned, alignmentData);
+                pluginAAsync.canvas3d?.requestDraw?.();
+                const pluginBAsync = viewerB.ref.current;
+                if (!pluginBAsync) {
+                    console.warn('Viewer B not initialized.');
+                    return;
+                }
+                pluginBAsync.canvas3d?.requestDraw?.();
+                console.log('[Re-align Residue] Applied reload-based fallback realign.');
+            })();
+        } catch (err) {
+            console.error('Residue alignment error:', err);
+        }
+    };
+
     // --- Debug: Log subunit selection and filtered chain IDs ---
     useEffect(() => {
         const chains = subunitToChainIdsAlignedTo.get(selectedSubunitAlignedTo);
@@ -1955,8 +2273,16 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         },
         uiState: {
             zoom: {
-                extraRadius: zoomExtraRadius,
-                minRadius: zoomMinRadius,
+                extraRadius: zoomExtraRadiusA,
+                minRadius: zoomMinRadiusA,
+            },
+            zoomByViewer: {
+                viewerA: { extraRadius: zoomExtraRadiusA, minRadius: zoomMinRadiusA },
+                viewerB: { extraRadius: zoomExtraRadiusB, minRadius: zoomMinRadiusB },
+            },
+            clippingByViewer: {
+                viewerA: { minNear: clippingA.minNear, clipRadius: clippingA.clipRadius },
+                viewerB: { minNear: clippingB.minNear, clipRadius: clippingB.clipRadius },
             },
             selections: {
                 alignedTo: {
@@ -2023,8 +2349,16 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             },
             uiState: {
                 zoom: {
-                    extraRadius: zoomExtraRadius,
-                    minRadius: zoomMinRadius,
+                        extraRadius: zoomExtraRadiusA,
+                        minRadius: zoomMinRadiusA,
+                    },
+                    zoomByViewer: {
+                        viewerA: { extraRadius: zoomExtraRadiusA, minRadius: zoomMinRadiusA },
+                        viewerB: { extraRadius: zoomExtraRadiusB, minRadius: zoomMinRadiusB },
+                },
+                clippingByViewer: {
+                    viewerA: { minNear: clippingA.minNear, clipRadius: clippingA.clipRadius },
+                    viewerB: { minNear: clippingB.minNear, clipRadius: clippingB.clipRadius },
                 },
                 selections: {
                     alignedTo: {
@@ -2150,9 +2484,30 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 loadedAny = true;
             }
             const uiState = session?.uiState as SessionUiState | undefined;
-            if (uiState?.zoom) {
-                if (Number.isFinite(uiState.zoom.extraRadius)) setZoomExtraRadius(uiState.zoom.extraRadius);
-                if (Number.isFinite(uiState.zoom.minRadius)) setZoomMinRadius(uiState.zoom.minRadius);
+            if (uiState?.zoomByViewer?.viewerA || uiState?.zoomByViewer?.viewerB) {
+                const zoomA = uiState.zoomByViewer?.viewerA;
+                const zoomB = uiState.zoomByViewer?.viewerB;
+                if (zoomA && Number.isFinite(zoomA.extraRadius)) setZoomExtraRadiusA(zoomA.extraRadius);
+                if (zoomA && Number.isFinite(zoomA.minRadius)) setZoomMinRadiusA(zoomA.minRadius);
+                if (zoomB && Number.isFinite(zoomB.extraRadius)) setZoomExtraRadiusB(zoomB.extraRadius);
+                if (zoomB && Number.isFinite(zoomB.minRadius)) setZoomMinRadiusB(zoomB.minRadius);
+            } else if (uiState?.zoom) {
+                if (Number.isFinite(uiState.zoom.extraRadius)) {
+                    setZoomExtraRadiusA(uiState.zoom.extraRadius);
+                    setZoomExtraRadiusB(uiState.zoom.extraRadius);
+                }
+                if (Number.isFinite(uiState.zoom.minRadius)) {
+                    setZoomMinRadiusA(uiState.zoom.minRadius);
+                    setZoomMinRadiusB(uiState.zoom.minRadius);
+                }
+            }
+            const clippingUiA = uiState?.clippingByViewer?.viewerA;
+            const clippingUiB = uiState?.clippingByViewer?.viewerB;
+            if (clippingUiA && Number.isFinite(clippingUiA.minNear) && Number.isFinite(clippingUiA.clipRadius)) {
+                setClippingA({ minNear: clippingUiA.minNear, clipRadius: clippingUiA.clipRadius });
+            }
+            if (clippingUiB && Number.isFinite(clippingUiB.minNear) && Number.isFinite(clippingUiB.clipRadius)) {
+                setClippingB({ minNear: clippingUiB.minNear, clipRadius: clippingUiB.clipRadius });
             }
             if (uiState?.selections?.alignedTo) {
                 if (typeof uiState.selections.alignedTo.subunit === 'string') setSelectedSubunitAlignedTo(uiState.selections.alignedTo.subunit as any);
@@ -2195,6 +2550,12 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             }
             if (typeof uiState?.showUniprotAccessionInChainLabels === 'boolean') {
                 setShowUniprotAccessionInChainLabels(uiState.showUniprotAccessionInChainLabels);
+            } else if (uiState?.showUniprotAccessionInChainLabelsByViewer) {
+                if (typeof uiState.showUniprotAccessionInChainLabelsByViewer.viewerA === 'boolean') {
+                    setShowUniprotAccessionInChainLabels(uiState.showUniprotAccessionInChainLabelsByViewer.viewerA);
+                } else if (typeof uiState.showUniprotAccessionInChainLabelsByViewer.viewerB === 'boolean') {
+                    setShowUniprotAccessionInChainLabels(uiState.showUniprotAccessionInChainLabelsByViewer.viewerB);
+                }
             }
             if (typeof uiState?.chainFinderQueries?.alignedTo === 'string') {
                 setChainFinderQueryAlignedTo(uiState.chainFinderQueries.alignedTo);
@@ -2221,6 +2582,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         setSelectedResidueIdsAligned,
         setSelectedResidueIdAlignedTo,
         setSelectedResidueIdAligned,
+        setClippingA,
+        setClippingB,
         setChainFinderQueryAlignedTo,
         setChainFinderQueryAligned,
         setUniprotGeneNames,
@@ -2405,10 +2768,12 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     </nav>
                     {SessionLoadModal}
                     <GeneralControls
-                        zoomExtraRadius={zoomExtraRadius}
-                        setZoomExtraRadius={setZoomExtraRadius}
-                        zoomMinRadius={zoomMinRadius}
-                        setZoomMinRadius={setZoomMinRadius}
+                        viewerA={viewerA.ref.current}
+                        viewerB={viewerB.ref.current}
+                        activeViewer={activeViewer}
+                        syncEnabled={syncEnabled}
+                        setSyncEnabled={setSyncEnabled}
+                        syncDisabled={!viewerA.isMoleculeAlignedLoaded || !viewerB.isMoleculeAlignedLoaded}
                         showUniprotAccessionInChainLabels={showUniprotAccessionInChainLabels}
                         setShowUniprotAccessionInChainLabels={setShowUniprotAccessionInChainLabels}
                         uniprotLookupStatus={{
@@ -2416,16 +2781,14 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                             pending: pendingUniProtCount,
                             inFlight: inFlightUniProtCount,
                         }}
-                        viewerA={viewerA.ref.current}
-                        viewerB={viewerB.ref.current}
-                        activeViewer={activeViewer}
-                        syncEnabled={syncEnabled}
-                        setSyncEnabled={setSyncEnabled}
-                        syncDisabled={!viewerA.isMoleculeAlignedLoaded || !viewerB.isMoleculeAlignedLoaded}
                         selectedChainIdAlignedTo={selectedChainIdAlignedTo}
                         selectedChainIdAligned={selectedChainIdAligned}
                         realignmentExists={realignmentExists}
                         handleRealignToChains={handleRealignToChains}
+                        canRealignToResidues={canRealignToResidues}
+                        residueRealignmentExists={residueRealignmentExists}
+                        residueRealignSummary={`${selectedResidueIdsAlignedTo.length} to ${selectedResidueIdsAligned.length}`}
+                        handleRealignToResidues={handleRealignToResidues}
                         selectedSubunitAlignedTo={selectedSubunitAlignedTo}
                         selectedSubunitAligned={selectedSubunitAligned}
                         subunitRealignmentExists={subunitRealignmentExists}
@@ -2474,9 +2837,14 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueZoomLabel: residueZoomLabelAlignedTo,
                                     onResidueZoom: residueZoomAAlignedTo.handleButtonClick,
                                     residueZoomDisabled: residueZoomDisabledAlignedTo,
+                                    zoomExtraRadius: zoomExtraRadiusA,
+                                    setZoomExtraRadius: setZoomExtraRadiusA,
+                                    zoomMinRadius: zoomMinRadiusA,
+                                    setZoomMinRadius: setZoomMinRadiusA,
                                     fog: fogA,
                                     setFog: makeFogSetters(setFogA),
                                     clipping: clippingA,
+                                    clippingDefaults: clippingDefaultsA,
                                     setClipping: makeClippingSetters(setClippingA),
                                     updateFog,
                                     handleFileChange,
@@ -2526,9 +2894,14 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueZoomLabel: residueZoomLabelAligned,
                                     onResidueZoom: residueZoomAAligned.handleButtonClick,
                                     residueZoomDisabled: residueZoomDisabledAligned,
+                                    zoomExtraRadius: zoomExtraRadiusA,
+                                    setZoomExtraRadius: setZoomExtraRadiusA,
+                                    zoomMinRadius: zoomMinRadiusA,
+                                    setZoomMinRadius: setZoomMinRadiusA,
                                     fog: fogA,
                                     setFog: makeFogSetters(setFogA),
                                     clipping: clippingA,
+                                    clippingDefaults: clippingDefaultsA,
                                     setClipping: makeClippingSetters(setClippingA),
                                     updateFog,
                                     handleFileChange,
@@ -2666,9 +3039,14 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueZoomLabel: residueZoomLabelAlignedTo,
                                     onResidueZoom: residueZoomBAlignedTo.handleButtonClick,
                                     residueZoomDisabled: residueZoomDisabledAlignedTo,
+                                    zoomExtraRadius: zoomExtraRadiusB,
+                                    setZoomExtraRadius: setZoomExtraRadiusB,
+                                    zoomMinRadius: zoomMinRadiusB,
+                                    setZoomMinRadius: setZoomMinRadiusB,
                                     fog: fogB,
                                     setFog: makeFogSetters(setFogB),
                                     clipping: clippingB,
+                                    clippingDefaults: clippingDefaultsB,
                                     setClipping: makeClippingSetters(setClippingB),
                                     updateFog,
                                     handleFileChange,
@@ -2718,9 +3096,14 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueZoomLabel: residueZoomLabelAligned,
                                     onResidueZoom: residueZoomBAligned.handleButtonClick,
                                     residueZoomDisabled: residueZoomDisabledAligned,
+                                    zoomExtraRadius: zoomExtraRadiusB,
+                                    setZoomExtraRadius: setZoomExtraRadiusB,
+                                    zoomMinRadius: zoomMinRadiusB,
+                                    setZoomMinRadius: setZoomMinRadiusB,
                                     fog: fogB,
                                     setFog: makeFogSetters(setFogB),
                                     clipping: clippingB,
+                                    clippingDefaults: clippingDefaultsB,
                                     setClipping: makeClippingSetters(setClippingB),
                                     updateFog,
                                     handleFileChange,
