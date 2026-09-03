@@ -45,6 +45,9 @@ export interface LoadDataRowPropsInput {
 	selectedSubunit: any;
 	setSelectedSubunit: (val: any) => void;
 	subunitZoomLabel: string;
+	onSubunitHighlight: () => void;
+	subunitHighlightOn?: boolean;
+	subunitHighlightDisabled: boolean;
 	onSubunitZoom: () => void;
 	subunitZoomDisabled: boolean;
 	subunitToChainIds: any;
@@ -52,12 +55,18 @@ export interface LoadDataRowPropsInput {
 	selectedChainId: any;
 	setSelectedChainId: (val: any) => void;
 	chainZoomLabel: string;
+	onChainHighlight: () => void;
+	chainHighlightOn?: boolean;
+	chainHighlightDisabled: boolean;
 	onChainZoom: () => void;
 	chainZoomDisabled: boolean;
 	residueInfo: any;
 	selectedResidueIds: string[];
 	setSelectedResidueIds: (val: string[]) => void;
 	residueZoomLabel: string;
+	onResidueHighlight: () => void;
+	residueHighlightOn?: boolean;
+	residueHighlightDisabled: boolean;
 	onResidueZoom: () => void;
 	residueZoomDisabled: boolean;
 	zoomExtraRadius: number;
@@ -115,6 +124,9 @@ export function getLoadDataRowProps({
 	selectedSubunit,
 	setSelectedSubunit,
 	subunitZoomLabel,
+	onSubunitHighlight,
+	subunitHighlightOn,
+	subunitHighlightDisabled,
 	onSubunitZoom,
 	subunitZoomDisabled,
 	subunitToChainIds,
@@ -122,12 +134,18 @@ export function getLoadDataRowProps({
 	selectedChainId,
 	setSelectedChainId,
 	chainZoomLabel,
+	onChainHighlight,
+	chainHighlightOn,
+	chainHighlightDisabled,
 	onChainZoom,
 	chainZoomDisabled,
 	residueInfo,
 	selectedResidueIds,
 	setSelectedResidueIds,
 	residueZoomLabel,
+	onResidueHighlight,
+	residueHighlightOn,
+	residueHighlightDisabled,
 	onResidueZoom,
 	residueZoomDisabled,
 	zoomExtraRadius,
@@ -244,6 +262,9 @@ export function getLoadDataRowProps({
 		selectedSubunit,
 		onSelectSubunit: setSelectedSubunit,
 		subunitZoomLabel,
+		onSubunitHighlight,
+		subunitHighlightOn,
+		subunitHighlightDisabled,
 		onSubunitZoom,
 		subunitZoomDisabled,
 		subunitSelectDisabled: !isMoleculeAlignedToLoaded,
@@ -251,6 +272,9 @@ export function getLoadDataRowProps({
 		selectedChainId,
 		onSelectChainId: setSelectedChainId,
 		chainZoomLabel,
+		onChainHighlight,
+		chainHighlightOn,
+		chainHighlightDisabled,
 		onChainZoom,
 		chainZoomDisabled,
 		chainSelectDisabled: !isMoleculeAlignedToLoaded,
@@ -258,6 +282,9 @@ export function getLoadDataRowProps({
 		selectedResidueIds,
 		onSelectResidueIds: setSelectedResidueIds,
 		residueZoomLabel,
+		onResidueHighlight,
+		residueHighlightOn,
+		residueHighlightDisabled,
 		onResidueZoom,
 		residueZoomDisabled,
 		zoomExtraRadius,
@@ -292,7 +319,7 @@ export function getLoadDataRowProps({
 		},
 		onResetClipping: () => {
 			const resetMinNear = Number(clippingDefaults?.minNear ?? clipping.minNear ?? 1);
-			const resetClipRadius = Number(clippingDefaults?.clipRadius ?? clipping.clipRadius ?? 100);
+			const resetClipRadius = Number(clippingDefaults?.clipRadius ?? clipping.clipRadius ?? 0);
 			setClipping.setMinNear(resetMinNear);
 			setClipping.setClipRadius(resetClipRadius);
 			updateFog(viewer.ref.current, null, fog.enabled, fog.near, fog.far, resetMinNear, resetClipRadius);
@@ -682,7 +709,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 	const activeLoadProps = viewerKey === 'A' ? loadDataRowPropsAlignedTo : loadDataRowPropsAligned;
 	const activeSelectZoomIdPrefix = viewerKey === 'A' ? `${viewerIdPrefix}-alignedto` : `${viewerIdPrefix}-aligned`;
 	const clippingNear = Number(activeLoadProps?.clippingMinNear ?? 1);
-	const clippingFar = Number(activeLoadProps?.clippingRadius ?? 100);
+	const clippingFar = Number(activeLoadProps?.clippingRadius ?? 0);
 
 	       return (
 		       <div className="Column" id={viewerIdPrefix}>
@@ -779,6 +806,9 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   onSelectSubunit={activeLoadProps.onSelectSubunit}
 						   subunitSelectDisabled={activeLoadProps.subunitSelectDisabled}
 						   subunitZoomLabel={activeLoadProps.subunitZoomLabel}
+						   onSubunitHighlight={activeLoadProps.onSubunitHighlight}
+						   subunitHighlightOn={activeLoadProps.subunitHighlightOn}
+						   subunitHighlightDisabled={activeLoadProps.subunitHighlightDisabled}
 						   onSubunitZoom={activeLoadProps.onSubunitZoom}
 						   subunitZoomDisabled={activeLoadProps.subunitZoomDisabled}
 						   chainInfo={activeLoadProps.chainInfo}
@@ -786,6 +816,9 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   onSelectChainId={activeLoadProps.onSelectChainId}
 						   chainSelectDisabled={activeLoadProps.chainSelectDisabled}
 						   chainZoomLabel={activeLoadProps.chainZoomLabel}
+						   onChainHighlight={activeLoadProps.onChainHighlight}
+						   chainHighlightOn={activeLoadProps.chainHighlightOn}
+						   chainHighlightDisabled={activeLoadProps.chainHighlightDisabled}
 						   onChainZoom={activeLoadProps.onChainZoom}
 						   chainZoomDisabled={activeLoadProps.chainZoomDisabled}
 						   residueInfo={activeLoadProps.residueInfo}
@@ -793,6 +826,9 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   onSelectResidueIds={activeLoadProps.onSelectResidueIds}
 						   residueSelectDisabled={activeLoadProps.residueSelectDisabled}
 						   residueZoomLabel={activeLoadProps.residueZoomLabel}
+						   onResidueHighlight={activeLoadProps.onResidueHighlight}
+						   residueHighlightOn={activeLoadProps.residueHighlightOn}
+						   residueHighlightDisabled={activeLoadProps.residueHighlightDisabled}
 						   onResidueZoom={activeLoadProps.onResidueZoom}
 						   residueZoomDisabled={activeLoadProps.residueZoomDisabled}
 						   zoomExtraRadius={activeLoadProps.zoomExtraRadius}

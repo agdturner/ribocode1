@@ -9,14 +9,17 @@
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { vi } from 'vitest';
-import { makeFogSetters, makeClippingSetters, createZoomHandler, makeZoomHandler } from './viewerHelpers';
-import { focusLociOnChain, focusLociOnResidue, focusLociOnResidues } from '../utils/structure';
+import { makeFogSetters, makeClippingSetters, createZoomHandler, makeZoomHandler, createChainHighlightHandler, createChainHighlightToggleHandler, createResidueHighlightToggleHandler, createSubunitHighlightToggleHandler } from './viewerHelpers';
+import { focusLociOnChain, focusLociOnResidue, focusLociOnResidues, highlightLociOnChain, highlightLociOnResidues, highlightLociOnSubunit } from '../utils/structure';
 
 vi.mock('../utils/structure', () => ({
   focusLociOnChain: vi.fn(),
   focusLociOnResidue: vi.fn(),
   focusLociOnResidues: vi.fn(),
   focusLociOnSubunit: vi.fn(),
+  highlightLociOnChain: vi.fn(),
+  highlightLociOnResidues: vi.fn(),
+  highlightLociOnSubunit: vi.fn(),
 }));
 
 describe('viewerHelpers', () => {
@@ -235,5 +238,243 @@ describe('viewerHelpers', () => {
       ['10', '11'],
       { '10': '', '11': 'A' }
     );
+  });
+
+  it('highlights selected chain and syncs highlight when enabled', async () => {
+    vi.mocked(highlightLociOnChain).mockClear();
+    const pluginRef = { current: { id: 'plugin-a' } };
+    const syncPluginRef = { current: { id: 'plugin-b' } };
+    const handler = createChainHighlightHandler(
+      pluginRef as any,
+      'struct-a',
+      'A',
+      true,
+      syncPluginRef as any,
+      'struct-b',
+      'B'
+    );
+
+    await handler.handleButtonClick();
+
+    expect(highlightLociOnChain).toHaveBeenCalledWith(
+      pluginRef.current,
+      'struct-a',
+      'A',
+      syncPluginRef.current,
+      undefined,
+      'struct-b',
+      'B'
+    );
+  });
+
+  it('toggles highlight on when currently off', async () => {
+    vi.mocked(highlightLociOnChain).mockClear();
+    const deselectAllA = vi.fn();
+    const clearHighlightsA = vi.fn();
+    const pluginRef = {
+      current: {
+        id: 'plugin-a',
+        managers: { interactivity: { lociSelects: { deselectAll: deselectAllA }, lociHighlights: { clearHighlights: clearHighlightsA } } },
+      },
+    };
+    const setIsHighlighted = vi.fn();
+    const handler = createChainHighlightToggleHandler(
+      pluginRef as any,
+      'struct-a',
+      'A',
+      false,
+      setIsHighlighted,
+      false
+    );
+
+    await handler.handleButtonClick();
+
+    expect(highlightLociOnChain).toHaveBeenCalledWith(
+      pluginRef.current,
+      'struct-a',
+      'A',
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
+    expect(setIsHighlighted).toHaveBeenCalledWith(true);
+    expect(deselectAllA).not.toHaveBeenCalled();
+    expect(clearHighlightsA).not.toHaveBeenCalled();
+  });
+
+  it('toggles highlight off when currently on and clears both viewers if synced', async () => {
+    vi.mocked(highlightLociOnChain).mockClear();
+    const deselectAllA = vi.fn();
+    const clearHighlightsA = vi.fn();
+    const deselectAllB = vi.fn();
+    const clearHighlightsB = vi.fn();
+    const pluginRef = {
+      current: {
+        id: 'plugin-a',
+        managers: { interactivity: { lociSelects: { deselectAll: deselectAllA }, lociHighlights: { clearHighlights: clearHighlightsA } } },
+      },
+    };
+    const syncPluginRef = {
+      current: {
+        id: 'plugin-b',
+        managers: { interactivity: { lociSelects: { deselectAll: deselectAllB }, lociHighlights: { clearHighlights: clearHighlightsB } } },
+      },
+    };
+    const setIsHighlighted = vi.fn();
+    const handler = createChainHighlightToggleHandler(
+      pluginRef as any,
+      'struct-a',
+      'A',
+      true,
+      setIsHighlighted,
+      true,
+      syncPluginRef as any,
+      'struct-b',
+      'B'
+    );
+
+    await handler.handleButtonClick();
+
+    expect(deselectAllA).toHaveBeenCalled();
+    expect(clearHighlightsA).not.toHaveBeenCalled();
+    expect(deselectAllB).toHaveBeenCalled();
+    expect(clearHighlightsB).not.toHaveBeenCalled();
+    expect(highlightLociOnChain).not.toHaveBeenCalled();
+    expect(setIsHighlighted).toHaveBeenCalledWith(false);
+  });
+
+  it('toggles residue highlight on when currently off', async () => {
+    vi.mocked(highlightLociOnResidues).mockClear();
+    const pluginRef = {
+      current: {
+        id: 'plugin-a',
+        managers: { interactivity: { lociSelects: { deselectAll: vi.fn() }, lociHighlights: { clearHighlights: vi.fn() } } },
+      },
+    };
+    const setIsHighlighted = vi.fn();
+    const handler = createResidueHighlightToggleHandler(
+      pluginRef as any,
+      'struct-a',
+      'A',
+      ['10', '11'],
+      { '10': '', '11': 'A' },
+      false,
+      setIsHighlighted,
+      false
+    );
+
+    await handler.handleButtonClick();
+
+    expect(highlightLociOnResidues).toHaveBeenCalledWith(
+      pluginRef.current,
+      'struct-a',
+      'A',
+      ['10', '11'],
+      { '10': '', '11': 'A' },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    );
+    expect(setIsHighlighted).toHaveBeenCalledWith(true);
+  });
+
+  it('toggles residue highlight off when currently on', async () => {
+    vi.mocked(highlightLociOnResidues).mockClear();
+    const deselectAll = vi.fn();
+    const clearHighlights = vi.fn();
+    const pluginRef = {
+      current: {
+        id: 'plugin-a',
+        managers: { interactivity: { lociSelects: { deselectAll }, lociHighlights: { clearHighlights } } },
+      },
+    };
+    const setIsHighlighted = vi.fn();
+    const handler = createResidueHighlightToggleHandler(
+      pluginRef as any,
+      'struct-a',
+      'A',
+      ['10'],
+      { '10': '' },
+      true,
+      setIsHighlighted,
+      false
+    );
+
+    await handler.handleButtonClick();
+
+    expect(deselectAll).not.toHaveBeenCalled();
+    expect(clearHighlights).toHaveBeenCalled();
+    expect(highlightLociOnResidues).not.toHaveBeenCalled();
+    expect(setIsHighlighted).toHaveBeenCalledWith(false);
+  });
+
+  it('toggles subunit highlight on when currently off', async () => {
+    vi.mocked(highlightLociOnSubunit).mockClear();
+    const pluginRef = {
+      current: {
+        id: 'plugin-a',
+        managers: {
+          interactivity: { lociSelects: { deselectAll: vi.fn() }, lociHighlights: { clearHighlights: vi.fn() } },
+          structure: { focus: { clear: vi.fn() } }
+        },
+      },
+    };
+    const setIsHighlighted = vi.fn();
+    const handler = createSubunitHighlightToggleHandler(
+      pluginRef as any,
+      'struct-a',
+      ['A', 'B'],
+      false,
+      setIsHighlighted,
+      false
+    );
+
+    await handler.handleButtonClick();
+
+    expect(highlightLociOnSubunit).toHaveBeenCalledWith(
+      pluginRef.current,
+      'struct-a',
+      ['A', 'B'],
+      undefined,
+      undefined,
+      undefined
+    );
+    expect(setIsHighlighted).toHaveBeenCalledWith(true);
+  });
+
+  it('toggles subunit highlight off and clears only focus channel', async () => {
+    vi.mocked(highlightLociOnSubunit).mockClear();
+    const deselectAll = vi.fn();
+    const clearHighlights = vi.fn();
+    const clearFocus = vi.fn();
+    const pluginRef = {
+      current: {
+        id: 'plugin-a',
+        managers: {
+          interactivity: { lociSelects: { deselectAll }, lociHighlights: { clearHighlights } },
+          structure: { focus: { clear: clearFocus } }
+        },
+      },
+    };
+    const setIsHighlighted = vi.fn();
+    const handler = createSubunitHighlightToggleHandler(
+      pluginRef as any,
+      'struct-a',
+      ['A'],
+      true,
+      setIsHighlighted,
+      false
+    );
+
+    await handler.handleButtonClick();
+
+    expect(clearFocus).toHaveBeenCalled();
+    expect(deselectAll).not.toHaveBeenCalled();
+    expect(clearHighlights).not.toHaveBeenCalled();
+    expect(highlightLociOnSubunit).not.toHaveBeenCalled();
+    expect(setIsHighlighted).toHaveBeenCalledWith(false);
   });
 });

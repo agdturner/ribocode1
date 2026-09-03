@@ -77,6 +77,36 @@ export function getChainLoci(plugin: PluginUIContext, structureRef: string, chai
 }
 
 /**
+ * Highlight/select a chain loci in Mol* so the chosen chain is visually emphasized.
+ * Uses selectOnly when available to mirror Mol* selection tool behavior.
+ */
+export function highlightLociOnChain(
+    plugin: PluginUIContext,
+    structureRef: string,
+    chainId: string,
+    syncPlugin?: PluginUIContext,
+    getChainLociFn: (plugin: PluginUIContext, structureRef: string, chainId: string) => any = getChainLoci,
+    syncStructureRef?: string,
+    syncChainId?: string
+) {
+    const applyHighlight = (targetPlugin: PluginUIContext, targetStructureRef: string, targetChainId: string) => {
+        const loci = getChainLociFn(targetPlugin, targetStructureRef, targetChainId);
+        if (!loci) return;
+        const lociSelects = targetPlugin.managers.interactivity?.lociSelects;
+        if (lociSelects?.selectOnly) {
+            lociSelects.selectOnly({ loci }, false);
+            return;
+        }
+        targetPlugin.managers.interactivity?.lociHighlights?.highlightOnly?.({ loci }, false);
+    };
+
+    applyHighlight(plugin, structureRef, chainId);
+    if (syncPlugin) {
+        applyHighlight(syncPlugin, syncStructureRef ?? structureRef, syncChainId ?? chainId);
+    }
+}
+
+/**
  * Focus the camera on a chain loci, with optional sync to another plugin.
  * Accepts zoom options for extraRadius and minRadius (same as focusLociOnResidue).
  */
@@ -153,6 +183,41 @@ export function focusLociOnSubunit(
         if (syncLoci) {
             syncPlugin.managers.camera.focusLoci(syncLoci, focusOptions);
         }
+    }
+}
+
+/**
+ * Highlight/focus a subunit (set of chains) using Mol* structure focus channel,
+ * independent of selection and highlight marker channels.
+ */
+export function highlightLociOnSubunit(
+    plugin: PluginUIContext,
+    structureRef: string,
+    chainIds: string[],
+    syncPlugin?: PluginUIContext,
+    syncStructureRef?: string,
+    syncChainIds?: string[]
+) {
+    const applyFocus = (
+        targetPlugin: PluginUIContext,
+        targetStructureRef: string,
+        targetChainIds: string[]
+    ) => {
+        const loci = getSubunitLoci(targetPlugin, targetStructureRef, targetChainIds);
+        if (!loci) return;
+        const focusManager = targetPlugin.managers.structure?.focus;
+        if (focusManager?.setFromLoci) {
+            focusManager.setFromLoci(loci);
+            return;
+        }
+        if (focusManager?.set) {
+            focusManager.set({ loci, label: `subunit:${targetChainIds.join(',')}` });
+        }
+    };
+
+    applyFocus(plugin, structureRef, chainIds);
+    if (syncPlugin) {
+        applyFocus(syncPlugin, syncStructureRef ?? structureRef, syncChainIds ?? chainIds);
     }
 }
 
@@ -256,6 +321,53 @@ export function focusLociOnResidues(
         if (syncLoci) {
             syncPlugin.managers.camera.focusLoci(syncLoci, focusOptions);
         }
+    }
+}
+
+/**
+ * Highlight one or many residues in a chain, with optional sync.
+ * Uses Mol* highlight channel so residue highlighting stays visually distinct
+ * from chain selection highlighting.
+ */
+export function highlightLociOnResidues(
+    plugin: PluginUIContext,
+    structureRef: string,
+    chainId: string,
+    residueIds: string[],
+    residueInsCodes?: Record<string, string | undefined>,
+    syncPlugin?: PluginUIContext,
+    syncStructureRef?: string,
+    syncChainId?: string,
+    syncResidueIds?: string[],
+    syncResidueInsCodes?: Record<string, string | undefined>
+) {
+    const applyHighlight = (
+        targetPlugin: PluginUIContext,
+        targetStructureRef: string,
+        targetChainId: string,
+        targetResidueIds: string[],
+        targetResidueInsCodes?: Record<string, string | undefined>
+    ) => {
+        const loci = getResiduesLoci(targetPlugin, targetStructureRef, targetChainId, targetResidueIds, targetResidueInsCodes);
+        if (!loci) return;
+        const lociHighlights = targetPlugin.managers.interactivity?.lociHighlights;
+        if (lociHighlights?.highlightOnly) {
+            lociHighlights.highlightOnly({ loci }, false);
+            return;
+        }
+        // Fallback for environments where highlight manager is unavailable.
+        targetPlugin.managers.interactivity?.lociSelects?.selectOnly?.({ loci }, false);
+    };
+
+    applyHighlight(plugin, structureRef, chainId, residueIds, residueInsCodes);
+    if (syncPlugin) {
+        applyHighlight(
+            syncPlugin,
+            syncStructureRef ?? structureRef,
+            syncChainId ?? chainId,
+            syncResidueIds ?? residueIds,
+            syncResidueInsCodes ?? residueInsCodes
+        );
     }
 }
 

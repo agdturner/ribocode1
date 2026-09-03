@@ -8,7 +8,7 @@
  * @lastModified 2026-04-24
  * @see https://github.com/ribocode-slola/ribocode1
  */
-import { focusLociOnChain, focusLociOnResidue, focusLociOnResidues, focusLociOnSubunit } from '../utils/structure';
+import { focusLociOnChain, focusLociOnResidue, focusLociOnResidues, focusLociOnSubunit, highlightLociOnChain, highlightLociOnResidues, highlightLociOnSubunit } from '../utils/structure';
 import { PluginUIContext } from 'molstar/lib/mol-plugin-ui/context';
 
 // Helper for fog setters
@@ -199,5 +199,312 @@ export function makeZoomHandler({
         syncResidueIds,
         residueInsCodes,
         syncResidueInsCodes
+    );
+}
+
+// Handler to highlight a selected chain.
+export function createChainHighlightHandler(
+    pluginRef: React.RefObject<PluginUIContext | null>,
+    structureRef: string | null,
+    chainId: string,
+    sync: boolean = false,
+    syncPluginRef?: React.RefObject<PluginUIContext | null>,
+    syncStructureRef?: string | null,
+    syncChainId?: string
+) {
+    return {
+        handleButtonClick: async () => {
+            const plugin = pluginRef.current;
+            if (!plugin || !structureRef || !chainId) return;
+            highlightLociOnChain(
+                plugin,
+                structureRef,
+                chainId,
+                sync && syncPluginRef?.current ? syncPluginRef.current : undefined,
+                undefined,
+                syncStructureRef ?? undefined,
+                syncChainId
+            );
+        }
+    };
+}
+
+export function makeChainHighlightHandler({
+    pluginRef,
+    structureRef,
+    chainId,
+    sync,
+    syncPluginRef,
+    syncStructureRef,
+    syncChainId,
+}: {
+    pluginRef: React.RefObject<PluginUIContext | null>,
+    structureRef: string | null,
+    chainId: string,
+    sync: boolean,
+    syncPluginRef?: React.RefObject<PluginUIContext | null>,
+    syncStructureRef?: string | null,
+    syncChainId?: string,
+}) {
+    return createChainHighlightHandler(
+        pluginRef,
+        structureRef,
+        chainId,
+        sync,
+        syncPluginRef,
+        syncStructureRef,
+        syncChainId
+    );
+}
+
+function clearChainSelection(plugin: PluginUIContext | null | undefined) {
+    if (!plugin) return;
+    plugin.managers.interactivity?.lociSelects?.deselectAll?.();
+}
+
+function clearResidueHighlights(plugin: PluginUIContext | null | undefined) {
+    if (!plugin) return;
+    plugin.managers.interactivity?.lociHighlights?.clearHighlights?.();
+}
+
+function clearSubunitFocus(plugin: PluginUIContext | null | undefined) {
+    if (!plugin) return;
+    plugin.managers.structure?.focus?.clear?.();
+}
+
+export function createChainHighlightToggleHandler(
+    pluginRef: React.RefObject<PluginUIContext | null>,
+    structureRef: string | null,
+    chainId: string,
+    isHighlighted: boolean,
+    setIsHighlighted: React.Dispatch<React.SetStateAction<boolean>>,
+    sync: boolean = false,
+    syncPluginRef?: React.RefObject<PluginUIContext | null>,
+    syncStructureRef?: string | null,
+    syncChainId?: string
+) {
+    return {
+        handleButtonClick: async () => {
+            const plugin = pluginRef.current;
+            const syncPlugin = sync && syncPluginRef?.current ? syncPluginRef.current : undefined;
+
+            if (isHighlighted) {
+                clearChainSelection(plugin);
+                clearChainSelection(syncPlugin);
+                setIsHighlighted(false);
+                return;
+            }
+
+            if (!plugin || !structureRef || !chainId) return;
+
+            highlightLociOnChain(
+                plugin,
+                structureRef,
+                chainId,
+                syncPlugin,
+                undefined,
+                syncStructureRef ?? undefined,
+                syncChainId
+            );
+            setIsHighlighted(true);
+        }
+    };
+}
+
+export function makeChainHighlightToggleHandler({
+    pluginRef,
+    structureRef,
+    chainId,
+    isHighlighted,
+    setIsHighlighted,
+    sync,
+    syncPluginRef,
+    syncStructureRef,
+    syncChainId,
+}: {
+    pluginRef: React.RefObject<PluginUIContext | null>,
+    structureRef: string | null,
+    chainId: string,
+    isHighlighted: boolean,
+    setIsHighlighted: React.Dispatch<React.SetStateAction<boolean>>,
+    sync: boolean,
+    syncPluginRef?: React.RefObject<PluginUIContext | null>,
+    syncStructureRef?: string | null,
+    syncChainId?: string,
+}) {
+    return createChainHighlightToggleHandler(
+        pluginRef,
+        structureRef,
+        chainId,
+        isHighlighted,
+        setIsHighlighted,
+        sync,
+        syncPluginRef,
+        syncStructureRef,
+        syncChainId
+    );
+}
+
+export function createResidueHighlightToggleHandler(
+    pluginRef: React.RefObject<PluginUIContext | null>,
+    structureRef: string | null,
+    chainId: string,
+    residueIds: string[],
+    residueInsCodes: Record<string, string | undefined> | undefined,
+    isHighlighted: boolean,
+    setIsHighlighted: React.Dispatch<React.SetStateAction<boolean>>,
+    sync: boolean = false,
+    syncPluginRef?: React.RefObject<PluginUIContext | null>,
+    syncStructureRef?: string | null,
+    syncChainId?: string,
+    syncResidueIds?: string[],
+    syncResidueInsCodes?: Record<string, string | undefined>
+) {
+    return {
+        handleButtonClick: async () => {
+            const plugin = pluginRef.current;
+            const syncPlugin = sync && syncPluginRef?.current ? syncPluginRef.current : undefined;
+
+            if (isHighlighted) {
+                clearResidueHighlights(plugin);
+                clearResidueHighlights(syncPlugin);
+                setIsHighlighted(false);
+                return;
+            }
+
+            if (!plugin || !structureRef || !chainId || residueIds.length === 0) return;
+
+            highlightLociOnResidues(
+                plugin,
+                structureRef,
+                chainId,
+                residueIds,
+                residueInsCodes,
+                syncPlugin,
+                syncStructureRef ?? undefined,
+                syncChainId,
+                syncResidueIds,
+                syncResidueInsCodes
+            );
+            setIsHighlighted(true);
+        }
+    };
+}
+
+export function makeResidueHighlightToggleHandler({
+    pluginRef,
+    structureRef,
+    chainId,
+    residueIds,
+    residueInsCodes,
+    isHighlighted,
+    setIsHighlighted,
+    sync,
+    syncPluginRef,
+    syncStructureRef,
+    syncChainId,
+    syncResidueIds,
+    syncResidueInsCodes,
+}: {
+    pluginRef: React.RefObject<PluginUIContext | null>,
+    structureRef: string | null,
+    chainId: string,
+    residueIds: string[],
+    residueInsCodes?: Record<string, string | undefined>,
+    isHighlighted: boolean,
+    setIsHighlighted: React.Dispatch<React.SetStateAction<boolean>>,
+    sync: boolean,
+    syncPluginRef?: React.RefObject<PluginUIContext | null>,
+    syncStructureRef?: string | null,
+    syncChainId?: string,
+    syncResidueIds?: string[],
+    syncResidueInsCodes?: Record<string, string | undefined>,
+}) {
+    return createResidueHighlightToggleHandler(
+        pluginRef,
+        structureRef,
+        chainId,
+        residueIds,
+        residueInsCodes,
+        isHighlighted,
+        setIsHighlighted,
+        sync,
+        syncPluginRef,
+        syncStructureRef,
+        syncChainId,
+        syncResidueIds,
+        syncResidueInsCodes
+    );
+}
+
+export function createSubunitHighlightToggleHandler(
+    pluginRef: React.RefObject<PluginUIContext | null>,
+    structureRef: string | null,
+    chainIds: string[],
+    isHighlighted: boolean,
+    setIsHighlighted: React.Dispatch<React.SetStateAction<boolean>>,
+    sync: boolean = false,
+    syncPluginRef?: React.RefObject<PluginUIContext | null>,
+    syncStructureRef?: string | null,
+    syncChainIds?: string[]
+) {
+    return {
+        handleButtonClick: async () => {
+            const plugin = pluginRef.current;
+            const syncPlugin = sync && syncPluginRef?.current ? syncPluginRef.current : undefined;
+
+            if (isHighlighted) {
+                clearSubunitFocus(plugin);
+                clearSubunitFocus(syncPlugin);
+                setIsHighlighted(false);
+                return;
+            }
+
+            if (!plugin || !structureRef || chainIds.length === 0) return;
+
+            highlightLociOnSubunit(
+                plugin,
+                structureRef,
+                chainIds,
+                syncPlugin,
+                syncStructureRef ?? undefined,
+                syncChainIds
+            );
+            setIsHighlighted(true);
+        }
+    };
+}
+
+export function makeSubunitHighlightToggleHandler({
+    pluginRef,
+    structureRef,
+    chainIds,
+    isHighlighted,
+    setIsHighlighted,
+    sync,
+    syncPluginRef,
+    syncStructureRef,
+    syncChainIds,
+}: {
+    pluginRef: React.RefObject<PluginUIContext | null>,
+    structureRef: string | null,
+    chainIds: string[],
+    isHighlighted: boolean,
+    setIsHighlighted: React.Dispatch<React.SetStateAction<boolean>>,
+    sync: boolean,
+    syncPluginRef?: React.RefObject<PluginUIContext | null>,
+    syncStructureRef?: string | null,
+    syncChainIds?: string[],
+}) {
+    return createSubunitHighlightToggleHandler(
+        pluginRef,
+        structureRef,
+        chainIds,
+        isHighlighted,
+        setIsHighlighted,
+        sync,
+        syncPluginRef,
+        syncStructureRef,
+        syncChainIds
     );
 }

@@ -92,7 +92,7 @@ describe('App clipping defaults', () => {
 
   it('falls back to app defaults when Mol* clipping props are missing', () => {
     const clipping = readClippingFromViewer({ canvas3d: { props: {} } });
-    expect(clipping).toEqual({ minNear: 1, clipRadius: 100 });
+    expect(clipping).toEqual({ minNear: 1, clipRadius: 0 });
   });
 });
 

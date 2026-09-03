@@ -89,6 +89,9 @@ interface LoadDataRowProps {
     onSelectSubunit: (subunit: RibosomeSubunitType) => void;
     subunitSelectDisabled: boolean;
     subunitZoomLabel: string;
+    onSubunitHighlight: () => void;
+    subunitHighlightOn?: boolean;
+    subunitHighlightDisabled: boolean;
     onSubunitZoom: () => void;
     subunitZoomDisabled: boolean;
     // Chain
@@ -97,6 +100,9 @@ interface LoadDataRowProps {
     onSelectChainId: (id: string) => void;
     chainSelectDisabled: boolean;
     chainZoomLabel: string;
+    onChainHighlight: () => void;
+    chainHighlightOn?: boolean;
+    chainHighlightDisabled: boolean;
     onChainZoom: () => void;
     chainZoomDisabled: boolean;
     // Residue
@@ -108,6 +114,9 @@ interface LoadDataRowProps {
     onSelectResidueIds: (ids: string[]) => void;
     residueSelectDisabled: boolean;
     residueZoomLabel: string;
+    onResidueHighlight: () => void;
+    residueHighlightOn?: boolean;
+    residueHighlightDisabled: boolean;
     onResidueZoom: () => void;
     residueZoomDisabled: boolean;
     zoomExtraRadius?: number;
@@ -142,6 +151,9 @@ interface LoadDataRowProps {
         onSelectSubunit: (subunit: RibosomeSubunitType) => void;
         subunitSelectDisabled: boolean;
         subunitZoomLabel: string;
+        onSubunitHighlight: () => void;
+        subunitHighlightOn?: boolean;
+        subunitHighlightDisabled: boolean;
         onSubunitZoom: () => void;
         subunitZoomDisabled: boolean;
         chainInfo: { chainLabels: Map<string, string>; };
@@ -149,6 +161,9 @@ interface LoadDataRowProps {
         onSelectChainId: (id: string) => void;
         chainSelectDisabled: boolean;
         chainZoomLabel: string;
+        onChainHighlight: () => void;
+        chainHighlightOn?: boolean;
+        chainHighlightDisabled: boolean;
         onChainZoom: () => void;
         chainZoomDisabled: boolean;
         residueInfo: {
@@ -159,6 +174,9 @@ interface LoadDataRowProps {
         onSelectResidueIds: (ids: string[]) => void;
         residueSelectDisabled: boolean;
         residueZoomLabel: string;
+        onResidueHighlight: () => void;
+        residueHighlightOn?: boolean;
+        residueHighlightDisabled: boolean;
         onResidueZoom: () => void;
         residueZoomDisabled: boolean;
         zoomExtraRadius?: number;
@@ -174,6 +192,9 @@ interface LoadDataRowProps {
         onSelectSubunit,
         subunitSelectDisabled,
         subunitZoomLabel,
+        onSubunitHighlight,
+        subunitHighlightOn = false,
+        subunitHighlightDisabled,
         onSubunitZoom,
         subunitZoomDisabled,
         chainInfo,
@@ -181,6 +202,9 @@ interface LoadDataRowProps {
         onSelectChainId,
         chainSelectDisabled,
         chainZoomLabel,
+        onChainHighlight,
+        chainHighlightOn = false,
+        chainHighlightDisabled,
         onChainZoom,
         chainZoomDisabled,
         residueInfo,
@@ -188,6 +212,9 @@ interface LoadDataRowProps {
         onSelectResidueIds,
         residueSelectDisabled,
         residueZoomLabel,
+        onResidueHighlight,
+        residueHighlightOn = false,
+        residueHighlightDisabled,
         onResidueZoom,
         residueZoomDisabled,
         zoomExtraRadius = 0,
@@ -197,6 +224,30 @@ interface LoadDataRowProps {
         idPrefix,
     }) => (
         <>
+            <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <label htmlFor={`${idPrefix}-zoom-extra-radius`}>Zoom extraRadius:</label>
+                <input
+                    id={`${idPrefix}-zoom-extra-radius`}
+                    type="number"
+                    value={zoomExtraRadius}
+                    min={0}
+                    max={100}
+                    step={1}
+                    style={{ width: 60 }}
+                    onChange={e => onZoomExtraRadiusChange(Number(e.target.value))}
+                />
+                <label htmlFor={`${idPrefix}-zoom-min-radius`}>minRadius:</label>
+                <input
+                    id={`${idPrefix}-zoom-min-radius`}
+                    type="number"
+                    value={zoomMinRadius}
+                    min={0}
+                    max={100}
+                    step={1}
+                    style={{ width: 60 }}
+                    onChange={e => onZoomMinRadiusChange(Number(e.target.value))}
+                />
+            </div>
             <div className="load-data-control-row">
                 <SubunitSelectButton
                     disabled={subunitSelectDisabled}
@@ -204,6 +255,17 @@ interface LoadDataRowProps {
                     onSelect={onSelectSubunit}
                     id={`${idPrefix}-subunit-select`}
                 />
+            </div>
+            <div className="load-data-control-row">
+                <button
+                    onClick={onSubunitHighlight}
+                    disabled={subunitHighlightDisabled}
+                    aria-pressed={subunitHighlightOn}
+                    className="msp-btn msp-form-control"
+                    id={`${idPrefix}-highlight-subunit-btn`}
+                >
+                    Highlight Subunit: {subunitHighlightOn ? 'On' : 'Off'}
+                </button>
             </div>
             <div className="load-data-control-row">
                 <button
@@ -226,6 +288,17 @@ interface LoadDataRowProps {
             </div>
             <div className="load-data-control-row">
                 <button
+                    onClick={onChainHighlight}
+                    disabled={chainHighlightDisabled}
+                    aria-pressed={chainHighlightOn}
+                    className="msp-btn msp-form-control"
+                    id={`${idPrefix}-highlight-chain-btn`}
+                >
+                    Highlight Chain: {chainHighlightOn ? 'On' : 'Off'}
+                </button>
+            </div>
+            <div className="load-data-control-row">
+                <button
                     onClick={onChainZoom}
                     disabled={chainZoomDisabled}
                     className="msp-btn msp-form-control"
@@ -245,6 +318,17 @@ interface LoadDataRowProps {
             </div>
             <div className="load-data-control-row">
                 <button
+                    onClick={onResidueHighlight}
+                    disabled={residueHighlightDisabled}
+                    aria-pressed={residueHighlightOn}
+                    className="msp-btn msp-form-control"
+                    id={`${idPrefix}-highlight-residue-btn`}
+                >
+                    Highlight Residues: {residueHighlightOn ? 'On' : 'Off'}
+                </button>
+            </div>
+            <div className="load-data-control-row">
+                <button
                     onClick={onResidueZoom}
                     disabled={residueZoomDisabled}
                     className="msp-btn msp-form-control"
@@ -252,30 +336,6 @@ interface LoadDataRowProps {
                 >
                     Zoom to Residue: {residueZoomLabel}
                 </button>
-            </div>
-            <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <label htmlFor={`${idPrefix}-zoom-extra-radius`}>Residue Zoom extraRadius:</label>
-                <input
-                    id={`${idPrefix}-zoom-extra-radius`}
-                    type="number"
-                    value={zoomExtraRadius}
-                    min={0}
-                    max={100}
-                    step={1}
-                    style={{ width: 60 }}
-                    onChange={e => onZoomExtraRadiusChange(Number(e.target.value))}
-                />
-                <label htmlFor={`${idPrefix}-zoom-min-radius`}>minRadius:</label>
-                <input
-                    id={`${idPrefix}-zoom-min-radius`}
-                    type="number"
-                    value={zoomMinRadius}
-                    min={0}
-                    max={100}
-                    step={1}
-                    style={{ width: 60 }}
-                    onChange={e => onZoomMinRadiusChange(Number(e.target.value))}
-                />
             </div>
         </>
     );
@@ -354,6 +414,9 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     onSelectSubunit,
     subunitSelectDisabled,
     subunitZoomLabel,
+    onSubunitHighlight,
+    subunitHighlightOn = false,
+    subunitHighlightDisabled,
     onSubunitZoom,
     subunitZoomDisabled,
     chainInfo,
@@ -361,6 +424,9 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     onSelectChainId,
     chainSelectDisabled,
     chainZoomLabel,
+    onChainHighlight,
+    chainHighlightOn = false,
+    chainHighlightDisabled,
     onChainZoom,
     chainZoomDisabled,
     residueInfo,
@@ -368,6 +434,9 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     onSelectResidueIds,
     residueSelectDisabled,
     residueZoomLabel,
+    onResidueHighlight,
+    residueHighlightOn = false,
+    residueHighlightDisabled,
     onResidueZoom,
     residueZoomDisabled,
     zoomExtraRadius = 0,
@@ -491,6 +560,9 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                         onSelectSubunit={onSelectSubunit}
                         subunitSelectDisabled={subunitSelectDisabled}
                         subunitZoomLabel={subunitZoomLabel}
+                        onSubunitHighlight={onSubunitHighlight}
+                        subunitHighlightOn={subunitHighlightOn}
+                        subunitHighlightDisabled={subunitHighlightDisabled}
                         onSubunitZoom={onSubunitZoom}
                         subunitZoomDisabled={subunitZoomDisabled}
                         chainInfo={chainInfo}
@@ -498,6 +570,9 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                         onSelectChainId={onSelectChainId}
                         chainSelectDisabled={chainSelectDisabled}
                         chainZoomLabel={chainZoomLabel}
+                        onChainHighlight={onChainHighlight}
+                        chainHighlightOn={chainHighlightOn}
+                        chainHighlightDisabled={chainHighlightDisabled}
                         onChainZoom={onChainZoom}
                         chainZoomDisabled={chainZoomDisabled}
                         residueInfo={residueInfo}
@@ -505,6 +580,9 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                         onSelectResidueIds={onSelectResidueIds}
                         residueSelectDisabled={residueSelectDisabled}
                         residueZoomLabel={residueZoomLabel}
+                        onResidueHighlight={onResidueHighlight}
+                        residueHighlightOn={residueHighlightOn}
+                        residueHighlightDisabled={residueHighlightDisabled}
                         onResidueZoom={onResidueZoom}
                         residueZoomDisabled={residueZoomDisabled}
                         zoomExtraRadius={zoomExtraRadius}
@@ -604,6 +682,9 @@ interface LoadDataRowProps {
     onSelectSubunit: (subunit: RibosomeSubunitType) => void;
     subunitSelectDisabled: boolean;
     subunitZoomLabel: string;
+    onSubunitHighlight: () => void;
+    subunitHighlightOn?: boolean;
+    subunitHighlightDisabled: boolean;
     onSubunitZoom: () => void;
     subunitZoomDisabled: boolean;
     // Chain
@@ -612,6 +693,8 @@ interface LoadDataRowProps {
     onSelectChainId: (id: string) => void;
     chainSelectDisabled: boolean;
     chainZoomLabel: string;
+    onChainHighlight: () => void;
+    chainHighlightDisabled: boolean;
     onChainZoom: () => void;
     chainZoomDisabled: boolean;
     // Residue
@@ -623,6 +706,9 @@ interface LoadDataRowProps {
     onSelectResidueIds: (ids: string[]) => void;
     residueSelectDisabled: boolean;
     residueZoomLabel: string;
+    onResidueHighlight: () => void;
+    residueHighlightOn?: boolean;
+    residueHighlightDisabled: boolean;
     onResidueZoom: () => void;
     residueZoomDisabled: boolean;
     // Optional representation type selector
