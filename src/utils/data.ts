@@ -13,6 +13,8 @@ import { Asset } from 'molstar/lib/mol-util/assets';
 import { Vec3 } from 'molstar/lib/mol-math/linear-algebra';
 import { StructureElement, StructureProperties } from 'molstar/lib/mol-model/structure';
 
+const ENABLE_ATOM_DATA_DIAGNOSTICS = false;
+
 /**
  * Load a molecule from a URL into the Molstar viewer.
  * @param viewer The Molstar viewer/plugin instance.
@@ -74,9 +76,9 @@ export function getAtomDataFromStructureUnits(structure: any, filterChainId?: st
     const units = structure.data?.units ?? structure.units;
     if (!units) return { symbolTypes, chainIds, xs, ys, zs };
     if (units.length > 0) {
-        console.log('[getAtomDataFromStructureUnits] First unit:', units[0]);
+        if (ENABLE_ATOM_DATA_DIAGNOSTICS) console.info('[getAtomDataFromStructureUnits] First unit:', units[0]);
         if (units[0].model) {
-            console.log('[getAtomDataFromStructureUnits] First unit.model:', units[0].model);
+            if (ENABLE_ATOM_DATA_DIAGNOSTICS) console.info('[getAtomDataFromStructureUnits] First unit.model:', units[0].model);
         }
     }
 
@@ -118,7 +120,7 @@ export function getAtomDataFromStructureUnits(structure: any, filterChainId?: st
                     zs.push(p[2]);
                 }
             }
-            console.log('[getAtomDataFromStructureUnits] Unique chain IDs in structure:', Array.from(uniqueChainIds));
+            if (ENABLE_ATOM_DATA_DIAGNOSTICS) console.info('[getAtomDataFromStructureUnits] Unique chain IDs in structure:', Array.from(uniqueChainIds));
             return { symbolTypes, chainIds, xs, ys, zs };
         } catch (err) {
             console.warn('[getAtomDataFromStructureUnits] Falling back to hierarchy extraction path after structure-location failure.', err);
@@ -184,7 +186,7 @@ export function getAtomDataFromStructureUnits(structure: any, filterChainId?: st
             zs.push(z);
         }
     }
-    console.log('[getAtomDataFromStructureUnits] Unique chain IDs in structure:', Array.from(uniqueChainIds));
+    if (ENABLE_ATOM_DATA_DIAGNOSTICS) console.info('[getAtomDataFromStructureUnits] Unique chain IDs in structure:', Array.from(uniqueChainIds));
     return { symbolTypes, chainIds, xs, ys, zs };
 }
 
@@ -247,10 +249,12 @@ export function updateAndLogAtomCoordinates(model: any, centroid: Vec3, rotmat: 
     const n = xs.length;
     const np = Math.floor(n / 3);
     // Log before update
-    console.log('Preparing to update atom coordinates:');
+    if (ENABLE_ATOM_DATA_DIAGNOSTICS) console.info('Preparing to update atom coordinates:');
     for (let i = 0; i < n; i++) {
         if (i % np === 0) {
-            console.log(`Preparing to update atom ${i}: new coords x=${xs[i]}, y=${ys[i]}, z=${zs[i]}`);
+            if (ENABLE_ATOM_DATA_DIAGNOSTICS) {
+                console.info(`Preparing to update atom ${i}: new coords x=${xs[i]}, y=${ys[i]}, z=${zs[i]}`);
+            }
         }
     }
     // Recentering
@@ -273,10 +277,12 @@ export function updateAndLogAtomCoordinates(model: any, centroid: Vec3, rotmat: 
     model.atomicConformation.y = ys;
     model.atomicConformation.z = zs;
     // Log after update
-    console.log('Atom coordinates updated.');
+    if (ENABLE_ATOM_DATA_DIAGNOSTICS) console.info('Atom coordinates updated.');
     for (let i = 0; i < n; i++) {
         if (i % np === 0) {
-            console.log(`Updated atom ${i}: new coords x=${model.atomicConformation.x[i]}, y=${model.atomicConformation.y[i]}, z=${model.atomicConformation.z[i]}`);
+            if (ENABLE_ATOM_DATA_DIAGNOSTICS) {
+                console.info(`Updated atom ${i}: new coords x=${model.atomicConformation.x[i]}, y=${model.atomicConformation.y[i]}, z=${model.atomicConformation.z[i]}`);
+            }
         }
     }
 }

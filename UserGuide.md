@@ -39,7 +39,7 @@ The UI layout is as follows:
      - `Load Colours` button
    - `Clipping` controls (directly above `Select and Zoom Controls`): `Min Near`, `Clip Radius`, and `Reset Clipping`
    - `Show Select and Zoom Controls` button (collapsed by default)
-  - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, `Residue Zoom` settings, and `AlignedTo Chain Finder`)
+  - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, `Residue Zoom` settings, `Highlight`/`Inspect` toggles, and `AlignedTo Chain Finder`)
    - `Show Advanced Mol* Controls` button (toggles advanced Mol* interface for power users)
    - `Advanced Mol* Controls` panel (shown only when expanded; includes Sequence, Left Panel, Structure Tools, and Log sections)
  - Column `B`
@@ -54,7 +54,7 @@ The UI layout is as follows:
      - `Load Colours` button
    - `Clipping` controls (directly above `Select and Zoom Controls`): `Min Near`, `Clip Radius`, and `Reset Clipping`
    - `Show Select and Zoom Controls` button (collapsed by default)
-  - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, `Residue Zoom` settings, and `Aligned Chain Finder`)
+  - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, `Residue Zoom` settings, `Highlight`/`Inspect` toggles, and `Aligned Chain Finder`)
    - `Show Advanced Mol* Controls` button (toggles advanced Mol* interface for power users)
    - `Advanced Mol* Controls` panel (shown only when expanded; includes Sequence, Left Panel, Structure Tools, and Log sections)
 ```
@@ -161,13 +161,13 @@ Next, the user can do several things:
 * Residue labels in `Select Residues` follow Mol* style: `code number [auth n]` (for example `GLY 70 [auth 70]`, `A 12 [auth 12]`).
 * If a residue is selected, the `Zoom to Residue` control becomes actionable to zoom to the selected residue within the chain. The selected residue will be in the viewer centre. How much is displayed around that depends on the `Residue Zoom` settings.
 * If chains are selected for both `AlignedTo` and `Aligned` molecules, the `Re-align` button can be actioned to apply chain-based re-alignment.
-* Re-aligning a different chain pair is supported repeatedly; repeating the same pair is blocked to avoid cumulative transform/rotation drift.
+* Re-aligning both different and repeated chain pairs is supported; repeated same-pair actions use an idempotent baseline transform to avoid cumulative transform/rotation drift.
 
 ### Re-align implementation note
 
 - Chain re-alignment now prefers an in-place transform of the currently loaded aligned structures for faster iteration.
 - If in-place transform cannot be applied, Ribocode automatically falls back to the reload-based `ReAligned` path.
-- Console diagnostics for re-alignment now include fit-quality metrics (`movingSelectedAtomCount`, `referenceSelectedAtomCount`, `atomPairCount`, and `rmsd`).
+- Optional console diagnostics for re-alignment include fit-quality metrics (`movingSelectedAtomCount`, `referenceSelectedAtomCount`, `atomPairCount`, and `rmsd`) when debug flags are enabled.
 
 Ribosome data can be downloaded from the [RCSB Protein Data Bank](https://www.rcsb.org/pages/about-us/index) in CIF format. Two datasets which align well are: [4ug0](https://files.rcsb.org/download/4UG0.cif); and [6xu8](https://files.rcsb.org/download/6XU8.cif).
 

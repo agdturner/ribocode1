@@ -54,13 +54,13 @@ import { PluginUIContext } from 'molstar/lib/mol-plugin-ui/context';
 import { AlignmentData } from 'molstar/lib/extensions/ribocode/types';
 import { StateTransforms } from 'molstar/lib/mol-plugin-state/transforms';
 import { Mat4 } from 'molstar/lib/mol-math/linear-algebra';
+import { StructureElement, StructureProperties } from 'molstar/lib/mol-model/structure';
 import type { LoadedMolecule, ViewerKey, MoleculeMode } from './types/ribocode';
 import { A, B } from './constants/ribocode';
 import { makeFogSetters, makeClippingSetters, makeZoomHandler, makeChainHighlightToggleHandler, makeResidueHighlightToggleHandler, makeSubunitHighlightToggleHandler, makeChainInspectToggleHandler, makeResidueInspectToggleHandler, makeSubunitInspectToggleHandler } from './utils/viewerHelpers';
 import { selectedAtomTypes } from './constants/ribocode';
 import { parseRpNameTableBySpecies } from './utils/rpNameTable';
 import { extractUniProtAccessionsFromText, fetchUniProtGeneNamesBatched, parseChainToMoleculeNameFromCifText, parseChainToUniProtFromCifText, UniProtGeneNameCache } from './utils/uniprot';
-import { addRealignPair, hasRealignPair } from './utils/realignment';
 import rpNameTableCsv from '../data/input/RP_name_table_uniprot.csv?raw';
 
 /**
@@ -143,9 +143,406 @@ interface SessionUiState {
 
 const UNIPROT_CACHE_STORAGE_KEY = 'ribocode-uniprot-gene-cache-v1';
 const ENABLE_IN_PLACE_CHAIN_REALIGN = true;
+const ENABLE_REALIGN_DIAGNOSTICS = false;
 const SUBUNIT_REALIGN_CHAIN_ID = '__subunit__';
 const RESIDUE_REALIGN_CHAIN_ID = '__residue__';
 const DEFAULT_CLIPPING = { minNear: 1, clipRadius: 0 };
+
+function round3(value: number): number {
+    return Number.isFinite(value) ? Number(value.toFixed(3)) : value;
+}
+
+function readRotationFromMatrix(m: Mat4): number[][] {
+    return [
+        [Mat4.getValue(m, 0, 0), Mat4.getValue(m, 0, 1), Mat4.getValue(m, 0, 2)],
+        [Mat4.getValue(m, 1, 0), Mat4.getValue(m, 1, 1), Mat4.getValue(m, 1, 2)],
+        [Mat4.getValue(m, 2, 0), Mat4.getValue(m, 2, 1), Mat4.getValue(m, 2, 2)],
+    ];
+}
+
+function getRotationDeterminant(r: number[][]): number {
+    return r[0][0] * (r[1][1] * r[2][2] - r[1][2] * r[2][1])
+        - r[0][1] * (r[1][0] * r[2][2] - r[1][2] * r[2][0])
+        + r[0][2] * (r[1][0] * r[2][1] - r[1][1] * r[2][0]);
+}
+
+function getRotationOrthogonalityError(r: number[][]): number {
+    const rrT = [
+        [r[0][0] * r[0][0] + r[0][1] * r[0][1] + r[0][2] * r[0][2], r[0][0] * r[1][0] + r[0][1] * r[1][1] + r[0][2] * r[1][2], r[0][0] * r[2][0] + r[0][1] * r[2][1] + r[0][2] * r[2][2]],
+        [r[1][0] * r[0][0] + r[1][1] * r[0][1] + r[1][2] * r[0][2], r[1][0] * r[1][0] + r[1][1] * r[1][1] + r[1][2] * r[1][2], r[1][0] * r[2][0] + r[1][1] * r[2][1] + r[1][2] * r[2][2]],
+        [r[2][0] * r[0][0] + r[2][1] * r[0][1] + r[2][2] * r[0][2], r[2][0] * r[1][0] + r[2][1] * r[1][1] + r[2][2] * r[1][2], r[2][0] * r[2][0] + r[2][1] * r[2][1] + r[2][2] * r[2][2]],
+    ];
+    const id = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    let maxAbs = 0;
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            const d = Math.abs(rrT[i][j] - id[i][j]);
+            if (d > maxAbs) maxAbs = d;
+        }
+    }
+    return maxAbs;
+}
+
+function getRotationAngleDegrees(r: number[][]): number {
+    const trace = r[0][0] + r[1][1] + r[2][2];
+    const cosTheta = Math.min(1, Math.max(-1, (trace - 1) / 2));
+    return (Math.acos(cosTheta) * 180) / Math.PI;
+}
+
+function summarizeMatrix(m: Mat4) {
+    const r = readRotationFromMatrix(m);
+    return {
+        rotationDeg: round3(getRotationAngleDegrees(r)),
+        rotationDet: round3(getRotationDeterminant(r)),
+        orthogonalityMaxAbs: round3(getRotationOrthogonalityError(r)),
+        translation: {
+            x: round3(Mat4.getValue(m, 0, 3)),
+            y: round3(Mat4.getValue(m, 1, 3)),
+            z: round3(Mat4.getValue(m, 2, 3)),
+        },
+        matrixRows: [
+            [round3(Mat4.getValue(m, 0, 0)), round3(Mat4.getValue(m, 0, 1)), round3(Mat4.getValue(m, 0, 2)), round3(Mat4.getValue(m, 0, 3))],
+            [round3(Mat4.getValue(m, 1, 0)), round3(Mat4.getValue(m, 1, 1)), round3(Mat4.getValue(m, 1, 2)), round3(Mat4.getValue(m, 1, 3))],
+            [round3(Mat4.getValue(m, 2, 0)), round3(Mat4.getValue(m, 2, 1)), round3(Mat4.getValue(m, 2, 2)), round3(Mat4.getValue(m, 2, 3))],
+            [round3(Mat4.getValue(m, 3, 0)), round3(Mat4.getValue(m, 3, 1)), round3(Mat4.getValue(m, 3, 2)), round3(Mat4.getValue(m, 3, 3))],
+        ],
+    };
+}
+
+function chooseBestSharedElementSelector(
+    movingSymbolTypes: string[],
+    referenceSymbolTypes: string[],
+    fallback: Record<string, boolean>
+): { selector: Record<string, boolean>; mode: string; selectedType?: string; countDelta?: number; pairedCount?: number } {
+    const movingCounts = new Map<string, number>();
+    const referenceCounts = new Map<string, number>();
+
+    for (const raw of movingSymbolTypes) {
+        const type = String(raw || '').trim();
+        if (!type) continue;
+        movingCounts.set(type, (movingCounts.get(type) ?? 0) + 1);
+    }
+    for (const raw of referenceSymbolTypes) {
+        const type = String(raw || '').trim();
+        if (!type) continue;
+        referenceCounts.set(type, (referenceCounts.get(type) ?? 0) + 1);
+    }
+
+    const candidates = Array.from(movingCounts.keys())
+        .filter(type => referenceCounts.has(type))
+        .map(type => {
+            const moving = movingCounts.get(type) ?? 0;
+            const reference = referenceCounts.get(type) ?? 0;
+            return {
+                type,
+                moving,
+                reference,
+                delta: Math.abs(moving - reference),
+                paired: Math.min(moving, reference),
+            };
+        })
+        .filter(c => c.paired >= 10)
+        .sort((a, b) => {
+            if (a.delta !== b.delta) return a.delta - b.delta;
+            if (a.paired !== b.paired) return b.paired - a.paired;
+            return a.type.localeCompare(b.type);
+        });
+
+    if (candidates.length > 0) {
+        const best = candidates[0];
+        return {
+            selector: { [best.type]: true },
+            mode: 'single-best-shared-element',
+            selectedType: best.type,
+            countDelta: best.delta,
+            pairedCount: best.paired,
+        };
+    }
+
+    return {
+        selector: fallback,
+        mode: 'fallback-default-types',
+    };
+}
+
+function getColumnStringValue(column: any, index: number): string {
+    if (!column) return '';
+    if (typeof column.value === 'function') {
+        const v = column.value(index);
+        return v == null ? '' : String(v);
+    }
+    if (Array.isArray(column.value)) {
+        const v = column.value[index];
+        return v == null ? '' : String(v);
+    }
+    return '';
+}
+
+function buildAnchorAtomDataForChain(structure: any, chainId: string) {
+    const symbolTypes: string[] = [];
+    const chainIds: string[] = [];
+    const xs: number[] = [];
+    const ys: number[] = [];
+    const zs: number[] = [];
+    const residueKeys: string[] = [];
+
+    if (!structure || !chainId) return { symbolTypes, chainIds, xs, ys, zs, residueKeys };
+
+    const normalizedChainId = String(chainId).trim().toUpperCase();
+    const units = structure?.data?.units ?? structure?.units ?? [];
+    const seen = new Set<string>();
+
+    const normalizeAnchorName = (raw: string): string => {
+        const name = String(raw || '').trim().toUpperCase();
+        if (name === 'P') return 'P';
+        if (name === 'CA') return 'CA';
+        if (name === "C4'" || name === 'C4*') return "C4'";
+        if (name === "C1'" || name === 'C1*') return "C1'";
+        return '';
+    };
+
+    const canUseStructureLocation = !!structure?.unitMap
+        && !!StructureElement?.Location?.create
+        && !!StructureProperties?.chain?.auth_asym_id
+        && !!StructureProperties?.atom?.label_atom_id;
+
+    if (canUseStructureLocation) {
+        try {
+            const loc = StructureElement.Location.create(structure);
+            for (const unit of units) {
+                if (unit.kind !== 0) continue;
+                const elements = unit.elements ?? [];
+                for (let i = 0; i < elements.length; i++) {
+                    const atomIdx = elements[i];
+                    loc.unit = unit;
+                    loc.element = atomIdx;
+
+                    const authChainId = String(StructureProperties.chain.auth_asym_id(loc) ?? '');
+                    const labelChainId = String(StructureProperties.chain.label_asym_id(loc) ?? '');
+                    const authNorm = authChainId.trim().toUpperCase();
+                    const labelNorm = labelChainId.trim().toUpperCase();
+                    if (authNorm !== normalizedChainId && labelNorm !== normalizedChainId) continue;
+
+                    const labelAtomId = String(StructureProperties.atom.label_atom_id(loc) ?? '');
+                    const authAtomId = String(StructureProperties.atom.auth_atom_id(loc) ?? '');
+                    const anchor = normalizeAnchorName(labelAtomId || authAtomId);
+                    if (!anchor) continue;
+
+                    const residueKey = `${StructureProperties.residue.auth_seq_id(loc) ?? ''}:${StructureProperties.residue.pdbx_PDB_ins_code(loc) ?? ''}`;
+                    const dedupeKey = `${anchor}:${residueKey}`;
+                    if (seen.has(dedupeKey)) continue;
+                    seen.add(dedupeKey);
+
+                    const x = Number(StructureProperties.atom.x(loc));
+                    const y = Number(StructureProperties.atom.y(loc));
+                    const z = Number(StructureProperties.atom.z(loc));
+                    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
+
+                    symbolTypes.push(anchor);
+                    chainIds.push(chainId);
+                    xs.push(x);
+                    ys.push(y);
+                    zs.push(z);
+                    residueKeys.push(residueKey);
+                }
+            }
+            return { symbolTypes, chainIds, xs, ys, zs, residueKeys };
+        } catch (err) {
+            console.warn('[Re-align][Anchor] Falling back to hierarchy anchor extraction after structure-location failure.', err);
+        }
+    }
+
+    for (const unit of units) {
+        if (unit.kind !== 0) continue;
+        const model = unit.model;
+        const chains = model?.atomicHierarchy?.chains;
+        const atoms = model?.atomicHierarchy?.atoms;
+        const conformation = model?.atomicConformation;
+        const residueAtomSegmentsIndex = model?.atomicHierarchy?.residueAtomSegments?.index;
+        if (!chains || !atoms || !conformation || !residueAtomSegmentsIndex) continue;
+
+        const elements = unit.elements ?? [];
+        for (let i = 0; i < elements.length; i++) {
+            const atomIdx = elements[i];
+            const chainIdx = unit?.chainIndex?.[i] ?? unit?.chainIndex?.[atomIdx];
+            const authChainId = getColumnStringValue(chains.auth_asym_id, chainIdx ?? -1);
+            const labelChainId = getColumnStringValue(chains.label_asym_id, chainIdx ?? -1);
+            const authNorm = String(authChainId).trim().toUpperCase();
+            const labelNorm = String(labelChainId).trim().toUpperCase();
+            if (authNorm !== normalizedChainId && labelNorm !== normalizedChainId) continue;
+
+            const labelAtomId = getColumnStringValue(atoms.label_atom_id, atomIdx);
+            const authAtomId = getColumnStringValue(atoms.auth_atom_id, atomIdx);
+            const anchor = normalizeAnchorName(labelAtomId || authAtomId);
+            if (!anchor) continue;
+
+            const residueIdx = residueAtomSegmentsIndex[atomIdx];
+            if (!Number.isFinite(residueIdx)) continue;
+            const residueKey = String(residueIdx);
+            const dedupeKey = `${anchor}:${residueKey}`;
+            if (seen.has(dedupeKey)) continue;
+            seen.add(dedupeKey);
+
+            const x = conformation.x?.[atomIdx] ?? NaN;
+            const y = conformation.y?.[atomIdx] ?? NaN;
+            const z = conformation.z?.[atomIdx] ?? NaN;
+            if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
+
+            symbolTypes.push(anchor);
+            chainIds.push(chainId);
+            xs.push(x);
+            ys.push(y);
+            zs.push(z);
+            residueKeys.push(residueKey);
+        }
+    }
+
+    return { symbolTypes, chainIds, xs, ys, zs, residueKeys };
+}
+
+function parseResidueSortParts(residueKey: string): { seq: number; ins: string } {
+    const raw = String(residueKey || '');
+    const [seqRaw = '', insRaw = ''] = raw.split(':');
+    const seq = Number.parseInt(seqRaw, 10);
+    return {
+        seq: Number.isFinite(seq) ? seq : Number.POSITIVE_INFINITY,
+        ins: insRaw,
+    };
+}
+
+function buildPairedAnchorFitData(
+    selectedAnchorType: string,
+    movingChainId: string,
+    referenceChainId: string,
+    movingAnchorData: { symbolTypes: string[]; xs: number[]; ys: number[]; zs: number[]; residueKeys: string[] },
+    referenceAnchorData: { symbolTypes: string[]; xs: number[]; ys: number[]; zs: number[]; residueKeys: string[] }
+) {
+    const isFiniteCoord = (x: number, y: number, z: number) => Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z);
+
+    const movingEntries = movingAnchorData.symbolTypes
+        .map((type, idx) => ({
+            type,
+            idx,
+            residueKey: movingAnchorData.residueKeys[idx] ?? '',
+            x: movingAnchorData.xs[idx],
+            y: movingAnchorData.ys[idx],
+            z: movingAnchorData.zs[idx],
+        }))
+        .filter(a => a.type === selectedAnchorType && isFiniteCoord(a.x, a.y, a.z));
+
+    const referenceEntries = referenceAnchorData.symbolTypes
+        .map((type, idx) => ({
+            type,
+            idx,
+            residueKey: referenceAnchorData.residueKeys[idx] ?? '',
+            x: referenceAnchorData.xs[idx],
+            y: referenceAnchorData.ys[idx],
+            z: referenceAnchorData.zs[idx],
+        }))
+        .filter(a => a.type === selectedAnchorType && isFiniteCoord(a.x, a.y, a.z));
+
+    const movingByResidue = new Map<string, typeof movingEntries[number]>();
+    for (const e of movingEntries) {
+        if (!e.residueKey || movingByResidue.has(e.residueKey)) continue;
+        movingByResidue.set(e.residueKey, e);
+    }
+    const referenceByResidue = new Map<string, typeof referenceEntries[number]>();
+    for (const e of referenceEntries) {
+        if (!e.residueKey || referenceByResidue.has(e.residueKey)) continue;
+        referenceByResidue.set(e.residueKey, e);
+    }
+
+    const sharedResidueKeys = Array.from(movingByResidue.keys())
+        .filter(k => referenceByResidue.has(k))
+        .sort((a, b) => {
+            const pa = parseResidueSortParts(a);
+            const pb = parseResidueSortParts(b);
+            if (pa.seq !== pb.seq) return pa.seq - pb.seq;
+            return pa.ins.localeCompare(pb.ins);
+        });
+
+    const useSharedResidues = sharedResidueKeys.length >= 10;
+
+    const sortedMoving = movingEntries.slice().sort((a, b) => {
+        const pa = parseResidueSortParts(a.residueKey);
+        const pb = parseResidueSortParts(b.residueKey);
+        if (pa.seq !== pb.seq) return pa.seq - pb.seq;
+        return pa.ins.localeCompare(pb.ins);
+    });
+    const sortedReference = referenceEntries.slice().sort((a, b) => {
+        const pa = parseResidueSortParts(a.residueKey);
+        const pb = parseResidueSortParts(b.residueKey);
+        if (pa.seq !== pb.seq) return pa.seq - pb.seq;
+        return pa.ins.localeCompare(pb.ins);
+    });
+
+    const pairCount = useSharedResidues
+        ? sharedResidueKeys.length
+        : Math.min(sortedMoving.length, sortedReference.length);
+
+    const movingFit = { symbolTypes: [] as string[], chainIds: [] as string[], xs: [] as number[], ys: [] as number[], zs: [] as number[] };
+    const referenceFit = { symbolTypes: [] as string[], chainIds: [] as string[], xs: [] as number[], ys: [] as number[], zs: [] as number[] };
+
+    if (pairCount === 0) {
+        return {
+            movingFit,
+            referenceFit,
+            pairing: {
+                strategy: useSharedResidues ? 'shared-residue-keys' : 'ordered-fallback',
+                pairCount,
+                sharedResidueKeyCount: sharedResidueKeys.length,
+                movingSelectedCount: sortedMoving.length,
+                referenceSelectedCount: sortedReference.length,
+            }
+        };
+    }
+
+    if (useSharedResidues) {
+        for (const residueKey of sharedResidueKeys) {
+            const m = movingByResidue.get(residueKey)!;
+            const r = referenceByResidue.get(residueKey)!;
+            movingFit.symbolTypes.push(selectedAnchorType);
+            movingFit.chainIds.push(movingChainId);
+            movingFit.xs.push(m.x);
+            movingFit.ys.push(m.y);
+            movingFit.zs.push(m.z);
+
+            referenceFit.symbolTypes.push(selectedAnchorType);
+            referenceFit.chainIds.push(referenceChainId);
+            referenceFit.xs.push(r.x);
+            referenceFit.ys.push(r.y);
+            referenceFit.zs.push(r.z);
+        }
+    } else {
+        for (let i = 0; i < pairCount; i++) {
+            const m = sortedMoving[i];
+            const r = sortedReference[i];
+            movingFit.symbolTypes.push(selectedAnchorType);
+            movingFit.chainIds.push(movingChainId);
+            movingFit.xs.push(m.x);
+            movingFit.ys.push(m.y);
+            movingFit.zs.push(m.z);
+
+            referenceFit.symbolTypes.push(selectedAnchorType);
+            referenceFit.chainIds.push(referenceChainId);
+            referenceFit.xs.push(r.x);
+            referenceFit.ys.push(r.y);
+            referenceFit.zs.push(r.z);
+        }
+    }
+
+    return {
+        movingFit,
+        referenceFit,
+        pairing: {
+            strategy: useSharedResidues ? 'shared-residue-keys' : 'ordered-fallback',
+            pairCount,
+            sharedResidueKeyCount: sharedResidueKeys.length,
+            movingSelectedCount: sortedMoving.length,
+            referenceSelectedCount: sortedReference.length,
+        }
+    };
+}
 
 export function readClippingFromViewer(plugin: any): { minNear: number; clipRadius: number } {
     const clipping = plugin?.canvas3d?.props?.cameraClipping ?? {};
@@ -194,7 +591,8 @@ function buildAtomDataForChainGroup(structure: any, chainIds: string[]) {
 function buildAtomDataForResidueGroup(
     structure: any,
     residueIds: string[],
-    residueToAtomIds: Record<string, string[]>
+    residueToAtomIds: Record<string, string[]>,
+    selectedChainId?: string
 ) {
     const symbolTypes: string[] = [];
     const groupedChainIds: string[] = [];
@@ -214,15 +612,53 @@ function buildAtomDataForResidueGroup(
     }
 
     const units = structure?.data?.units ?? structure?.units ?? [];
+    const normalizedSelectedChainId = selectedChainId ? String(selectedChainId).trim().toUpperCase() : undefined;
+
+    const resolveChainIdxForAtom = (unit: any, atomIdx: number, elementOffset: number): number | undefined => {
+        const model = unit?.model;
+        const residueAtomSegmentsIndex = model?.atomicHierarchy?.residueAtomSegments?.index;
+        const chainAtomSegmentsIndex = model?.atomicHierarchy?.chainAtomSegments?.index;
+        if (residueAtomSegmentsIndex && chainAtomSegmentsIndex) {
+            const residueIdx = residueAtomSegmentsIndex[atomIdx];
+            if (residueIdx !== undefined) {
+                const derivedChainIdx = chainAtomSegmentsIndex[residueIdx];
+                if (derivedChainIdx !== undefined) return derivedChainIdx;
+            }
+        }
+        const unitChainIndex = unit?.chainIndex;
+        if (unitChainIndex) {
+            const local = unitChainIndex[elementOffset];
+            if (local !== undefined) return local;
+            const byAtom = unitChainIndex[atomIdx];
+            if (byAtom !== undefined) return byAtom;
+        }
+        return undefined;
+    };
+
     for (const unit of units) {
         if (unit.kind !== 0) continue;
         const model = unit.model;
+        const chains = model?.atomicHierarchy?.chains;
         const atoms = model?.atomicHierarchy?.atoms;
         const conformation = model?.atomicConformation;
         if (!atoms || !conformation) continue;
 
-        for (const atomIdx of unit.elements ?? []) {
+        const elements = unit.elements ?? [];
+        for (let i = 0; i < elements.length; i++) {
+            const atomIdx = elements[i];
             if (!allowedAtomIdx.has(atomIdx)) continue;
+
+            if (normalizedSelectedChainId) {
+                const chainIdx = resolveChainIdxForAtom(unit, atomIdx, i);
+                const authChainId = chains?.auth_asym_id?.value?.(chainIdx) ?? '';
+                const labelChainId = chains?.label_asym_id?.value?.(chainIdx) ?? '';
+                const authNorm = String(authChainId).trim().toUpperCase();
+                const labelNorm = String(labelChainId).trim().toUpperCase();
+                if (authNorm !== normalizedSelectedChainId && labelNorm !== normalizedSelectedChainId) {
+                    continue;
+                }
+            }
+
             const symbol = atoms.type_symbol && typeof atoms.type_symbol.value === 'function'
                 ? String(atoms.type_symbol.value(atomIdx) ?? '')
                 : '';
@@ -540,7 +976,6 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     // Track realigned molecules with from/to chain IDs to prevent duplicates
     const [realignedMoleculesA, setRealignedMoleculesA] = useState<Array<{ id: string, file: File, label: string, from: string, to: string }>>([]);
     const [realignedMoleculesB, setRealignedMoleculesB] = useState<Array<{ id: string, file: File, label: string, from: string, to: string }>>([]);
-    const [appliedInPlaceRealignPairs, setAppliedInPlaceRealignPairs] = useState<string[]>([]);
 
     // Use custom confirmation hook
     const confirm = useConfirm();
@@ -834,7 +1269,6 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 // Already loaded, skip
                 return viewerA.moleculeAlignedTo as LoadedMolecule | undefined;
             }
-            setAppliedInPlaceRealignPairs([]);
             setAlignedToFile(file);
             setAlignedToFilename(file.name);
             if (expectedAlignedToFilename) setExpectedAlignedToFilename(null);
@@ -912,7 +1346,6 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 // Already loaded, skip
                 return viewerA.moleculeAligned as LoadedMolecule | undefined;
             }
-            setAppliedInPlaceRealignPairs([]);
             setAlignedFile(file);
             setAlignedFilename(file.name);
             const alignData = alignmentData ?? viewerA.moleculeAlignedTo?.alignmentData;
@@ -2238,8 +2671,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     };
 
     // Check if a re-alignment for the selected pair already exists
-    const realignmentExists = realignedMoleculesA.some(mol => mol.from === selectedChainIdAlignedTo && mol.to === selectedChainIdAligned)
-        || hasRealignPair(appliedInPlaceRealignPairs, selectedChainIdAlignedTo, selectedChainIdAligned);
+    const realignmentExists = realignedMoleculesA.some(mol => mol.from === selectedChainIdAlignedTo && mol.to === selectedChainIdAligned);
     const canRealignToSubunits = selectedSubunitAlignedTo !== 'All'
         && selectedSubunitAligned !== 'All'
         && selectedSubunitChainIdsAlignedTo.length > 0
@@ -2247,8 +2679,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const subunitFromKey = `subunit:${selectedSubunitAlignedTo}`;
     const subunitToKey = `subunit:${selectedSubunitAligned}`;
     const subunitRealignmentExists = canRealignToSubunits
-        && (realignedMoleculesA.some(mol => mol.from === subunitFromKey && mol.to === subunitToKey)
-            || hasRealignPair(appliedInPlaceRealignPairs, subunitFromKey, subunitToKey));
+        && realignedMoleculesA.some(mol => mol.from === subunitFromKey && mol.to === subunitToKey);
 
     const canRealignToResidues = !!selectedChainIdAlignedTo
         && !!selectedChainIdAligned
@@ -2257,8 +2688,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const residueFromKey = `residue:${selectedChainIdAlignedTo}:${selectedResidueIdsAlignedTo.slice().sort().join(',')}`;
     const residueToKey = `residue:${selectedChainIdAligned}:${selectedResidueIdsAligned.slice().sort().join(',')}`;
     const residueRealignmentExists = canRealignToResidues
-        && (realignedMoleculesA.some(mol => mol.from === residueFromKey && mol.to === residueToKey)
-            || hasRealignPair(appliedInPlaceRealignPairs, residueFromKey, residueToKey));
+        && realignedMoleculesA.some(mol => mol.from === residueFromKey && mol.to === residueToKey);
 
     const applyStructureTransformInPlace = useCallback(async (
         plugin: PluginUIContext,
@@ -2283,6 +2713,95 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         plugin.canvas3d?.requestDraw?.();
     }, []);
 
+    const realignTransformCacheRef = useRef<Record<string, Mat4>>({});
+    const realignBaseTransformCacheRef = useRef<Record<string, Mat4>>({});
+    const realignDiagnosticsCounterRef = useRef<Record<string, number>>({});
+
+    useEffect(() => {
+        realignTransformCacheRef.current = {};
+        realignBaseTransformCacheRef.current = {};
+        realignDiagnosticsCounterRef.current = {};
+    }, [structureRefAAligned, structureRefBAligned]);
+
+    const getStructureCoordinateSystemMatrix = useCallback((
+        plugin: PluginUIContext,
+        structureRef: string
+    ): Mat4 => {
+        const structureEntry = plugin.managers.structure.hierarchy.current.structures.find(
+            s => s.cell.transform.ref === structureRef
+        );
+        const coordinateSystem = structureEntry?.transform?.cell.obj?.data.coordinateSystem;
+        if (coordinateSystem?.matrix) {
+            return Mat4.copy(Mat4(), coordinateSystem.matrix);
+        }
+        return Mat4.identity();
+    }, []);
+
+    const applyComposedRealignTransform = useCallback(async (
+        plugin: PluginUIContext,
+        structureRef: string,
+        deltaTransform: Mat4,
+        tag: string,
+        cacheKey: string,
+        diagnostics?: {
+            operation: 'chain' | 'subunit' | 'residue';
+            from: string;
+            to: string;
+            movingFiniteAtomCount?: number;
+            referenceFiniteAtomCount?: number;
+            atomPairCount?: number;
+            rmsd?: number;
+        }
+    ) => {
+        const opKey = diagnostics
+            ? `${diagnostics.operation}:${diagnostics.from}->${diagnostics.to}`
+            : `unknown:${cacheKey}`;
+        const opCacheKey = `${cacheKey}:${opKey}`;
+
+        const previousApplied = realignTransformCacheRef.current[opCacheKey]
+            ? Mat4.copy(Mat4(), realignTransformCacheRef.current[opCacheKey])
+            : undefined;
+
+        const current = getStructureCoordinateSystemMatrix(plugin, structureRef);
+        if (!realignBaseTransformCacheRef.current[opCacheKey]) {
+            realignBaseTransformCacheRef.current[opCacheKey] = Mat4.copy(Mat4(), current);
+        }
+        const base = realignBaseTransformCacheRef.current[opCacheKey];
+        const next = Mat4.mul(Mat4(), base, deltaTransform);
+        realignTransformCacheRef.current[opCacheKey] = Mat4.copy(Mat4(), next);
+
+        if (ENABLE_REALIGN_DIAGNOSTICS) {
+            const step = (realignDiagnosticsCounterRef.current[opKey] ?? 0) + 1;
+            realignDiagnosticsCounterRef.current[opKey] = step;
+            const source = previousApplied ? 'operation-baseline (previous-applied-available)' : 'operation-baseline';
+
+            console.info('[Re-align Diagnostics]', {
+                opKey,
+                step,
+                cacheKey,
+                opCacheKey,
+                sourceCurrentTransform: source,
+                structureRef,
+                tag,
+                fit: diagnostics
+                    ? {
+                        movingFiniteAtomCount: diagnostics.movingFiniteAtomCount,
+                        referenceFiniteAtomCount: diagnostics.referenceFiniteAtomCount,
+                        atomPairCount: diagnostics.atomPairCount,
+                        rmsd: diagnostics.rmsd,
+                    }
+                    : undefined,
+                delta: summarizeMatrix(deltaTransform),
+                current: summarizeMatrix(current),
+                base: summarizeMatrix(base),
+                previousApplied: previousApplied ? summarizeMatrix(previousApplied) : null,
+                next: summarizeMatrix(next),
+            });
+        }
+
+        await applyStructureTransformInPlace(plugin, structureRef, next, tag);
+    }, [applyStructureTransformInPlace, getStructureCoordinateSystemMatrix]);
+
     // Realign handler using selected chains
     const handleRealignToChains = () => {
         if (realignmentExists) return;
@@ -2300,7 +2819,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         const structureAlignedTo = pluginA.managers.structure.hierarchy.current.structures.find(
             s => s.cell.transform.ref === structureRefAAlignedTo
         )?.cell.obj?.data;
-        console.log('structureAlignedTo:', structureAlignedTo);
+        if (ENABLE_REALIGN_DIAGNOSTICS) console.info('structureAlignedTo:', structureAlignedTo);
         if (!viewerA.moleculeAlignedTo) {
             console.warn('Viewer A moleculeAlignedTo not available.');
             return;
@@ -2308,7 +2827,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         const structureAligned = pluginA.managers.structure.hierarchy.current.structures.find(
             s => s.cell.transform.ref === structureRefAAligned
         )?.cell.obj?.data;
-        console.log('structureAligned:', structureAligned);
+        if (ENABLE_REALIGN_DIAGNOSTICS) console.info('structureAligned:', structureAligned);
         if (!structureAlignedTo || !structureAligned) {
             console.warn('Could not find structure objects for selected refs.');
             return;
@@ -2337,16 +2856,18 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             }
         });
 
-        console.log('[Re-align][Chain atom summary]', {
-            alignedTo: {
-                chainId: selectedChainIdAlignedTo,
-                ...summarize(alignedToSummary),
-            },
-            aligned: {
-                chainId: selectedChainIdAligned,
-                ...summarize(alignedSummary),
-            }
-        });
+        if (ENABLE_REALIGN_DIAGNOSTICS) {
+            console.info('[Re-align][Chain atom summary]', {
+                alignedTo: {
+                    chainId: selectedChainIdAlignedTo,
+                    ...summarize(alignedToSummary),
+                },
+                aligned: {
+                    chainId: selectedChainIdAligned,
+                    ...summarize(alignedSummary),
+                }
+            });
+        }
 
         if (alignedToSummary.finiteAtomCount === 0 || alignedSummary.finiteAtomCount === 0) {
             console.warn('[Re-align] Could not proceed: one or both selected chains contain no finite atom coordinates.', {
@@ -2359,54 +2880,121 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         }
 
         try {
-            const allChainAtomTypes = new Set<string>();
-            for (const t of atomDataAligned.symbolTypes) {
-                if (typeof t === 'string' && t.length > 0) allChainAtomTypes.add(t);
+            const anchorDataAligned = buildAnchorAtomDataForChain(structureAligned, selectedChainIdAligned);
+            const anchorDataAlignedTo = buildAnchorAtomDataForChain(structureAlignedTo, selectedChainIdAlignedTo);
+
+            const movingAnchorCount = new Map<string, number>();
+            const referenceAnchorCount = new Map<string, number>();
+            for (const t of anchorDataAligned.symbolTypes) movingAnchorCount.set(t, (movingAnchorCount.get(t) ?? 0) + 1);
+            for (const t of anchorDataAlignedTo.symbolTypes) referenceAnchorCount.set(t, (referenceAnchorCount.get(t) ?? 0) + 1);
+
+            if (ENABLE_REALIGN_DIAGNOSTICS) {
+                console.info('[Re-align][Anchor availability]', {
+                    moving: Object.fromEntries(movingAnchorCount.entries()),
+                    reference: Object.fromEntries(referenceAnchorCount.entries()),
+                    movingTotal: anchorDataAligned.symbolTypes.length,
+                    referenceTotal: anchorDataAlignedTo.symbolTypes.length,
+                });
             }
-            for (const t of atomDataAlignedTo.symbolTypes) {
-                if (typeof t === 'string' && t.length > 0) allChainAtomTypes.add(t);
+
+            const preferredAnchorOrder = ['P', 'CA', "C4'", "C1'"];
+            let selectedAnchorType: string | undefined;
+            for (const t of preferredAnchorOrder) {
+                const pairs = Math.min(movingAnchorCount.get(t) ?? 0, referenceAnchorCount.get(t) ?? 0);
+                if (pairs >= 10) {
+                    selectedAnchorType = t;
+                    break;
+                }
             }
-            const selectedAtomTypesForChainRealign = allChainAtomTypes.size > 0
-                ? Object.fromEntries(Array.from(allChainAtomTypes).map(atomType => [atomType, true]))
-                : selectedAtomTypes;
-            console.log('[Re-align][Atom selector]', {
-                mode: allChainAtomTypes.size > 0 ? 'all-chain-atom-types' : 'fallback-default-types',
-                atomTypeCount: Object.keys(selectedAtomTypesForChainRealign).length,
-                atomTypes: Object.keys(selectedAtomTypesForChainRealign),
-            });
+
+            const anchorPairData = selectedAnchorType
+                ? buildPairedAnchorFitData(
+                    selectedAnchorType,
+                    selectedChainIdAligned,
+                    selectedChainIdAlignedTo,
+                    anchorDataAligned,
+                    anchorDataAlignedTo
+                )
+                : undefined;
+
+            const useAnchorFitting = !!selectedAnchorType && !!anchorPairData && anchorPairData.pairing.pairCount >= 10;
+            const fitMoving = useAnchorFitting ? anchorPairData.movingFit : atomDataAligned;
+            const fitReference = useAnchorFitting ? anchorPairData.referenceFit : atomDataAlignedTo;
+
+            if (!useAnchorFitting && ENABLE_REALIGN_DIAGNOSTICS) {
+                console.warn('[Re-align][Anchor] No suitable anchor pairing found (need >=10 paired anchors). Falling back to element-data fitting.', {
+                    preferredAnchorOrder,
+                    selectedAnchorType,
+                    anchorPairing: anchorPairData?.pairing,
+                    moving: Object.fromEntries(movingAnchorCount.entries()),
+                    reference: Object.fromEntries(referenceAnchorCount.entries()),
+                });
+            }
+
+            if (useAnchorFitting && ENABLE_REALIGN_DIAGNOSTICS) {
+                console.info('[Re-align][Anchor pairing]', anchorPairData?.pairing);
+            }
+
+            const chainSelector = useAnchorFitting
+                ? {
+                    selector: { [selectedAnchorType as string]: true },
+                    mode: 'anchor-atom',
+                    selectedType: selectedAnchorType,
+                    countDelta: Math.abs((movingAnchorCount.get(selectedAnchorType as string) ?? 0) - (referenceAnchorCount.get(selectedAnchorType as string) ?? 0)),
+                    pairedCount: Math.min(movingAnchorCount.get(selectedAnchorType as string) ?? 0, referenceAnchorCount.get(selectedAnchorType as string) ?? 0),
+                }
+                : chooseBestSharedElementSelector(
+                    atomDataAligned.symbolTypes,
+                    atomDataAlignedTo.symbolTypes,
+                    selectedAtomTypes
+                );
+
+            const selectedAtomTypesForChainRealign = chainSelector.selector;
+            if (ENABLE_REALIGN_DIAGNOSTICS) {
+                console.info('[Re-align][Atom selector]', {
+                    mode: chainSelector.mode,
+                    selectedType: chainSelector.selectedType,
+                    countDelta: chainSelector.countDelta,
+                    pairedCount: chainSelector.pairedCount,
+                    atomTypeCount: Object.keys(selectedAtomTypesForChainRealign).length,
+                    atomTypes: Object.keys(selectedAtomTypesForChainRealign),
+                    fitDataMode: useAnchorFitting ? 'anchor-data' : 'element-data',
+                    anchorPairing: anchorPairData?.pairing,
+                });
+            }
 
             const result = alignDatasetUsingChains(
                 selectedAtomTypesForChainRealign,
                 selectedChainIdAligned,
-                atomDataAligned.symbolTypes,
-                atomDataAligned.chainIds,
-                atomDataAligned.xs,
-                atomDataAligned.ys,
-                atomDataAligned.zs,
+                fitMoving.symbolTypes,
+                fitMoving.chainIds,
+                fitMoving.xs,
+                fitMoving.ys,
+                fitMoving.zs,
                 selectedChainIdAlignedTo,
-                atomDataAlignedTo.symbolTypes,
-                atomDataAlignedTo.chainIds,
-                atomDataAlignedTo.xs,
-                atomDataAlignedTo.ys,
-                atomDataAlignedTo.zs
+                fitReference.symbolTypes,
+                fitReference.chainIds,
+                fitReference.xs,
+                fitReference.ys,
+                fitReference.zs
             );
 
             const isFiniteCoord = (x: number, y: number, z: number) =>
                 Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z);
 
-            const movingPairIndexes = atomDataAligned.symbolTypes
+            const movingPairIndexes = fitMoving.symbolTypes
                 .map((type, idx) => ({ type, idx }))
                 .filter(({ type, idx }) =>
                     selectedAtomTypesForChainRealign[type]
-                    && isFiniteCoord(atomDataAligned.xs[idx], atomDataAligned.ys[idx], atomDataAligned.zs[idx])
+                    && isFiniteCoord(fitMoving.xs[idx], fitMoving.ys[idx], fitMoving.zs[idx])
                 )
                 .map(({ idx }) => idx);
 
-            const referencePairIndexes = atomDataAlignedTo.symbolTypes
+            const referencePairIndexes = fitReference.symbolTypes
                 .map((type, idx) => ({ type, idx }))
                 .filter(({ type, idx }) =>
                     selectedAtomTypesForChainRealign[type]
-                    && isFiniteCoord(atomDataAlignedTo.xs[idx], atomDataAlignedTo.ys[idx], atomDataAlignedTo.zs[idx])
+                    && isFiniteCoord(fitReference.xs[idx], fitReference.ys[idx], fitReference.zs[idx])
                 )
                 .map(({ idx }) => idx);
 
@@ -2417,20 +3005,23 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 for (let i = 0; i < atomPairCount; i++) {
                     const movingIdx = movingPairIndexes[i];
                     const referenceIdx = referencePairIndexes[i];
-                    const dx = result.alignedX[movingIdx] - atomDataAlignedTo.xs[referenceIdx];
-                    const dy = result.alignedY[movingIdx] - atomDataAlignedTo.ys[referenceIdx];
-                    const dz = result.alignedZ[movingIdx] - atomDataAlignedTo.zs[referenceIdx];
+                    const dx = result.alignedX[movingIdx] - fitReference.xs[referenceIdx];
+                    const dy = result.alignedY[movingIdx] - fitReference.ys[referenceIdx];
+                    const dz = result.alignedZ[movingIdx] - fitReference.zs[referenceIdx];
                     sumSq += dx * dx + dy * dy + dz * dz;
                 }
                 pairwiseRmsd = Math.sqrt(sumSq / atomPairCount);
             }
 
-            console.log('[Re-align][Fit quality]', {
-                movingSelectedAtomCount: movingPairIndexes.length,
-                referenceSelectedAtomCount: referencePairIndexes.length,
-                atomPairCount,
-                rmsd: Number.isFinite(pairwiseRmsd) ? Number(pairwiseRmsd.toFixed(4)) : pairwiseRmsd,
-            });
+            if (ENABLE_REALIGN_DIAGNOSTICS) {
+                console.info('[Re-align][Fit quality]', {
+                    movingSelectedAtomCount: movingPairIndexes.length,
+                    referenceSelectedAtomCount: referencePairIndexes.length,
+                    atomPairCount,
+                    rmsd: Number.isFinite(pairwiseRmsd) ? Number(pairwiseRmsd.toFixed(4)) : pairwiseRmsd,
+                    fitDataMode: useAnchorFitting ? 'anchor-data' : 'element-data',
+                });
+            }
 
             const buildRigidTransformFromFit = (): Mat4 => {
                 const rot = result.rotmat;
@@ -2453,10 +3044,10 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 let ty = 0;
                 let tz = 0;
                 let n = 0;
-                for (let i = 0; i < atomDataAligned.xs.length && i < result.alignedX.length; i++) {
-                    const x = atomDataAligned.xs[i];
-                    const y = atomDataAligned.ys[i];
-                    const z = atomDataAligned.zs[i];
+                for (let i = 0; i < fitMoving.xs.length && i < result.alignedX.length; i++) {
+                    const x = fitMoving.xs[i];
+                    const y = fitMoving.ys[i];
+                    const z = fitMoving.zs[i];
                     const xAligned = result.alignedX[i];
                     const yAligned = result.alignedY[i];
                     const zAligned = result.alignedZ[i];
@@ -2491,14 +3082,23 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
 
                 const baseTransform = buildRigidTransformFromFit();
                 const applyToViewer = async (plugin: PluginUIContext, structureRef: string, tag: string) => {
-                    const structureEntry = plugin.managers.structure.hierarchy.current.structures.find(
-                        s => s.cell.transform.ref === structureRef
+                    const viewerKey = plugin === viewerA.ref.current ? 'A' : 'B';
+                    await applyComposedRealignTransform(
+                        plugin,
+                        structureRef,
+                        baseTransform,
+                        tag,
+                        `${viewerKey}:${structureRef}`,
+                        {
+                            operation: 'chain',
+                            from: selectedChainIdAligned,
+                            to: selectedChainIdAlignedTo,
+                            movingFiniteAtomCount: alignedSummary.finiteAtomCount,
+                            referenceFiniteAtomCount: alignedToSummary.finiteAtomCount,
+                            atomPairCount,
+                            rmsd: pairwiseRmsd,
+                        }
                     );
-                    const coordinateSystem = structureEntry?.transform?.cell.obj?.data.coordinateSystem;
-                    const matrix = coordinateSystem && !Mat4.isIdentity(coordinateSystem.matrix)
-                        ? Mat4.mul(Mat4(), coordinateSystem.matrix, baseTransform)
-                        : baseTransform;
-                    await applyStructureTransformInPlace(plugin, structureRef, matrix, tag);
                 };
 
                 await applyToViewer(pluginAInPlace, structureRefAAligned, 'ribocode-realign-inplace');
@@ -2506,7 +3106,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 return true;
             };
 
-            console.log('Alignment result:', result);
+            if (ENABLE_REALIGN_DIAGNOSTICS) console.info('Alignment result:', result);
             const alignmentData: AlignmentData = {
                 centroidReference: result.centroidReference,
                 centroid: result.centroid,
@@ -2523,10 +3123,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 try {
                     const appliedInPlace = await applyInPlaceRealign();
                     if (appliedInPlace) {
-                        setAppliedInPlaceRealignPairs(prev => addRealignPair(prev, selectedChainIdAlignedTo, selectedChainIdAligned));
                         // Keep the transformed structure in frame automatically.
                         await chainZoomBAligned.handleButtonClick();
-                        console.log('[Re-align] Applied in-place transform to existing aligned structures.');
+                        if (ENABLE_REALIGN_DIAGNOSTICS) console.info('[Re-align] Applied in-place transform to existing aligned structures.');
                         return;
                     }
                 } catch (inPlaceErr) {
@@ -2542,9 +3141,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     return;
                 }
                 pluginB.canvas3d?.requestDraw?.();
-                console.log('[Re-align] Applied reload-based fallback realign.');
+                if (ENABLE_REALIGN_DIAGNOSTICS) console.info('[Re-align] Applied reload-based fallback realign.');
             })();
-            console.log('Realignment applied to Viewer A and B models.');
+            if (ENABLE_REALIGN_DIAGNOSTICS) console.info('Realignment applied to Viewer A and B models.');
         } catch (err) {
             console.error('Alignment error:', err);
         }
@@ -2679,14 +3278,21 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
 
                 const baseTransform = buildRigidTransformFromFit();
                 const applyToViewer = async (plugin: PluginUIContext, structureRef: string, tag: string) => {
-                    const structureEntry = plugin.managers.structure.hierarchy.current.structures.find(
-                        s => s.cell.transform.ref === structureRef
+                    const viewerKey = plugin === viewerA.ref.current ? 'A' : 'B';
+                    await applyComposedRealignTransform(
+                        plugin,
+                        structureRef,
+                        baseTransform,
+                        tag,
+                        `${viewerKey}:${structureRef}`,
+                        {
+                            operation: 'subunit',
+                            from: selectedSubunitAligned,
+                            to: selectedSubunitAlignedTo,
+                            movingFiniteAtomCount: alignedSummary.finiteAtomCount,
+                            referenceFiniteAtomCount: alignedToSummary.finiteAtomCount,
+                        }
                     );
-                    const coordinateSystem = structureEntry?.transform?.cell.obj?.data.coordinateSystem;
-                    const matrix = coordinateSystem && !Mat4.isIdentity(coordinateSystem.matrix)
-                        ? Mat4.mul(Mat4(), coordinateSystem.matrix, baseTransform)
-                        : baseTransform;
-                    await applyStructureTransformInPlace(plugin, structureRef, matrix, tag);
                 };
 
                 await applyToViewer(pluginAInPlace, structureRefAAligned, 'ribocode-realign-subunit-inplace');
@@ -2710,7 +3316,6 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 try {
                     const appliedInPlace = await applyInPlaceRealign();
                     if (appliedInPlace) {
-                        setAppliedInPlaceRealignPairs(prev => addRealignPair(prev, subunitFromKey, subunitToKey));
                         await subunitZoomBAligned.handleButtonClick();
                         console.log('[Re-align Subunit] Applied in-place transform to existing aligned structures.');
                         return;
@@ -2762,12 +3367,14 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         const atomDataAlignedTo = buildAtomDataForResidueGroup(
             structureAlignedTo,
             selectedResidueIdsAlignedTo,
-            residueInfoAlignedTo.residueToAtomIds
+            residueInfoAlignedTo.residueToAtomIds,
+            selectedChainIdAlignedTo
         );
         const atomDataAligned = buildAtomDataForResidueGroup(
             structureAligned,
             selectedResidueIdsAligned,
-            residueInfoAligned.residueToAtomIds
+            residueInfoAligned.residueToAtomIds,
+            selectedChainIdAligned
         );
 
         const alignedToSummary = summarizeAtomCloud(atomDataAlignedTo.xs, atomDataAlignedTo.ys, atomDataAlignedTo.zs);
@@ -2872,14 +3479,21 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
 
                 const baseTransform = buildRigidTransformFromFit();
                 const applyToViewer = async (plugin: PluginUIContext, structureRef: string, tag: string) => {
-                    const structureEntry = plugin.managers.structure.hierarchy.current.structures.find(
-                        s => s.cell.transform.ref === structureRef
+                    const viewerKey = plugin === viewerA.ref.current ? 'A' : 'B';
+                    await applyComposedRealignTransform(
+                        plugin,
+                        structureRef,
+                        baseTransform,
+                        tag,
+                        `${viewerKey}:${structureRef}`,
+                        {
+                            operation: 'residue',
+                            from: `${selectedChainIdAligned}:${selectedResidueIdsAligned.slice().sort().join(',')}`,
+                            to: `${selectedChainIdAlignedTo}:${selectedResidueIdsAlignedTo.slice().sort().join(',')}`,
+                            movingFiniteAtomCount: alignedSummary.finiteAtomCount,
+                            referenceFiniteAtomCount: alignedToSummary.finiteAtomCount,
+                        }
                     );
-                    const coordinateSystem = structureEntry?.transform?.cell.obj?.data.coordinateSystem;
-                    const matrix = coordinateSystem && !Mat4.isIdentity(coordinateSystem.matrix)
-                        ? Mat4.mul(Mat4(), coordinateSystem.matrix, baseTransform)
-                        : baseTransform;
-                    await applyStructureTransformInPlace(plugin, structureRef, matrix, tag);
                 };
 
                 await applyToViewer(pluginAInPlace, structureRefAAligned, 'ribocode-realign-residue-inplace');
@@ -2903,7 +3517,6 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 try {
                     const appliedInPlace = await applyInPlaceRealign();
                     if (appliedInPlace) {
-                        setAppliedInPlaceRealignPairs(prev => addRealignPair(prev, residueFromKey, residueToKey));
                         await residueZoomBAligned.handleButtonClick();
                         console.log('[Re-align Residue] Applied in-place transform to existing aligned structures.');
                         return;

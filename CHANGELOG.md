@@ -1,3 +1,15 @@
+## [v0.12.1] - 2026-09-04
+Release summary: this patch release stabilizes repeated chain re-alignment, clarifies highlight vs inspect behavior, and reduces default diagnostic console noise.
+- Split `Highlight` and `Inspect` behavior for subunit/chain/residue controls so simple highlighting no longer triggers focus/details inspect side effects.
+- Fixed inspect toggle wiring in active viewer panels so `Inspect Chain` and `Inspect Residues` reliably toggle on/off.
+- Switched basic highlight flows to persistent selection channels, preserving highlights during viewer interaction and pointer movement.
+- Added follow-selection highlight synchronization so active highlights update when selected subunit/chain/residue changes.
+- Hardened chain re-alignment atom fitting by preferring anchor atoms and deterministic residue-key pairing (`shared-residue-keys`) before fallback strategies.
+- Improved chain re-alignment fit quality for problematic pairs (for example `CU -> CU`) by preventing mismatched positional atom pairing.
+- Made repeated in-place chain re-alignment idempotent by composing each operation against a stable operation-specific baseline transform.
+- Added regression coverage for repeated chain realign stability while preserving repeat availability.
+- Reduced temporary troubleshooting log noise by gating realignment and atom-extraction diagnostics behind disabled-by-default debug flags.
+
 ## [v0.12.0] - 2026-09-02
 Release summary: this release improves alignment and camera-sync reliability in dual-viewer workflows, and updates Mol* interaction behavior so right-clicking empty canvas space no longer resets zoom to full extent.
 - Fixed `Select Subunit` filtering so chain options are populated from real inferred subunit mappings (`All`, `Large`, `Small`, `Other`) instead of a fallback default bucket.
