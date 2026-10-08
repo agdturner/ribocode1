@@ -65,6 +65,13 @@ export interface LoadDataRowPropsInput {
 	chainInspectDisabled: boolean;
 	onChainZoom: () => void;
 	chainZoomDisabled: boolean;
+	showUniprotAccessionInChainLabels?: boolean;
+	setShowUniprotAccessionInChainLabels?: (val: boolean) => void;
+	uniprotLookupStatus?: {
+		completed: number;
+		pending: number;
+		inFlight: number;
+	};
 	residueInfo: any;
 	selectedResidueIds: string[];
 	setSelectedResidueIds: (val: string[]) => void;
@@ -153,6 +160,9 @@ export function getLoadDataRowProps({
 	chainInspectDisabled,
 	onChainZoom,
 	chainZoomDisabled,
+	showUniprotAccessionInChainLabels,
+	setShowUniprotAccessionInChainLabels,
+	uniprotLookupStatus,
 	residueInfo,
 	selectedResidueIds,
 	setSelectedResidueIds,
@@ -181,7 +191,8 @@ export function getLoadDataRowProps({
 	syncEnabled,
 	realignedRepRefs,
 	setRealignedRepRefs,
-	setRealignedStructRefs
+	setRealignedStructRefs,
+	loadedFilename,
 }: LoadDataRowPropsInput) {
 	   return {
 			  // Use the correct molecule and loaded state for each row
@@ -189,11 +200,13 @@ export function getLoadDataRowProps({
 				  Aligned === 'AlignedTo'
 					  ? (viewer.moleculeAlignedTo ? Aligned + `: ${viewer.moleculeAlignedTo.name || viewer.moleculeAlignedTo.label || viewer.moleculeAlignedTo.filename}` : "")
 					  : (viewer.moleculeAligned ? Aligned + `: ${viewer.moleculeAligned.name || viewer.moleculeAligned.label || viewer.moleculeAligned.filename}` : ""),
-			  isLoaded: Aligned === 'AlignedTo' ? isMoleculeAlignedToLoaded : (viewer.moleculeAligned && viewer.moleculeAligned.filename ? true : false),
+			  isLoaded: Aligned === 'AlignedTo'
+				  ? (isMoleculeAlignedToLoaded || Boolean(loadedFilename))
+				  : (isMoleculeAlignedLoaded || Boolean(loadedFilename) || Boolean(viewer.moleculeAligned && viewer.moleculeAligned.filename)),
 			  loadedFilename:
 				  Aligned === 'AlignedTo'
-					  ? (viewer.moleculeAlignedTo?.filename || viewer.moleculeAlignedTo?.name || viewer.moleculeAlignedTo?.label || "")
-					  : (viewer.moleculeAligned?.filename || viewer.moleculeAligned?.name || viewer.moleculeAligned?.label || ""),
+					  ? (viewer.moleculeAlignedTo?.filename || loadedFilename || viewer.moleculeAlignedTo?.name || viewer.moleculeAlignedTo?.label || "")
+					  : (viewer.moleculeAligned?.filename || loadedFilename || viewer.moleculeAligned?.name || viewer.moleculeAligned?.label || ""),
 		   onFileInputClick: viewer.handleFileInputButtonClick,
 		   fileInputRef: viewer.fileInputRef,
 		   onFileChange: (e: any) => handleFileChange(e, Aligned),
@@ -300,6 +313,9 @@ export function getLoadDataRowProps({
 		chainInspectDisabled,
 		onChainZoom,
 		chainZoomDisabled,
+		showUniprotAccessionInChainLabels,
+		onShowUniprotAccessionInChainLabelsChange: setShowUniprotAccessionInChainLabels,
+		uniprotLookupStatus,
 		chainSelectDisabled: !isMoleculeAlignedToLoaded,
 		residueInfo,
 		selectedResidueIds,
@@ -723,7 +739,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 			chainLabels: loadDataRowPropsAlignedTo?.chainInfo?.chainLabels as Map<string, string>,
 			selectedChainId: loadDataRowPropsAlignedTo?.selectedChainId ?? '',
 			onSelectChainId: loadDataRowPropsAlignedTo?.onSelectChainId as (chainId: string) => void,
-			title: 'AlignedTo Chain Finder',
+			title: 'Select Chain',
 			query: alignedToChainFinderQuery,
 			onQueryChange: onAlignedToChainFinderQueryChange,
 		}
@@ -731,7 +747,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 			chainLabels: loadDataRowPropsAligned?.chainInfo?.chainLabels as Map<string, string>,
 			selectedChainId: loadDataRowPropsAligned?.selectedChainId ?? '',
 			onSelectChainId: loadDataRowPropsAligned?.onSelectChainId as (chainId: string) => void,
-			title: 'Aligned Chain Finder',
+			title: 'Select Chain',
 			query: alignedChainFinderQuery,
 			onQueryChange: onAlignedChainFinderQueryChange,
 		};
@@ -872,6 +888,9 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   chainInspectDisabled={activeLoadProps.chainInspectDisabled}
 						   onChainZoom={activeLoadProps.onChainZoom}
 						   chainZoomDisabled={activeLoadProps.chainZoomDisabled}
+						   showUniprotAccessionInChainLabels={activeLoadProps.showUniprotAccessionInChainLabels}
+						   onShowUniprotAccessionInChainLabelsChange={activeLoadProps.onShowUniprotAccessionInChainLabelsChange}
+						   uniprotLookupStatus={activeLoadProps.uniprotLookupStatus}
 						   residueInfo={activeLoadProps.residueInfo}
 						   selectedResidueIds={activeLoadProps.selectedResidueIds}
 						   onSelectResidueIds={activeLoadProps.onSelectResidueIds}

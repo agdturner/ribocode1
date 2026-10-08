@@ -59,7 +59,8 @@ export function createZoomHandler(
     residueIds?: string[],
     syncResidueIds?: string[],
     residueInsCodes?: Record<string, string | undefined>,
-    syncResidueInsCodes?: Record<string, string | undefined>
+    syncResidueInsCodes?: Record<string, string | undefined>,
+    onAfterZoom?: () => void | Promise<void>
 ) {
     return {
         handleButtonClick: async () => {
@@ -130,6 +131,8 @@ export function createZoomHandler(
                     chainId
                 );
             }
+
+            await onAfterZoom?.();
         }
     };
 }
@@ -155,7 +158,8 @@ export function makeZoomHandler({
     residueInsCodes,
     syncResidueInsCodes,
     zoomExtraRadius,
-    zoomMinRadius
+    zoomMinRadius,
+    onAfterZoom
 }: {
     pluginRef: React.RefObject<PluginUIContext | null>,
     structureRef: string | null,
@@ -176,7 +180,8 @@ export function makeZoomHandler({
     residueInsCodes?: Record<string, string | undefined>,
     syncResidueInsCodes?: Record<string, string | undefined>,
     zoomExtraRadius?: number,
-    zoomMinRadius?: number
+    zoomMinRadius?: number,
+    onAfterZoom?: () => void | Promise<void>
 }) {
     return createZoomHandler(
         pluginRef,
@@ -198,7 +203,8 @@ export function makeZoomHandler({
         residueIds,
         syncResidueIds,
         residueInsCodes,
-        syncResidueInsCodes
+        syncResidueInsCodes,
+        onAfterZoom
     );
 }
 

@@ -108,7 +108,7 @@ const MolstarContainer = React.forwardRef(({ viewerKey, setViewer, onMouseDown, 
                     },
                 });
                 if (typeof pluginInstance.state?.updateBehavior === 'function') {
-                    await pluginInstance.state.updateBehavior(PluginBehaviors.Camera.FocusLoci, params => {
+                    await pluginInstance.state.updateBehavior(PluginBehaviors.Camera.FocusLoci, (params: { bindings: Record<string, unknown> }) => {
                         params.bindings = {
                             ...params.bindings,
                             clickResetCameraOnEmpty: Binding.Empty,

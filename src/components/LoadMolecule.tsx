@@ -14,7 +14,6 @@ export const repTypeSelectIdSuffix = 'representation-type';
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import React from 'react';
-import ChainSelectButton from './buttons/select/Chain';
 import ChainSelectionTable from './ChainSelectionTable';
 import ResidueSelectButton from './buttons/select/Residue';
 import SubunitSelectButton from './buttons/select/Subunit';
@@ -112,6 +111,13 @@ interface LoadDataRowProps {
     chainInspectDisabled: boolean;
     onChainZoom: () => void;
     chainZoomDisabled: boolean;
+    showUniprotAccessionInChainLabels?: boolean;
+    onShowUniprotAccessionInChainLabelsChange?: (value: boolean) => void;
+    uniprotLookupStatus?: {
+        completed: number;
+        pending: number;
+        inFlight: number;
+    };
     // Residue
     residueInfo: {
         residueLabels: Map<string, ResidueLabelInfo>;
@@ -182,6 +188,13 @@ interface LoadDataRowProps {
         chainInspectDisabled: boolean;
         onChainZoom: () => void;
         chainZoomDisabled: boolean;
+        showUniprotAccessionInChainLabels?: boolean;
+        onShowUniprotAccessionInChainLabelsChange?: (value: boolean) => void;
+        uniprotLookupStatus?: {
+            completed: number;
+            pending: number;
+            inFlight: number;
+        };
         residueInfo: {
             residueLabels: Map<string, ResidueLabelInfo>;
             residueToAtomIds: Record<string, string[]>;
@@ -239,6 +252,9 @@ interface LoadDataRowProps {
         chainInspectDisabled,
         onChainZoom,
         chainZoomDisabled,
+        showUniprotAccessionInChainLabels = true,
+        onShowUniprotAccessionInChainLabelsChange,
+        uniprotLookupStatus,
         residueInfo,
         selectedResidueIds,
         onSelectResidueIds,
@@ -267,6 +283,7 @@ interface LoadDataRowProps {
     }) => {
         const [showSubunitControls, setShowSubunitControls] = React.useState(false);
         const [showChainControls, setShowChainControls] = React.useState(false);
+        const [showSelectChainControls, setShowSelectChainControls] = React.useState(false);
         const [showResidueControls, setShowResidueControls] = React.useState(false);
         const residueSectionDisabled = !selectedChainId;
 
@@ -276,8 +293,38 @@ interface LoadDataRowProps {
             }
         }, [residueSectionDisabled]);
 
+        const filteredChainLabels = getFilteredChainLabels(selectedSubunit, chainInfo.chainLabels, subunitToChainIds);
+        const effectiveChainLabels = chainFinderChainLabels ?? filteredChainLabels;
+        const selectedChainLabel = selectedChainId
+            ? (effectiveChainLabels.get(selectedChainId) ?? chainInfo.chainLabels.get(selectedChainId) ?? selectedChainId)
+            : 'None';
+
         return (
             <>
+                <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <label htmlFor={`${idPrefix}-zoom-extra-radius`}>Zoom extraRadius:</label>
+                    <input
+                        id={`${idPrefix}-zoom-extra-radius`}
+                        type="number"
+                        value={zoomExtraRadius}
+                        min={0}
+                        max={100}
+                        step={1}
+                        style={{ width: 60 }}
+                        onChange={e => onZoomExtraRadiusChange(Number(e.target.value))}
+                    />
+                    <label htmlFor={`${idPrefix}-zoom-min-radius`}>minRadius:</label>
+                    <input
+                        id={`${idPrefix}-zoom-min-radius`}
+                        type="number"
+                        value={zoomMinRadius}
+                        min={0}
+                        max={100}
+                        step={1}
+                        style={{ width: 60 }}
+                        onChange={e => onZoomMinRadiusChange(Number(e.target.value))}
+                    />
+                </div>
                 <div className="load-data-control-row">
                     <button
                         type="button"
@@ -290,7 +337,7 @@ interface LoadDataRowProps {
                 </div>
                 {showSubunitControls && (
                     <>
-                        <div className="load-data-control-row">
+                        <div className="load-data-control-row" style={{ marginLeft: 12 }}>
                             <SubunitSelectButton
                                 disabled={subunitSelectDisabled}
                                 selectedSubunit={selectedSubunit}
@@ -298,7 +345,16 @@ interface LoadDataRowProps {
                                 id={`${idPrefix}-subunit-select`}
                             />
                         </div>
-                        <div className="load-data-control-row">
+                        <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 12 }}>
+                            <button
+                                onClick={onSubunitZoom}
+                                disabled={subunitZoomDisabled}
+                                aria-label={`Zoom (${subunitZoomLabel})`}
+                                className="msp-btn msp-form-control"
+                                id={`${idPrefix}-zoom-subunit-btn`}
+                            >
+                                Zoom
+                            </button>
                             <button
                                 onClick={onSubunitHighlight}
                                 disabled={subunitHighlightDisabled}
@@ -306,10 +362,8 @@ interface LoadDataRowProps {
                                 className="msp-btn msp-form-control"
                                 id={`${idPrefix}-highlight-subunit-btn`}
                             >
-                                Highlight Subunit (Basic): {subunitHighlightOn ? 'On' : 'Off'}
+                                Highlight: {subunitHighlightOn ? 'On' : 'Off'}
                             </button>
-                        </div>
-                        <div className="load-data-control-row">
                             <button
                                 onClick={onSubunitInspect}
                                 disabled={subunitInspectDisabled}
@@ -317,17 +371,7 @@ interface LoadDataRowProps {
                                 className="msp-btn msp-form-control"
                                 id={`${idPrefix}-inspect-subunit-btn`}
                             >
-                                Inspect Subunit: {subunitInspectOn ? 'On' : 'Off'}
-                            </button>
-                        </div>
-                        <div className="load-data-control-row">
-                            <button
-                                onClick={onSubunitZoom}
-                                disabled={subunitZoomDisabled}
-                                className="msp-btn msp-form-control"
-                                id={`${idPrefix}-zoom-subunit-btn`}
-                            >
-                                Zoom to Subunit: {subunitZoomLabel}
+                                Inspect: {subunitInspectOn ? 'On' : 'Off'}
                             </button>
                         </div>
                     </>
@@ -345,27 +389,19 @@ interface LoadDataRowProps {
                 </div>
                 {showChainControls && (
                     <>
-                        <div className="load-data-control-row">
-                            <ChainSelectButton
-                                 disabled={chainSelectDisabled || !selectedSubunit}
-                                 chainLabels={getFilteredChainLabels(selectedSubunit, chainInfo.chainLabels, subunitToChainIds)}
-                                 selectedChainId={selectedChainId}
-                                 onSelect={onSelectChainId}
-                                 id={`${idPrefix}-chain-select`}
-                            />
+                        <div className="load-data-control-row" id={`${idPrefix}-selected-chain-label`} style={{ marginLeft: 12 }}>
+                            <span>Selected Chain: {selectedChainLabel}</span>
                         </div>
-                        {!!chainFinderChainLabels && (
-                            <ChainSelectionTable
-                                chainLabels={chainFinderChainLabels}
-                                selectedChainId={chainFinderSelectedChainId ?? selectedChainId}
-                                onSelectChainId={chainFinderOnSelectChainId ?? onSelectChainId}
-                                title={chainFinderTitle}
-                                query={chainFinderQuery}
-                                onQueryChange={chainFinderOnQueryChange}
-                                idPrefix={chainFinderIdPrefix ?? idPrefix}
-                            />
-                        )}
-                        <div className="load-data-control-row">
+                        <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 12 }}>
+                            <button
+                                onClick={onChainZoom}
+                                disabled={chainZoomDisabled}
+                                aria-label={`Zoom (${chainZoomLabel})`}
+                                className="msp-btn msp-form-control"
+                                id={`${idPrefix}-zoom-chain-btn`}
+                            >
+                                Zoom
+                            </button>
                             <button
                                 onClick={onChainHighlight}
                                 disabled={chainHighlightDisabled}
@@ -373,10 +409,8 @@ interface LoadDataRowProps {
                                 className="msp-btn msp-form-control"
                                 id={`${idPrefix}-highlight-chain-btn`}
                             >
-                                Highlight Chain: {chainHighlightOn ? 'On' : 'Off'}
+                                Highlight: {chainHighlightOn ? 'On' : 'Off'}
                             </button>
-                        </div>
-                        <div className="load-data-control-row">
                             <button
                                 onClick={onChainInspect}
                                 disabled={chainInspectDisabled}
@@ -384,19 +418,55 @@ interface LoadDataRowProps {
                                 className="msp-btn msp-form-control"
                                 id={`${idPrefix}-inspect-chain-btn`}
                             >
-                                Inspect Chain: {chainInspectOn ? 'On' : 'Off'}
+                                Inspect: {chainInspectOn ? 'On' : 'Off'}
                             </button>
                         </div>
-                        <div className="load-data-control-row">
+                        <div className="load-data-control-row" style={{ marginLeft: 12 }}>
                             <button
-                                onClick={onChainZoom}
-                                disabled={chainZoomDisabled}
+                                type="button"
                                 className="msp-btn msp-form-control"
-                                id={`${idPrefix}-zoom-chain-btn`}
+                                id={`${idPrefix}-select-chain-controls-toggle-btn`}
+                                onClick={() => setShowSelectChainControls((current) => !current)}
                             >
-                                Zoom to Chain: {chainZoomLabel}
+                                {showSelectChainControls ? 'Hide Select Chain Control' : 'Show Select Chain Control'}
                             </button>
                         </div>
+                        {showSelectChainControls && (
+                            <>
+                                {onShowUniprotAccessionInChainLabelsChange && (
+                                    <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 12 }}>
+                                        <button
+                                            type="button"
+                                            className="msp-btn msp-form-control"
+                                            id={`${idPrefix}-show-uniprot-accession`}
+                                            aria-pressed={showUniprotAccessionInChainLabels}
+                                            onClick={() => onShowUniprotAccessionInChainLabelsChange(!showUniprotAccessionInChainLabels)}
+                                        >
+                                            Include UniProt accession in chain labels: {showUniprotAccessionInChainLabels ? 'On' : 'Off'}
+                                        </button>
+                                        <span
+                                            id={`${idPrefix}-uniprot-status`}
+                                            style={{ fontSize: 12, color: '#555' }}
+                                        >
+                                            UniProt cache: {uniprotLookupStatus?.completed ?? 0} cached, {uniprotLookupStatus?.pending ?? 0} pending, {uniprotLookupStatus?.inFlight ?? 0} in-flight
+                                        </span>
+                                    </div>
+                                )}
+                                <div style={{ marginLeft: 12 }}>
+                                    {!!effectiveChainLabels && effectiveChainLabels.size > 0 && (
+                                        <ChainSelectionTable
+                                            chainLabels={effectiveChainLabels}
+                                            selectedChainId={chainFinderSelectedChainId ?? selectedChainId}
+                                            onSelectChainId={chainFinderOnSelectChainId ?? onSelectChainId}
+                                            title={chainFinderTitle}
+                                            query={chainFinderQuery}
+                                            onQueryChange={chainFinderOnQueryChange}
+                                            idPrefix={chainFinderIdPrefix ?? idPrefix}
+                                        />
+                                    )}
+                                </div>
+                            </>
+                        )}
                     </>
                 )}
 
@@ -413,31 +483,7 @@ interface LoadDataRowProps {
                 </div>
                 {showResidueControls && (
                     <>
-                        <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                            <label htmlFor={`${idPrefix}-zoom-extra-radius`}>Zoom extraRadius:</label>
-                            <input
-                                id={`${idPrefix}-zoom-extra-radius`}
-                                type="number"
-                                value={zoomExtraRadius}
-                                min={0}
-                                max={100}
-                                step={1}
-                                style={{ width: 60 }}
-                                onChange={e => onZoomExtraRadiusChange(Number(e.target.value))}
-                            />
-                            <label htmlFor={`${idPrefix}-zoom-min-radius`}>minRadius:</label>
-                            <input
-                                id={`${idPrefix}-zoom-min-radius`}
-                                type="number"
-                                value={zoomMinRadius}
-                                min={0}
-                                max={100}
-                                step={1}
-                                style={{ width: 60 }}
-                                onChange={e => onZoomMinRadiusChange(Number(e.target.value))}
-                            />
-                        </div>
-                        <div className="load-data-control-row">
+                        <div className="load-data-control-row" style={{ marginLeft: 12 }}>
                             <ResidueSelectButton
                                 disabled={residueSelectDisabled || !selectedChainId}
                                 residueLabels={residueInfo.residueLabels}
@@ -446,7 +492,16 @@ interface LoadDataRowProps {
                                 id={`${idPrefix}-residue-select`}
                             />
                         </div>
-                        <div className="load-data-control-row">
+                        <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 12 }}>
+                            <button
+                                onClick={onResidueZoom}
+                                disabled={residueZoomDisabled}
+                                aria-label={`Zoom (${residueZoomLabel})`}
+                                className="msp-btn msp-form-control"
+                                id={`${idPrefix}-zoom-residue-btn`}
+                            >
+                                Zoom
+                            </button>
                             <button
                                 onClick={onResidueHighlight}
                                 disabled={residueHighlightDisabled}
@@ -454,10 +509,8 @@ interface LoadDataRowProps {
                                 className="msp-btn msp-form-control"
                                 id={`${idPrefix}-highlight-residue-btn`}
                             >
-                                Highlight Residues: {residueHighlightOn ? 'On' : 'Off'}
+                                Highlight: {residueHighlightOn ? 'On' : 'Off'}
                             </button>
-                        </div>
-                        <div className="load-data-control-row">
                             <button
                                 onClick={onResidueInspect}
                                 disabled={residueInspectDisabled}
@@ -465,17 +518,7 @@ interface LoadDataRowProps {
                                 className="msp-btn msp-form-control"
                                 id={`${idPrefix}-inspect-residue-btn`}
                             >
-                                Inspect Residues: {residueInspectOn ? 'On' : 'Off'}
-                            </button>
-                        </div>
-                        <div className="load-data-control-row">
-                            <button
-                                onClick={onResidueZoom}
-                                disabled={residueZoomDisabled}
-                                className="msp-btn msp-form-control"
-                                id={`${idPrefix}-zoom-residue-btn`}
-                            >
-                                Zoom to Residue: {residueZoomLabel}
+                                Inspect: {residueInspectOn ? 'On' : 'Off'}
                             </button>
                         </div>
                     </>
@@ -579,6 +622,9 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     chainInspectDisabled,
     onChainZoom,
     chainZoomDisabled,
+    showUniprotAccessionInChainLabels = true,
+    onShowUniprotAccessionInChainLabelsChange,
+    uniprotLookupStatus,
     residueInfo,
     selectedResidueIds,
     onSelectResidueIds,
@@ -734,6 +780,9 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                         chainInspectDisabled={chainInspectDisabled}
                         onChainZoom={onChainZoom}
                         chainZoomDisabled={chainZoomDisabled}
+                        showUniprotAccessionInChainLabels={showUniprotAccessionInChainLabels}
+                        onShowUniprotAccessionInChainLabelsChange={onShowUniprotAccessionInChainLabelsChange}
+                        uniprotLookupStatus={uniprotLookupStatus}
                         residueInfo={residueInfo}
                         selectedResidueIds={selectedResidueIds}
                         onSelectResidueIds={onSelectResidueIds}

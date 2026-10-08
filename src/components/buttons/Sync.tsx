@@ -12,7 +12,6 @@ import React, { useEffect, useRef } from 'react';
 import { PluginUIContext } from 'molstar/lib/mol-plugin-ui/context';
 import { Vec3 } from 'molstar/lib/mol-math/linear-algebra/3d/vec3';
 import type { ViewerKey } from '../../types/ribocode';
-import GenericSelectButton from './select/Select';
 
 /**
  * Suffix for the SyncButton id, used for consistent id construction in code and tests.
@@ -302,14 +301,17 @@ const SyncButton: React.FC<SyncButtonProps> = ({
     }, [syncEnabled, viewerA, viewerB, activeViewer]);
 
     return (
-        <GenericSelectButton
-            label="Sync"
-            options={['On', 'Off']}
-            selected={syncEnabled ? 'On' : 'Off'}
-            onSelect={option => setSyncEnabled(option === 'On')}
+        <button
+            type="button"
+            className="msp-btn msp-form-control"
+            aria-label="Sync"
+            aria-pressed={syncEnabled}
             disabled={disabled}
             id={id}
-        />
+            onClick={() => setSyncEnabled(!syncEnabled)}
+        >
+            Sync: {syncEnabled ? 'On' : 'Off'}
+        </button>
     );
 };
 

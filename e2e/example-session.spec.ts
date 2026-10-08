@@ -15,6 +15,10 @@ const inputDir = path.resolve(__dirname, '../data/input');
 const alignedToFile = path.join(inputDir, '4ug0.cif');
 const alignedFile = path.join(inputDir, '6xu8.cif');
 
+async function waitForSessionMenuReady(page: Page) {
+  await expect(page.locator('#session-menu-btn')).toBeVisible({ timeout: 45000 });
+}
+
 async function completeRequiredFilesModal(page: Page) {
   await expect(page.getByText('Load Session: Select Required Files')).toBeVisible();
   const fileInputs = await page.$$('[data-testid^="session-load-modal-file-input-"]');
@@ -35,7 +39,10 @@ async function completeRequiredFilesModal(page: Page) {
 
 test.describe('Session Save/Load E2E', () => {
   test('can load, save, and reload session with real data', async ({ page }) => {
+    test.setTimeout(60000);
+
     await page.goto('http://localhost:5173/');
+    await waitForSessionMenuReady(page);
 
     await page.click('#viewer-column-A-alignedto-load-btn');
     await page.setInputFiles('#viewer-column-A-alignedto-file-input', alignedToFile);
@@ -44,12 +51,13 @@ test.describe('Session Save/Load E2E', () => {
     await page.click('#viewer-column-B-aligned-load-btn');
 
     await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toHaveText(/4ug0\.cif/i);
-    await expect(page.locator('#viewer-column-B-aligned-load-btn')).toHaveCount(0, { timeout: 20000 });
+    await expect(page.locator('#viewer-column-B-aligned-filename-label')).toHaveText(/6xu8\.cif/i, { timeout: 20000 });
 
     await page.click('#session-menu-btn');
     await page.click('#session-menu-dropdown .session-menu-item:text-is("Save")');
 
-    await page.reload();
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 45000 });
+    await waitForSessionMenuReady(page);
     await page.click('#session-menu-btn');
     await page.click('#session-menu-dropdown .session-menu-item:text-is("Load")');
 
@@ -60,6 +68,6 @@ test.describe('Session Save/Load E2E', () => {
     await expect(page.locator('#viewer-column-A-molstar-container')).toBeVisible();
     await expect(page.locator('#viewer-column-B-molstar-container')).toBeVisible();
     await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toHaveText(/4ug0\.cif/i);
-    await expect(page.locator('#viewer-column-B-aligned-load-btn')).toHaveCount(0, { timeout: 20000 });
+    await expect(page.locator('#viewer-column-B-aligned-filename-label')).toHaveText(/6xu8\.cif/i, { timeout: 20000 });
   });
 });

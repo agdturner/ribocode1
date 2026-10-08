@@ -493,6 +493,13 @@ The following scripts are available in `package.json`:
 - Document any new E2E tests and datasets added.
 - Prefer realistic user flows: test file selection dialogs, downloads, and UI prompts as a user would experience them.
 
+#### Session and Selector Stability Notes
+
+- Prefer stable ID/testid selectors for repeated controls (`Zoom`, `Highlight`, `Inspect`) because label text is intentionally duplicated across Subunit, Chain, and Residue sections.
+- For session load/save/reload flows, wait for key controls (for example `#session-menu-btn`) before interacting after navigation or reload.
+- Long session workflows can exceed the default 30s test timeout under parallel workers; set a per-test timeout (for example `test.setTimeout(60000)`) for save/reload/load scenarios.
+- For load completion assertions, prefer checking filename labels (for example `#viewer-column-B-aligned-filename-label`) rather than assuming the absence/presence of a specific load button.
+
 ### Resources
 
 - [Playwright documentation](https://playwright.dev/docs/intro)

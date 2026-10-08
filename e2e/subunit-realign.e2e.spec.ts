@@ -27,7 +27,7 @@ async function loadAlignedToAndAligned(page: import('@playwright/test').Page) {
 async function selectSubunitWithChains(
   page: import('@playwright/test').Page,
   subunitSelect: string,
-  chainSelect: string
+  chainRowPrefix: string
 ): Promise<string> {
   const values = await page.evaluate((selector) => {
     return Array.from(document.querySelectorAll(`${selector} option`))
@@ -38,12 +38,10 @@ async function selectSubunitWithChains(
   for (const value of values) {
     await page.selectOption(subunitSelect, value);
     await page.waitForTimeout(50);
-    const chainValues = await page.evaluate((selector) => {
-      return Array.from(document.querySelectorAll(`${selector} option`))
-        .map(opt => (opt as HTMLOptionElement).value)
-        .filter(v => v && v !== '');
-    }, chainSelect);
-    if (chainValues.length > 0) return value;
+    const chainCount = await page.evaluate((prefix) => {
+      return document.querySelectorAll(`[data-testid^="${prefix}"]`).length;
+    }, chainRowPrefix);
+    if (chainCount > 0) return value;
   }
 
   throw new Error(`No non-All subunit with chain options found for ${subunitSelect}`);
@@ -65,6 +63,8 @@ test('Align Subunits button enables and remains available for repeated pairs', a
   await page.click('#viewer-column-B-aligned-subunit-controls-toggle-btn');
   await page.click('#viewer-column-A-alignedto-chain-controls-toggle-btn');
   await page.click('#viewer-column-B-aligned-chain-controls-toggle-btn');
+  await page.click('#viewer-column-A-alignedto-select-chain-controls-toggle-btn');
+  await page.click('#viewer-column-B-aligned-select-chain-controls-toggle-btn');
 
   const realignSubunitBtn = page.locator('#generalcontrols-realign-subunit-btn');
   await expect(realignSubunitBtn).toBeDisabled();
@@ -73,12 +73,12 @@ test('Align Subunits button enables and remains available for repeated pairs', a
   const alignedToSubunit = await selectSubunitWithChains(
     page,
     '#viewer-column-A-alignedto-subunit-select',
-    '#viewer-column-A-alignedto-chain-select'
+    'viewer-column-A-chain-table-row-'
   );
   const alignedSubunit = await selectSubunitWithChains(
     page,
     '#viewer-column-B-aligned-subunit-select',
-    '#viewer-column-B-aligned-chain-select'
+    'viewer-column-B-chain-table-row-'
   );
 
   await expect(realignSubunitBtn).toBeEnabled();

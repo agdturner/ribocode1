@@ -1,4 +1,52 @@
-## [v0.11.0] - Unreleased
+## [v0.13.0] - 2026-10-08
+Release summary: this minor release standardizes `Select and Zoom` control UX across subunit/chain/residue flows, clarifies chain-label controls, and improves selector/test stability.
+- Updated `Re-align` to chains so sync is temporarily disabled while realignment runs, then restored to its prior enabled state.
+- Standardized Subunit, Chain, and Residue control sections to a consistent nested layout with aligned indentation and action ordering (`Zoom`, `Highlight`, `Inspect`).
+- Simplified action button labels across controls (for example `Zoom`, `Highlight: On/Off`, `Inspect: On/Off`) to reduce visual clutter.
+- Added nested chain controls with `Show/Hide Chain Controls` and `Show/Hide Select Chain Control`; selected-chain summary/actions remain visible while select-table details can be collapsed.
+- Changed chain-selection panel naming to `Select Chain` in both columns for clearer, symmetric terminology.
+- Renamed chain-label toggle wording to `Include UniProt accession in chain labels` for consistency with `Show/Hide` section controls.
+- Updated tests to prefer stable ID-based selectors for control actions and added regression coverage for nested chain-section visibility and repeated realign workflows.
+
+## [v0.12.2] - 2026-10-08
+Release summary: this patch release aligns chain re-alignment camera behavior across viewers for a consistent side-by-side viewpoint.
+- Updated chain re-alignment camera behavior so after `Re-align` to chains, the `Aligned` viewer camera matches the `AlignedTo` viewer viewpoint (zoom, pan target, and orientation).
+- Fixed camera snapshot type compatibility in `App.tsx` by using Mol* `Vec3` values when applying copied camera state (`position`, `target`, `up`).
+- Updated tests to match diagnostics-gated logging behavior in `src/utils/data.ts` (removed stale always-log assertion in `data.test.ts`).
+- Tightened `App.test.tsx` mock typing for `makeZoomHandler` to avoid TypeScript spread/tuple inference errors.
+
+## [v0.12.1] - 2026-09-04
+Release summary: this patch release stabilizes repeated chain re-alignment, clarifies highlight vs inspect behavior, and reduces default diagnostic console noise.
+- Split `Highlight` and `Inspect` behavior for subunit/chain/residue controls so simple highlighting no longer triggers focus/details inspect side effects.
+- Fixed inspect toggle wiring in active viewer panels so `Inspect Chain` and `Inspect Residues` reliably toggle on/off.
+- Switched basic highlight flows to persistent selection channels, preserving highlights during viewer interaction and pointer movement.
+- Added follow-selection highlight synchronization so active highlights update when selected subunit/chain/residue changes.
+- Hardened chain re-alignment atom fitting by preferring anchor atoms and deterministic residue-key pairing (`shared-residue-keys`) before fallback strategies.
+- Improved chain re-alignment fit quality for problematic pairs (for example `CU -> CU`) by preventing mismatched positional atom pairing.
+- Made repeated in-place chain re-alignment idempotent by composing each operation against a stable operation-specific baseline transform.
+- Added regression coverage for repeated chain realign stability while preserving repeat availability.
+- Reduced temporary troubleshooting log noise by gating realignment and atom-extraction diagnostics behind disabled-by-default debug flags.
+
+## [v0.12.0] - 2026-09-02
+Release summary: this release improves alignment and camera-sync reliability in dual-viewer workflows, and updates Mol* interaction behavior so right-clicking empty canvas space no longer resets zoom to full extent.
+- Fixed `Select Subunit` filtering so chain options are populated from real inferred subunit mappings (`All`, `Large`, `Small`, `Other`) instead of a fallback default bucket.
+- Added `Zoom to Subunit` controls for each viewer/molecule panel, using the selected subunit chain set for camera focus.
+- Added `Re-align to Subunit` in General Controls, enabled only when valid non-`All` subunits are selected on both datasets and disabled after an already-applied subunit pair.
+- Added dedicated Playwright E2E coverage for subunit re-alignment button state transitions in `e2e/subunit-realign.e2e.spec.ts`.
+- Updated `Select Residue` to support multi-residue selection per viewer, while keeping session compatibility via legacy first-selected `residueId` fallback.
+- Updated `Zoom to Residue` so when multiple residues are selected the camera focuses the combined loci of all selected residues (instead of only the first).
+- Moved `Residue Zoom` (`extraRadius`, `minRadius`) and `Show UniProt accession in chain labels` to per-viewer controls directly below each viewer's `Zoom to Residue` button, with per-viewer session save/load support and legacy global-field fallback.
+- Fixed residue-code extraction so labels use meaningful residue/nucleotide codes from residue/atom comp IDs instead of malformed fallbacks (e.g. preventing `ATOM` -> `ATO`).
+- Added residue code normalization for RNA/protein conventions and updated residue labels to Mol*-style `code number [auth n]` (for example `A 12 [auth 12]`, `GLY 70 [auth 70]`).
+- Added focused unit/integration regression coverage for residue label lookup, multi-selection persistence (`residueIds` + legacy `residueId`), and session round-tripping.
+- Reordered per-column controls so representation actions (`Representation` selector/add button and `Load Colours`) appear before Select/Zoom controls.
+- Added per-column `Show/Hide Select and Zoom Controls` toggle that controls Subunit/Chain/Residue selectors, zoom buttons, and Chain Finder together.
+- Set Select/Zoom controls to be collapsed by default, and positioned the toggle immediately above `Show/Hide Advanced Mol* Controls`.
+- Updated toggle button layout so `Show/Hide Advanced Mol* Controls` always appears below `Show/Hide Select and Zoom Controls` (stacked vertically).
+- Moved per-molecule representation toggle rows (`MoleculeUI` visibility controls) to render immediately below each Mol* viewer, before `Load Molecule` controls.
+- Fixed per-viewer clipping controls to drive Mol* `cameraClipping` parameters (`radius` and `minNear`) so slider changes now match visible clipping behavior in native Mol* Settings.
+
+## [v0.11.0] - 2026-08-14
 - Added a preferred in-place chain re-alignment path that applies rigid transforms directly to existing aligned structures in both viewers.
 - Kept the existing reload-based `ReAligned` path as an automatic fallback if in-place transform application is unavailable or fails.
 - Updated chain-fit atom selection to use atom types present in the selected chains, instead of relying on a narrow static default subset.
@@ -12,6 +60,7 @@
 - Added in-place re-alignment pair tracking to prevent repeated transform stacking when the same chain pair is re-aligned again.
 - Corrected Mol* equal-count alignment centroid mapping so `centroid` (moving) and `centroidReference` (reference) match the trajectory transform convention `R * (p - centroid) + centroidReference`.
 - Added regression coverage for sync directionality and repeated re-align guarding across unit, integration, and E2E tests.
+- Disabled empty-space camera reset on right-click by overriding Mol* `camera-focus-loci` reset bindings, so background right-click no longer zooms out to full extent.
 
 ## [v0.10.0] - 2026-07-28
 - Moved viewer rendering to the top of each column so the two Mol* canvases stay visually aligned even when control content differs between columns.

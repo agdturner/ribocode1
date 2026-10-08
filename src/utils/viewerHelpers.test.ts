@@ -133,6 +133,25 @@ describe('viewerHelpers', () => {
     );
   });
 
+  it('invokes onAfterZoom callback after zooming', async () => {
+    vi.mocked(focusLociOnChain).mockClear();
+    const pluginRef = { current: { id: 'plugin-a' } };
+    const onAfterZoom = vi.fn();
+    const handler = makeZoomHandler({
+      pluginRef: pluginRef as any,
+      structureRef: 'struct-a',
+      property: 'chain-test',
+      chainId: 'B',
+      sync: false,
+      onAfterZoom,
+    });
+
+    await handler.handleButtonClick();
+
+    expect(focusLociOnChain).toHaveBeenCalled();
+    expect(onAfterZoom).toHaveBeenCalledTimes(1);
+  });
+
   it('syncs residue zoom with zoom options to the other viewer when sync is enabled', async () => {
     vi.mocked(focusLociOnResidue).mockClear();
     const pluginRef = { current: { id: 'plugin-a' } };

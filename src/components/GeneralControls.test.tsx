@@ -16,7 +16,6 @@ import { A, B } from '../constants/ribocode';
 
 describe('GeneralControls', () => {
   it('renders and responds to user input', () => {
-    const setShowUniprotAccessionInChainLabels = vi.fn();
     const setSyncEnabled = vi.fn();
     const handleRealignToChains = vi.fn();
     const handleRealignToResidues = vi.fn();
@@ -28,9 +27,6 @@ describe('GeneralControls', () => {
       syncEnabled: false,
       setSyncEnabled,
       syncDisabled: false,
-      showUniprotAccessionInChainLabels: true,
-      setShowUniprotAccessionInChainLabels,
-      uniprotLookupStatus: { completed: 5, pending: 2, inFlight: 1 },
       selectedChainIdAlignedTo: A,
       selectedChainIdAligned: B,
       realignmentExists: false,
@@ -50,18 +46,11 @@ describe('GeneralControls', () => {
     const root = container.querySelector(`#test-controls-${generalControlsIdSuffix}`);
     expect(root).toBeInTheDocument();
 
-    const showUniProtToggle = getByLabelText(/Show UniProt accession in chain labels/i);
-    fireEvent.click(showUniProtToggle);
-    expect(setShowUniprotAccessionInChainLabels).toHaveBeenCalledWith(false);
-    expect(container.querySelector('#test-controls-uniprot-status')?.textContent).toContain('UniProt cache: 5 cached, 2 pending, 1 in-flight');
-
-    // Test SyncButton (actually a select) is rendered and works
-    const syncSelect = getByLabelText(/Sync/i);
-    expect(syncSelect).toBeInTheDocument();
-    fireEvent.change(syncSelect, { target: { value: 'On' } });
+    // Test SyncButton is rendered and toggles
+    const syncButton = getByLabelText(/Sync/i);
+    expect(syncButton).toBeInTheDocument();
+    fireEvent.click(syncButton);
     expect(setSyncEnabled).toHaveBeenCalledWith(true);
-    fireEvent.change(syncSelect, { target: { value: 'Off' } });
-    expect(setSyncEnabled).toHaveBeenCalledWith(false);
 
     // Test realign button
     const realignBtn = getByRole('button', { name: /Align Chains:/i });
@@ -95,9 +84,6 @@ describe('GeneralControls', () => {
       syncEnabled: false,
       setSyncEnabled: vi.fn(),
       syncDisabled: true,
-      showUniprotAccessionInChainLabels: true,
-      setShowUniprotAccessionInChainLabels: vi.fn(),
-      uniprotLookupStatus: { completed: 0, pending: 0, inFlight: 0 },
       selectedChainIdAlignedTo: A,
       selectedChainIdAligned: B,
       realignmentExists: false,

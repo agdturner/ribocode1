@@ -16,7 +16,12 @@ function dataPath(filename: string) {
   return path.resolve(__dirname, '../data/input', filename);
 }
 
+async function waitForSessionMenuReady(page: Page) {
+  await expect(page.locator('#session-menu-btn')).toBeVisible({ timeout: 45000 });
+}
+
 async function loadSessionAndRequiredFiles(page: Page, sessionFixtureFile: string) {
+  await waitForSessionMenuReady(page);
   await page.click('button#session-menu-btn');
   await page.waitForSelector('#session-menu-dropdown', { state: 'visible' });
   await page.waitForTimeout(200);
@@ -46,6 +51,7 @@ async function loadSessionAndRequiredFiles(page: Page, sessionFixtureFile: strin
 test('Session load prompts for required files and loads data', async ({ page }) => {
   // 1. Go to the app
   await page.goto('http://localhost:5173/'); // Adjust if your dev server runs elsewhere
+  await waitForSessionMenuReady(page);
 
   await loadSessionAndRequiredFiles(page, 'test-session.json');
 
@@ -53,7 +59,7 @@ test('Session load prompts for required files and loads data', async ({ page }) 
   await expect(page.locator('#viewer-column-A-molstar-container')).toBeVisible();
   await expect(page.locator('#viewer-column-B-molstar-container')).toBeVisible();
   await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toHaveText(/4ug0\.cif/i);
-  await expect(page.locator('#viewer-column-B-aligned-load-btn')).toHaveCount(0, { timeout: 20000 });
+  await expect(page.locator('#viewer-column-B-aligned-filename-label')).toHaveText(/6xu8\.cif/i, { timeout: 20000 });
 
   // 8. Assert that the fallback error dialog does NOT appear
   await expect(page.locator('text=Session loaded, but could not automatically reload datasets')).toHaveCount(0);
@@ -61,19 +67,23 @@ test('Session load prompts for required files and loads data', async ({ page }) 
 });
 
 test('Session load restores saved cartoon representations', async ({ page }) => {
+  test.setTimeout(60000);
+
   await page.goto('http://localhost:5173/');
+  await waitForSessionMenuReady(page);
 
   await loadSessionAndRequiredFiles(page, 'test-session.json');
-  await expect(page.locator('#viewer-column-B-aligned-load-btn')).toHaveCount(0, { timeout: 20000 });
+  await expect(page.locator('#viewer-column-B-aligned-filename-label')).toHaveText(/6xu8\.cif/i, { timeout: 20000 });
   const baselineCartoonCount = await page.locator('button[aria-label="Toggle visibility for cartoon representation"]').count();
 
-  await page.reload();
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: 45000 });
+  await waitForSessionMenuReady(page);
   await loadSessionAndRequiredFiles(page, 'test-session-with-representations.json');
 
   await expect(page.locator('#viewer-column-A-molstar-container')).toBeVisible();
   await expect(page.locator('#viewer-column-B-molstar-container')).toBeVisible();
   await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toHaveText(/4ug0\.cif/i);
-  await expect(page.locator('#viewer-column-B-aligned-load-btn')).toHaveCount(0, { timeout: 20000 });
+  await expect(page.locator('#viewer-column-B-aligned-filename-label')).toHaveText(/6xu8\.cif/i, { timeout: 20000 });
 
   await expect(async () => {
     const restoredCartoonCount = await page.locator('button[aria-label="Toggle visibility for cartoon representation"]').count();

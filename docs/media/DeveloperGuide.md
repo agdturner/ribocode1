@@ -168,6 +168,8 @@ Chain-based re-alignment now uses a staged approach in `src/App.tsx`.
   - Applied in-place chain pairs are tracked and deduplicated so the same `(from, to)` pair is not transformed repeatedly.
 - Fallback path (reload-based):
   - If in-place transform cannot be applied, the app falls back to the existing `ReAligned` loading flow using alignment data.
+- Post-realign camera behavior:
+  - After chain re-alignment is applied, the `Aligned` viewer camera is matched to the `AlignedTo` viewer camera (zoom, pan target, and orientation) to keep both viewers in the same viewpoint.
 - Alignment-data transform behavior:
   - Mol* trajectory alignment application now uses full `rotation + translation` when `rotMat`, `centroid`, and `centroidReference` are available.
   - Equal-count fit mapping is normalized so `centroid` is the moving-set centroid and `centroidReference` is the reference-set centroid, matching the transform convention `R * (p - centroid) + centroidReference`.
@@ -490,6 +492,13 @@ The following scripts are available in `package.json`:
 - Clean up test state between tests to avoid cross-test interference.
 - Document any new E2E tests and datasets added.
 - Prefer realistic user flows: test file selection dialogs, downloads, and UI prompts as a user would experience them.
+
+#### Session and Selector Stability Notes
+
+- Prefer stable ID/testid selectors for repeated controls (`Zoom`, `Highlight`, `Inspect`) because label text is intentionally duplicated across Subunit, Chain, and Residue sections.
+- For session load/save/reload flows, wait for key controls (for example `#session-menu-btn`) before interacting after navigation or reload.
+- Long session workflows can exceed the default 30s test timeout under parallel workers; set a per-test timeout (for example `test.setTimeout(60000)`) for save/reload/load scenarios.
+- For load completion assertions, prefer checking filename labels (for example `#viewer-column-B-aligned-filename-label`) rather than assuming the absence/presence of a specific load button.
 
 ### Resources
 

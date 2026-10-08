@@ -774,7 +774,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const [viewerAReady, setViewerAReady] = useState(false);
     const [viewerBReady, setViewerBReady] = useState(false);
     const [syncEnabled, setSyncEnabled] = useState(false);
-    const [showUniprotAccessionInChainLabels, setShowUniprotAccessionInChainLabels] = useState(true);
+    const [showUniprotAccessionInChainLabelsA, setShowUniprotAccessionInChainLabelsA] = useState(true);
+    const [showUniprotAccessionInChainLabelsB, setShowUniprotAccessionInChainLabelsB] = useState(true);
     const rpNameLookupBySpecies = useMemo(
         () => parseRpNameTableBySpecies(rpNameTableCsv),
         []
@@ -1607,6 +1608,40 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         updateFog(viewerB.ref.current, null, fogB.enabled, fogB.near, fogB.far, clippingB.minNear, clippingB.clipRadius);
     }, [viewerBReady, fogB, clippingB, updateFog]);
 
+    const syncClippingFromMolstarAfterZoom = useCallback((sourceViewer: ViewerKey, includeSyncedViewer: boolean) => {
+        const applyFromViewer = (
+            plugin: PluginUIContext | null,
+            setClipping: React.Dispatch<React.SetStateAction<{ minNear: number; clipRadius: number }>>,
+            setClippingDefaults: React.Dispatch<React.SetStateAction<{ minNear: number; clipRadius: number }>>
+        ) => {
+            if (!plugin?.canvas3d) return;
+            const clippingFromMolstar = readClippingFromViewer(plugin);
+            setClipping(clippingFromMolstar);
+            setClippingDefaults(clippingFromMolstar);
+        };
+
+        const capture = () => {
+            if (sourceViewer === A) {
+                applyFromViewer(viewerA.ref.current, setClippingA, setClippingDefaultsA);
+                if (includeSyncedViewer) {
+                    applyFromViewer(viewerB.ref.current, setClippingB, setClippingDefaultsB);
+                }
+            } else {
+                applyFromViewer(viewerB.ref.current, setClippingB, setClippingDefaultsB);
+                if (includeSyncedViewer) {
+                    applyFromViewer(viewerA.ref.current, setClippingA, setClippingDefaultsA);
+                }
+            }
+        };
+
+        // Mol* camera clipping can settle asynchronously after loci focus.
+        // Sample a few times so visible clipping controls stay in sync without requiring a toggle.
+        capture();
+        setTimeout(capture, 0);
+        setTimeout(capture, 32);
+        setTimeout(capture, 96);
+    }, [viewerA.ref, viewerB.ref, setClippingA, setClippingB, setClippingDefaultsA, setClippingDefaultsB]);
+
     // Toggle visibility for moleculeAlignedTo in viewer A.
     const toggleViewerAAlignedTo = {
         handleButtonClick: () =>
@@ -1716,7 +1751,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         rpNameLookupBySpecies,
         uniprotGeneNames,
         onUniprotAccessionsDiscovered,
-        showUniprotAccessionInChainLabels,
+        showUniprotAccessionInChainLabelsA,
         alignedToChainToUniProtOverride,
         alignedToChainToMoleculeOverride
     );
@@ -1730,7 +1765,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         rpNameLookupBySpecies,
         uniprotGeneNames,
         onUniprotAccessionsDiscovered,
-        showUniprotAccessionInChainLabels,
+        showUniprotAccessionInChainLabelsB,
         alignedChainToUniProtOverride,
         alignedChainToMoleculeOverride
     );
@@ -1749,6 +1784,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncPluginRef: viewerB.ref,
         syncStructureRef: structureRefBAlignedTo,
         syncChainId: selectedChainIdAlignedTo,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(A, syncEnabled),
     });
     const chainZoomAAligned = makeZoomHandler({
         pluginRef: viewerA.ref,
@@ -1759,6 +1795,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncPluginRef: viewerB.ref,
         syncStructureRef: structureRefBAligned,
         syncChainId: selectedChainIdAligned,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(A, syncEnabled),
     });
     const chainZoomBAlignedTo = makeZoomHandler({
         pluginRef: viewerB.ref,
@@ -1769,6 +1806,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncPluginRef: viewerA.ref,
         syncStructureRef: structureRefAAlignedTo,
         syncChainId: selectedChainIdAlignedTo,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(B, syncEnabled),
     });
     const chainZoomBAligned = makeZoomHandler({
         pluginRef: viewerB.ref,
@@ -1779,6 +1817,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncPluginRef: viewerA.ref,
         syncStructureRef: structureRefAAligned,
         syncChainId: selectedChainIdAligned,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(B, syncEnabled),
     });
 
     const chainHighlightAAlignedTo = makeChainHighlightToggleHandler({
@@ -1911,7 +1950,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         residueInsCodes: selectedResidueInsCodesAlignedTo,
         syncResidueInsCodes: selectedResidueInsCodesAlignedTo,
         zoomExtraRadius: zoomExtraRadiusA,
-        zoomMinRadius: zoomMinRadiusA
+        zoomMinRadius: zoomMinRadiusA,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(A, syncEnabled),
     });
     const residueZoomAAligned = makeZoomHandler({
         pluginRef: viewerA.ref,
@@ -1931,7 +1971,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         residueInsCodes: selectedResidueInsCodesAligned,
         syncResidueInsCodes: selectedResidueInsCodesAligned,
         zoomExtraRadius: zoomExtraRadiusA,
-        zoomMinRadius: zoomMinRadiusA
+        zoomMinRadius: zoomMinRadiusA,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(A, syncEnabled),
     });
     const residueZoomBAlignedTo = makeZoomHandler({
         pluginRef: viewerB.ref,
@@ -1951,7 +1992,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         residueInsCodes: selectedResidueInsCodesAlignedTo,
         syncResidueInsCodes: selectedResidueInsCodesAlignedTo,
         zoomExtraRadius: zoomExtraRadiusB,
-        zoomMinRadius: zoomMinRadiusB
+        zoomMinRadius: zoomMinRadiusB,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(B, syncEnabled),
     });
     const residueZoomBAligned = makeZoomHandler({
         pluginRef: viewerB.ref,
@@ -1971,7 +2013,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         residueInsCodes: selectedResidueInsCodesAligned,
         syncResidueInsCodes: selectedResidueInsCodesAligned,
         zoomExtraRadius: zoomExtraRadiusB,
-        zoomMinRadius: zoomMinRadiusB
+        zoomMinRadius: zoomMinRadiusB,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(B, syncEnabled),
     });
 
     const residueHighlightAAlignedTo = makeResidueHighlightToggleHandler({
@@ -2116,7 +2159,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncPluginRef: viewerB.ref,
         syncStructureRef: structureRefBAlignedTo,
         zoomExtraRadius: zoomExtraRadiusA,
-        zoomMinRadius: zoomMinRadiusA
+        zoomMinRadius: zoomMinRadiusA,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(A, syncEnabled),
     });
     const subunitZoomAAligned = makeZoomHandler({
         pluginRef: viewerA.ref,
@@ -2129,7 +2173,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncPluginRef: viewerB.ref,
         syncStructureRef: structureRefBAligned,
         zoomExtraRadius: zoomExtraRadiusA,
-        zoomMinRadius: zoomMinRadiusA
+        zoomMinRadius: zoomMinRadiusA,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(A, syncEnabled),
     });
     const subunitZoomBAlignedTo = makeZoomHandler({
         pluginRef: viewerB.ref,
@@ -2142,7 +2187,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncPluginRef: viewerA.ref,
         syncStructureRef: structureRefAAlignedTo,
         zoomExtraRadius: zoomExtraRadiusB,
-        zoomMinRadius: zoomMinRadiusB
+        zoomMinRadius: zoomMinRadiusB,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(B, syncEnabled),
     });
     const subunitZoomBAligned = makeZoomHandler({
         pluginRef: viewerB.ref,
@@ -2155,7 +2201,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncPluginRef: viewerA.ref,
         syncStructureRef: structureRefAAligned,
         zoomExtraRadius: zoomExtraRadiusB,
-        zoomMinRadius: zoomMinRadiusB
+        zoomMinRadius: zoomMinRadiusB,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(B, syncEnabled),
     });
 
     const subunitHighlightAAlignedTo = makeSubunitHighlightToggleHandler({
@@ -3689,7 +3736,10 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 viewerB: getSerializableCameraSnapshot(viewerB.ref),
             },
             uniprotGeneNames,
-            showUniprotAccessionInChainLabels,
+            showUniprotAccessionInChainLabelsByViewer: {
+                viewerA: showUniprotAccessionInChainLabelsA,
+                viewerB: showUniprotAccessionInChainLabelsB,
+            },
             chainFinderQueries: {
                 alignedTo: chainFinderQueryAlignedTo,
                 aligned: chainFinderQueryAligned,
@@ -3765,7 +3815,10 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     viewerB: getSerializableCameraSnapshot(viewerB.ref),
                 },
                 uniprotGeneNames,
-                showUniprotAccessionInChainLabels,
+                showUniprotAccessionInChainLabelsByViewer: {
+                    viewerA: showUniprotAccessionInChainLabelsA,
+                    viewerB: showUniprotAccessionInChainLabelsB,
+                },
                 chainFinderQueries: {
                     alignedTo: chainFinderQueryAlignedTo,
                     aligned: chainFinderQueryAligned,
@@ -3933,13 +3986,14 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 setUniprotGeneNames(prev => ({ ...prev, ...resolvedOnly }));
             }
             if (typeof uiState?.showUniprotAccessionInChainLabels === 'boolean') {
-                setShowUniprotAccessionInChainLabels(uiState.showUniprotAccessionInChainLabels);
-            } else if (uiState?.showUniprotAccessionInChainLabelsByViewer) {
-                if (typeof uiState.showUniprotAccessionInChainLabelsByViewer.viewerA === 'boolean') {
-                    setShowUniprotAccessionInChainLabels(uiState.showUniprotAccessionInChainLabelsByViewer.viewerA);
-                } else if (typeof uiState.showUniprotAccessionInChainLabelsByViewer.viewerB === 'boolean') {
-                    setShowUniprotAccessionInChainLabels(uiState.showUniprotAccessionInChainLabelsByViewer.viewerB);
-                }
+                setShowUniprotAccessionInChainLabelsA(uiState.showUniprotAccessionInChainLabels);
+                setShowUniprotAccessionInChainLabelsB(uiState.showUniprotAccessionInChainLabels);
+            }
+            if (typeof uiState?.showUniprotAccessionInChainLabelsByViewer?.viewerA === 'boolean') {
+                setShowUniprotAccessionInChainLabelsA(uiState.showUniprotAccessionInChainLabelsByViewer.viewerA);
+            }
+            if (typeof uiState?.showUniprotAccessionInChainLabelsByViewer?.viewerB === 'boolean') {
+                setShowUniprotAccessionInChainLabelsB(uiState.showUniprotAccessionInChainLabelsByViewer.viewerB);
             }
             if (typeof uiState?.chainFinderQueries?.alignedTo === 'string') {
                 setChainFinderQueryAlignedTo(uiState.chainFinderQueries.alignedTo);
@@ -3971,7 +4025,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         setChainFinderQueryAlignedTo,
         setChainFinderQueryAligned,
         setUniprotGeneNames,
-        setShowUniprotAccessionInChainLabels,
+        setShowUniprotAccessionInChainLabelsA,
+        setShowUniprotAccessionInChainLabelsB,
     ]);
 
     // Initialize session load modal with the callback
@@ -3984,172 +4039,6 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 <SyncProvider>
                 <div className="App">
                     <AppHeader />
-                    {/* Session menu dropdown below the title */}
-                    <nav className="session-menu-bar">
-                        <div className="session-menu-container">
-                            <button
-                                className="session-menu-btn"
-                                id="session-menu-btn"
-                                onClick={e => {
-                                    const menu = document.getElementById('session-menu-dropdown');
-                                    if (menu) {
-                                        const willOpen = menu.style.display !== 'block';
-                                        menu.style.display = willOpen ? 'block' : 'none';
-                                        console.log(`[SessionMenu] Menu ${willOpen ? 'opened' : 'closed'} by button click`);
-                                    }
-                                }}
-                                onBlur={e => {
-                                    if (process.env.NODE_ENV !== 'test') {
-                                        setTimeout(() => {
-                                            const menu = document.getElementById('session-menu-dropdown');
-                                            if (menu) {
-                                                menu.style.display = 'none';
-                                                console.log('[SessionMenu] Menu closed by blur');
-                                            }
-                                        }, 150);
-                                    }
-                                }}
-                            >
-                                Session ▾
-                            </button>
-                            <div
-                                id="session-menu-dropdown"
-                                className="session-menu-dropdown"
-                                style={{ display: 'none', position: 'absolute', background: '#fff', border: '1px solid #ccc', borderRadius: 4, minWidth: 120, zIndex: 1000 }}
-                            >
-                                <div
-                                    className="session-menu-item session-menu-item-border"
-                                    onClick={() => {
-                                        handleSaveSession();
-                                        document.getElementById('session-menu-dropdown')!.style.display = 'none';
-                                    }}
-                                    tabIndex={0}
-                                    onKeyDown={e => { if (e.key === 'Enter') handleSaveSession(); }}
-                                    style={{ padding: '8px 16px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
-                                >
-                                    Save
-                                </div>
-                                <div
-                                    className="session-menu-item session-menu-item-border"
-                                    onClick={() => {
-                                        void handleSaveSessionAll();
-                                        document.getElementById('session-menu-dropdown')!.style.display = 'none';
-                                    }}
-                                    tabIndex={0}
-                                    onKeyDown={e => { if (e.key === 'Enter') void handleSaveSessionAll(); }}
-                                    style={{ padding: '8px 16px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
-                                >
-                                    Save All
-                                </div>
-                                <div
-                                    className="session-menu-item session-menu-item-border"
-                                    onClick={() => {
-                                        console.log('[SessionMenu] Load menu item clicked');
-                                        if (confirm('Loading a session will unload all current data and replace the session. Please save your work first if needed. Continue?')) {
-                                            console.log('[SessionMenu] Triggering file input for session load');
-                                            document.getElementById('session-menu-file-input')?.click();
-                                        }
-                                        setTimeout(() => {
-                                            const dropdown = document.getElementById('session-menu-dropdown');
-                                            if (dropdown) dropdown.style.display = 'none';
-                                        }, 0);
-                                    }}
-                                    tabIndex={0}
-                                    onKeyDown={e => {
-                                        if (e.key === 'Enter') {
-                                            console.log('[SessionMenu] Load menu item activated by Enter key');
-                                            if (confirm('Loading a session will unload all current data and replace the session. Please save your work first if needed. Continue?')) {
-                                                console.log('[SessionMenu] Triggering file input for session load (Enter)');
-                                                document.getElementById('session-menu-file-input')?.click();
-                                            }
-                                            setTimeout(() => {
-                                                const dropdown = document.getElementById('session-menu-dropdown');
-                                                if (dropdown) dropdown.style.display = 'none';
-                                            }, 0);
-                                        }
-                                    }}
-                                    style={{ padding: '8px 16px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
-                                >
-                                    Load
-                                </div>
-                                <div
-                                    className="session-menu-item session-menu-item-border"
-                                    onClick={() => {
-                                        console.log('[SessionMenu] Load All menu item clicked');
-                                        if (confirm('Loading a session will unload all current data and replace the session. Please save your work first if needed. Continue?')) {
-                                            console.log('[SessionMenu] Triggering file input for session load all');
-                                            document.getElementById('session-menu-file-input-all')?.click();
-                                        }
-                                        setTimeout(() => {
-                                            const dropdown = document.getElementById('session-menu-dropdown');
-                                            if (dropdown) dropdown.style.display = 'none';
-                                        }, 0);
-                                    }}
-                                    tabIndex={0}
-                                    onKeyDown={e => {
-                                        if (e.key === 'Enter') {
-                                            console.log('[SessionMenu] Load All menu item activated by Enter key');
-                                            if (confirm('Loading a session will unload all current data and replace the session. Please save your work first if needed. Continue?')) {
-                                                console.log('[SessionMenu] Triggering file input for session load all (Enter)');
-                                                document.getElementById('session-menu-file-input-all')?.click();
-                                            }
-                                            setTimeout(() => {
-                                                const dropdown = document.getElementById('session-menu-dropdown');
-                                                if (dropdown) dropdown.style.display = 'none';
-                                            }, 0);
-                                        }
-                                    }}
-                                    style={{ padding: '8px 16px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
-                                >
-                                    Load All
-                                </div>
-                                <div
-                                    className="session-menu-item"
-                                    onClick={() => {
-                                        if (confirm('Restarting will unload all data and reset the session. Please save your work first if needed. Continue?')) {
-                                            window.location.reload();
-                                        } else {
-                                            const dropdown = document.getElementById('session-menu-dropdown');
-                                            if (dropdown) dropdown.style.display = 'none';
-                                        }
-                                    }}
-                                    tabIndex={0}
-                                    onKeyDown={e => {
-                                        if (e.key === 'Enter') {
-                                            if (confirm('Restarting will unload all data and reset the session. Please save your work first if needed. Continue?')) {
-                                                window.location.reload();
-                                            } else {
-                                                document.getElementById('session-menu-dropdown')!.style.display = 'none';
-                                            }
-                                        }
-                                    }}
-                                    style={{ padding: '8px 16px', cursor: 'pointer' }}
-                                >
-                                    Restart
-                                </div>
-                            </div>
-                            <input
-                                id="session-menu-file-input"
-                                type="file"
-                                accept="application/json"
-                                style={{ display: 'none' }}
-                                onChange={e => {
-                                    console.log('[SessionMenu] File input changed (session load)');
-                                    handleLoadSession(e);
-                                }}
-                            />
-                            <input
-                                id="session-menu-file-input-all"
-                                type="file"
-                                accept="application/json"
-                                style={{ display: 'none' }}
-                                onChange={e => {
-                                    console.log('[SessionMenu] File input changed (session load all)');
-                                    handleLoadAllSession(e);
-                                }}
-                            />
-                        </div>
-                    </nav>
                     {SessionLoadModal}
                     <GeneralControls
                         viewerA={viewerA.ref.current}
@@ -4158,13 +4047,171 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                         syncEnabled={syncEnabled}
                         setSyncEnabled={setSyncEnabled}
                         syncDisabled={!viewerA.isMoleculeAlignedLoaded || !viewerB.isMoleculeAlignedLoaded}
-                        showUniprotAccessionInChainLabels={showUniprotAccessionInChainLabels}
-                        setShowUniprotAccessionInChainLabels={setShowUniprotAccessionInChainLabels}
-                        uniprotLookupStatus={{
-                            completed: completedUniProtCount,
-                            pending: pendingUniProtCount,
-                            inFlight: inFlightUniProtCount,
-                        }}
+                        sessionMenu={(
+                            <div className="session-menu-container" style={{ position: 'relative' }}>
+                                <button
+                                    className="session-menu-btn"
+                                    id="session-menu-btn"
+                                    onClick={e => {
+                                        const menu = document.getElementById('session-menu-dropdown');
+                                        if (menu) {
+                                            const willOpen = menu.style.display !== 'block';
+                                            menu.style.display = willOpen ? 'block' : 'none';
+                                            console.log(`[SessionMenu] Menu ${willOpen ? 'opened' : 'closed'} by button click`);
+                                        }
+                                    }}
+                                    onBlur={e => {
+                                        if (process.env.NODE_ENV !== 'test') {
+                                            setTimeout(() => {
+                                                const menu = document.getElementById('session-menu-dropdown');
+                                                if (menu) {
+                                                    menu.style.display = 'none';
+                                                    console.log('[SessionMenu] Menu closed by blur');
+                                                }
+                                            }, 150);
+                                        }
+                                    }}
+                                >
+                                    Session ▾
+                                </button>
+                                <div
+                                    id="session-menu-dropdown"
+                                    className="session-menu-dropdown"
+                                    style={{ display: 'none', position: 'absolute', background: '#fff', border: '1px solid #ccc', borderRadius: 4, minWidth: 120, zIndex: 1000 }}
+                                >
+                                    <div
+                                        className="session-menu-item session-menu-item-border"
+                                        onClick={() => {
+                                            handleSaveSession();
+                                            document.getElementById('session-menu-dropdown')!.style.display = 'none';
+                                        }}
+                                        tabIndex={0}
+                                        onKeyDown={e => { if (e.key === 'Enter') handleSaveSession(); }}
+                                        style={{ padding: '8px 16px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
+                                    >
+                                        Save
+                                    </div>
+                                    <div
+                                        className="session-menu-item session-menu-item-border"
+                                        onClick={() => {
+                                            void handleSaveSessionAll();
+                                            document.getElementById('session-menu-dropdown')!.style.display = 'none';
+                                        }}
+                                        tabIndex={0}
+                                        onKeyDown={e => { if (e.key === 'Enter') void handleSaveSessionAll(); }}
+                                        style={{ padding: '8px 16px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
+                                    >
+                                        Save All
+                                    </div>
+                                    <div
+                                        className="session-menu-item session-menu-item-border"
+                                        onClick={() => {
+                                            console.log('[SessionMenu] Load menu item clicked');
+                                            if (confirm('Loading a session will unload all current data and replace the session. Please save your work first if needed. Continue?')) {
+                                                console.log('[SessionMenu] Triggering file input for session load');
+                                                document.getElementById('session-menu-file-input')?.click();
+                                            }
+                                            setTimeout(() => {
+                                                const dropdown = document.getElementById('session-menu-dropdown');
+                                                if (dropdown) dropdown.style.display = 'none';
+                                            }, 0);
+                                        }}
+                                        tabIndex={0}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                console.log('[SessionMenu] Load menu item activated by Enter key');
+                                                if (confirm('Loading a session will unload all current data and replace the session. Please save your work first if needed. Continue?')) {
+                                                    console.log('[SessionMenu] Triggering file input for session load (Enter)');
+                                                    document.getElementById('session-menu-file-input')?.click();
+                                                }
+                                                setTimeout(() => {
+                                                    const dropdown = document.getElementById('session-menu-dropdown');
+                                                    if (dropdown) dropdown.style.display = 'none';
+                                                }, 0);
+                                            }
+                                        }}
+                                        style={{ padding: '8px 16px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
+                                    >
+                                        Load
+                                    </div>
+                                    <div
+                                        className="session-menu-item session-menu-item-border"
+                                        onClick={() => {
+                                            console.log('[SessionMenu] Load All menu item clicked');
+                                            if (confirm('Loading a session will unload all current data and replace the session. Please save your work first if needed. Continue?')) {
+                                                console.log('[SessionMenu] Triggering file input for session load all');
+                                                document.getElementById('session-menu-file-input-all')?.click();
+                                            }
+                                            setTimeout(() => {
+                                                const dropdown = document.getElementById('session-menu-dropdown');
+                                                if (dropdown) dropdown.style.display = 'none';
+                                            }, 0);
+                                        }}
+                                        tabIndex={0}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                console.log('[SessionMenu] Load All menu item activated by Enter key');
+                                                if (confirm('Loading a session will unload all current data and replace the session. Please save your work first if needed. Continue?')) {
+                                                    console.log('[SessionMenu] Triggering file input for session load all (Enter)');
+                                                    document.getElementById('session-menu-file-input-all')?.click();
+                                                }
+                                                setTimeout(() => {
+                                                    const dropdown = document.getElementById('session-menu-dropdown');
+                                                    if (dropdown) dropdown.style.display = 'none';
+                                                }, 0);
+                                            }
+                                        }}
+                                        style={{ padding: '8px 16px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
+                                    >
+                                        Load All
+                                    </div>
+                                    <div
+                                        className="session-menu-item"
+                                        onClick={() => {
+                                            if (confirm('Restarting will unload all data and reset the session. Please save your work first if needed. Continue?')) {
+                                                window.location.reload();
+                                            } else {
+                                                const dropdown = document.getElementById('session-menu-dropdown');
+                                                if (dropdown) dropdown.style.display = 'none';
+                                            }
+                                        }}
+                                        tabIndex={0}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                if (confirm('Restarting will unload all data and reset the session. Please save your work first if needed. Continue?')) {
+                                                    window.location.reload();
+                                                } else {
+                                                    document.getElementById('session-menu-dropdown')!.style.display = 'none';
+                                                }
+                                            }
+                                        }}
+                                        style={{ padding: '8px 16px', cursor: 'pointer' }}
+                                    >
+                                        Restart
+                                    </div>
+                                </div>
+                                <input
+                                    id="session-menu-file-input"
+                                    type="file"
+                                    accept="application/json"
+                                    style={{ display: 'none' }}
+                                    onChange={e => {
+                                        console.log('[SessionMenu] File input changed (session load)');
+                                        handleLoadSession(e);
+                                    }}
+                                />
+                                <input
+                                    id="session-menu-file-input-all"
+                                    type="file"
+                                    accept="application/json"
+                                    style={{ display: 'none' }}
+                                    onChange={e => {
+                                        console.log('[SessionMenu] File input changed (session load all)');
+                                        handleLoadAllSession(e);
+                                    }}
+                                />
+                            </div>
+                        )}
                         selectedChainIdAlignedTo={selectedChainIdAlignedTo}
                         selectedChainIdAligned={selectedChainIdAligned}
                         realignmentExists={realignmentExists}
@@ -4227,6 +4274,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     chainInspectDisabled: !selectedChainIdAlignedTo && !chainInspectOnAAlignedTo,
                                     onChainZoom: chainZoomAAlignedTo.handleButtonClick,
                                     chainZoomDisabled: !selectedChainIdAlignedTo,
+                                    showUniprotAccessionInChainLabels: showUniprotAccessionInChainLabelsA,
+                                    setShowUniprotAccessionInChainLabels: setShowUniprotAccessionInChainLabelsA,
+                                    uniprotLookupStatus: {
+                                        completed: completedUniProtCount,
+                                        pending: pendingUniProtCount,
+                                        inFlight: inFlightUniProtCount,
+                                    },
                                     residueInfo: residueInfoAlignedTo,
                                     selectedResidueIds: selectedResidueIdsAlignedTo,
                                     setSelectedResidueIds: setSelectedResidueIdsAlignedTo,
@@ -4302,6 +4356,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     chainInspectDisabled: !selectedChainIdAligned && !chainInspectOnAAligned,
                                     onChainZoom: chainZoomAAligned.handleButtonClick,
                                     chainZoomDisabled: !selectedChainIdAligned,
+                                    showUniprotAccessionInChainLabels: showUniprotAccessionInChainLabelsB,
+                                    setShowUniprotAccessionInChainLabels: setShowUniprotAccessionInChainLabelsB,
+                                    uniprotLookupStatus: {
+                                        completed: completedUniProtCount,
+                                        pending: pendingUniProtCount,
+                                        inFlight: inFlightUniProtCount,
+                                    },
                                     residueInfo: residueInfoAligned,
                                     selectedResidueIds: selectedResidueIdsAligned,
                                     setSelectedResidueIds: setSelectedResidueIdsAligned,
@@ -4465,6 +4526,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     chainInspectDisabled: !selectedChainIdAlignedTo && !chainInspectOnBAlignedTo,
                                     onChainZoom: chainZoomBAlignedTo.handleButtonClick,
                                     chainZoomDisabled: !selectedChainIdAlignedTo,
+                                    showUniprotAccessionInChainLabels: showUniprotAccessionInChainLabelsA,
+                                    setShowUniprotAccessionInChainLabels: setShowUniprotAccessionInChainLabelsA,
+                                    uniprotLookupStatus: {
+                                        completed: completedUniProtCount,
+                                        pending: pendingUniProtCount,
+                                        inFlight: inFlightUniProtCount,
+                                    },
                                     residueInfo: residueInfoAlignedTo,
                                     selectedResidueIds: selectedResidueIdsAlignedTo,
                                     setSelectedResidueIds: setSelectedResidueIdsAlignedTo,
@@ -4540,6 +4608,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     chainInspectDisabled: !selectedChainIdAligned && !chainInspectOnBAligned,
                                     onChainZoom: chainZoomBAligned.handleButtonClick,
                                     chainZoomDisabled: !selectedChainIdAligned,
+                                    showUniprotAccessionInChainLabels: showUniprotAccessionInChainLabelsB,
+                                    setShowUniprotAccessionInChainLabels: setShowUniprotAccessionInChainLabelsB,
+                                    uniprotLookupStatus: {
+                                        completed: completedUniProtCount,
+                                        pending: pendingUniProtCount,
+                                        inFlight: inFlightUniProtCount,
+                                    },
                                     residueInfo: residueInfoAligned,
                                     selectedResidueIds: selectedResidueIdsAligned,
                                     setSelectedResidueIds: setSelectedResidueIdsAligned,

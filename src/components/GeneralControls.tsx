@@ -38,13 +38,7 @@ interface GeneralControlsProps {
   syncEnabled: boolean;
   setSyncEnabled: (v: boolean) => void;
   syncDisabled: boolean;
-  showUniprotAccessionInChainLabels: boolean;
-  setShowUniprotAccessionInChainLabels: (v: boolean) => void;
-  uniprotLookupStatus?: {
-    completed: number;
-    pending: number;
-    inFlight: number;
-  };
+  sessionMenu?: React.ReactNode;
   selectedChainIdAlignedTo: string;
   selectedChainIdAligned: string;
   realignmentExists: boolean;
@@ -73,9 +67,7 @@ const GeneralControls: React.FC<GeneralControlsProps> = ({
   syncEnabled,
   setSyncEnabled,
   syncDisabled,
-  showUniprotAccessionInChainLabels,
-  setShowUniprotAccessionInChainLabels,
-  uniprotLookupStatus,
+  sessionMenu,
   selectedChainIdAlignedTo,
   selectedChainIdAligned,
   realignmentExists,
@@ -92,22 +84,7 @@ const GeneralControls: React.FC<GeneralControlsProps> = ({
   idPrefix = 'generalcontrols',
 }) => (
   <div className="General-Controls" id={idPrefix ? `${idPrefix}-${idSuffix}` : idSuffix}>
-    <label htmlFor={`${idPrefix}-show-uniprot-accession`}>
-      <input
-        id={`${idPrefix}-show-uniprot-accession`}
-        type="checkbox"
-        checked={showUniprotAccessionInChainLabels}
-        onChange={e => setShowUniprotAccessionInChainLabels(e.target.checked)}
-        style={{ marginRight: 4 }}
-      />
-      Show UniProt accession in chain labels
-    </label>
-    <span
-      id={`${idPrefix}-uniprot-status`}
-      style={{ fontSize: 12, color: '#555', marginLeft: 8 }}
-    >
-      UniProt cache: {uniprotLookupStatus?.completed ?? 0} cached, {uniprotLookupStatus?.pending ?? 0} pending, {uniprotLookupStatus?.inFlight ?? 0} in-flight
-    </span>
+    {sessionMenu}
     <SyncButton
       viewerA={viewerA}
       viewerB={viewerB}

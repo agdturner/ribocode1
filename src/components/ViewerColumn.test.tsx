@@ -219,12 +219,22 @@ describe('ViewerColumn', () => {
 
         fireEvent.click(toggleButton as HTMLElement);
         expect(toggleButton).toHaveTextContent('Hide Select and Zoom Controls');
+        expect(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-zoom-extra-radius`)).toBeInTheDocument();
+        expect(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-zoom-min-radius`)).toBeInTheDocument();
         const chainControlsToggle = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-chain-controls-toggle-btn`);
         expect(chainControlsToggle).toBeInTheDocument();
         expect(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-chain-table-container`)).toBeNull();
 
         fireEvent.click(chainControlsToggle as HTMLElement);
+        const selectChainControlsToggle = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-select-chain-controls-toggle-btn`);
+        expect(selectChainControlsToggle).toBeInTheDocument();
+        expect(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-chain-table-container`)).toBeNull();
+
+        fireEvent.click(selectChainControlsToggle as HTMLElement);
         expect(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-chain-table-container`)).toBeInTheDocument();
+
+        fireEvent.click(selectChainControlsToggle as HTMLElement);
+        expect(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-chain-table-container`)).toBeNull();
 
         fireEvent.click(chainControlsToggle as HTMLElement);
         expect(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-chain-table-container`)).toBeNull();
@@ -271,9 +281,9 @@ describe('ViewerColumn', () => {
         fireEvent.click(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-chain-controls-toggle-btn`) as HTMLElement);
         fireEvent.click(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-residue-controls-toggle-btn`) as HTMLElement);
 
-        fireEvent.click(screen.getByText('Inspect Subunit: Off'));
-        fireEvent.click(screen.getByText('Inspect Chain: Off'));
-        fireEvent.click(screen.getByText('Inspect Residues: Off'));
+        fireEvent.click(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-inspect-subunit-btn`) as HTMLElement);
+        fireEvent.click(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-inspect-chain-btn`) as HTMLElement);
+        fireEvent.click(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-inspect-residue-btn`) as HTMLElement);
 
         expect(onSubunitInspect).toHaveBeenCalled();
         expect(onChainInspect).toHaveBeenCalled();
@@ -430,8 +440,6 @@ describe('ViewerColumn', () => {
             isVisible: true,
             onToggleVisibility: vi.fn(),
             chainZoomLabel: '',
-            onChainHighlight: vi.fn(),
-            chainHighlightDisabled: true,
             onChainZoom: vi.fn(),
             chainZoomDisabled: false,
             subunitZoomLabel: '',
@@ -546,6 +554,10 @@ describe('ViewerColumn', () => {
             residueInspectDisabled: true,
             onResidueZoom: vi.fn(),
             residueZoomDisabled: true,
+            zoomExtraRadius: 0,
+            setZoomExtraRadius: vi.fn(),
+            zoomMinRadius: 0,
+            setZoomMinRadius: vi.fn(),
             fog: { enabled: false, near: 0, far: 100 },
             setFog: { setEnabled: vi.fn(), setNear: vi.fn(), setFar: vi.fn() },
             clipping: { minNear: 1, clipRadius: 100 },
@@ -656,6 +668,10 @@ describe('ViewerColumn', () => {
             residueInspectDisabled: true,
             onResidueZoom: vi.fn(),
             residueZoomDisabled: true,
+            zoomExtraRadius: 0,
+            setZoomExtraRadius: vi.fn(),
+            zoomMinRadius: 0,
+            setZoomMinRadius: vi.fn(),
             fog: { enabled: false, near: 0, far: 100 },
             setFog: { setEnabled: vi.fn(), setNear: vi.fn(), setFar: vi.fn() },
             clipping: { minNear: 2, clipRadius: 33 },

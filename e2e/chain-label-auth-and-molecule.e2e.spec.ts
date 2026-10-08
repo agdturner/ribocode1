@@ -16,25 +16,29 @@ function dataPath(filename: string) {
 test('Select Chain labels include auth code and molecule name for 6XU6', async ({ page }) => {
   await page.goto('http://localhost:5173/');
 
-  const uniprotToggle = page.locator('#generalcontrols-show-uniprot-accession');
-  await expect(uniprotToggle).toBeVisible();
-  await uniprotToggle.check();
-
   await page.locator('#viewer-column-A-alignedto-load-btn').click();
   await page.locator('#viewer-column-A-alignedto-file-input').setInputFiles(dataPath('6XU6.cif'));
   await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toHaveText(/6xu6\.cif/i);
 
   await page.click('#viewer-column-A-select-zoom-controls-toggle-btn');
   await page.click('#viewer-column-A-alignedto-chain-controls-toggle-btn');
+  await page.click('#viewer-column-A-alignedto-select-chain-controls-toggle-btn');
 
-  const chainSelect = page.locator('#viewer-column-A-alignedto-chain-select');
-  await expect(chainSelect).toBeEnabled({ timeout: 30000 });
+  const uniprotToggle = page.locator('#viewer-column-A-alignedto-show-uniprot-accession');
+  await expect(uniprotToggle).toBeVisible();
+  await expect(uniprotToggle).toContainText(/Include UniProt accession in chain labels:/i);
+  if (await uniprotToggle.getAttribute('aria-pressed') === 'false') {
+    await uniprotToggle.click();
+  }
+
+  const chainTable = page.locator('#viewer-column-A-chain-table-container');
+  await expect(chainTable).toBeVisible({ timeout: 30000 });
 
   await expect(async () => {
-    const optionTexts = await page.locator('#viewer-column-A-alignedto-chain-select option').evaluateAll(
-      options => options.map(o => (o.textContent || '').trim()).filter(Boolean)
+    const rowTexts = await page.locator('#viewer-column-A-chain-table tbody tr td').evaluateAll(
+      cols => cols.map(c => (c.textContent || '').trim()).filter(Boolean)
     );
-    const target = optionTexts.find(
+    const target = rowTexts.find(
       text => text.includes('ZB [auth CU]') && text.includes('Ribosomal protein L22-like protein')
     );
     expect(target).toBeTruthy();

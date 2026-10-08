@@ -1,7 +1,12 @@
-## [v0.12.3] - 2026-10-08
-Release summary: this patch release stabilizes chain realignment behavior when sync is enabled.
+## [v0.13.0] - 2026-10-08
+Release summary: this minor release standardizes `Select and Zoom` control UX across subunit/chain/residue flows, clarifies chain-label controls, and improves selector/test stability.
 - Updated `Re-align` to chains so sync is temporarily disabled while realignment runs, then restored to its prior enabled state.
-- Added regression coverage for temporary sync disable/restore flow during chain realignment actions.
+- Standardized Subunit, Chain, and Residue control sections to a consistent nested layout with aligned indentation and action ordering (`Zoom`, `Highlight`, `Inspect`).
+- Simplified action button labels across controls (for example `Zoom`, `Highlight: On/Off`, `Inspect: On/Off`) to reduce visual clutter.
+- Added nested chain controls with `Show/Hide Chain Controls` and `Show/Hide Select Chain Control`; selected-chain summary/actions remain visible while select-table details can be collapsed.
+- Changed chain-selection panel naming to `Select Chain` in both columns for clearer, symmetric terminology.
+- Renamed chain-label toggle wording to `Include UniProt accession in chain labels` for consistency with `Show/Hide` section controls.
+- Updated tests to prefer stable ID-based selectors for control actions and added regression coverage for nested chain-section visibility and repeated realign workflows.
 
 ## [v0.12.2] - 2026-10-08
 Release summary: this patch release aligns chain re-alignment camera behavior across viewers for a consistent side-by-side viewpoint.

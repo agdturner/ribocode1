@@ -71,8 +71,8 @@ function createMockViewer(camera: ReturnType<typeof createMockCamera>) {
 }
 
 describe('SyncButton', () => {
-    it('renders with correct label and options', () => {
-        const { getByLabelText, getByText } = render(
+    it('renders with correct label and initial off state', () => {
+        const { getByLabelText, getByRole } = render(
             <SyncButton
                 viewerA={null}
                 viewerB={null}
@@ -83,12 +83,13 @@ describe('SyncButton', () => {
                 id={syncSelectIdSuffix}
             />
         );
-        expect(getByLabelText('Sync')).toBeInTheDocument();
-        expect(getByText('On')).toBeInTheDocument();
-        expect(getByText('Off')).toBeInTheDocument();
+        const syncButton = getByLabelText('Sync');
+        expect(syncButton).toBeInTheDocument();
+        expect(getByRole('button', { name: 'Sync' })).toBeInTheDocument();
+        expect(syncButton).toHaveTextContent('Sync: Off');
     });
 
-    it('shows correct selected value based on syncEnabled', () => {
+    it('shows correct toggle text based on syncEnabled', () => {
         const { getByLabelText, rerender } = render(
             <SyncButton
                 viewerA={null}
@@ -100,7 +101,7 @@ describe('SyncButton', () => {
                 id={syncSelectIdSuffix}
             />
         );
-        expect((getByLabelText('Sync') as HTMLSelectElement).value).toBe('Off');
+        expect(getByLabelText('Sync')).toHaveTextContent('Sync: Off');
         rerender(
             <SyncButton
                 viewerA={null}
@@ -112,10 +113,10 @@ describe('SyncButton', () => {
                 id="test-sync-select"
             />
         );
-        expect((getByLabelText('Sync') as HTMLSelectElement).value).toBe('On');
+        expect(getByLabelText('Sync')).toHaveTextContent('Sync: On');
     });
 
-    it('calls setSyncEnabled when option is changed', () => {
+    it('calls setSyncEnabled when toggled', () => {
         const setSyncEnabled = vi.fn();
         const { getByLabelText } = render(
             <SyncButton
@@ -128,10 +129,8 @@ describe('SyncButton', () => {
                 id={syncSelectIdSuffix}
             />
         );
-        fireEvent.change(getByLabelText('Sync'), { target: { value: 'On' } });
+        fireEvent.click(getByLabelText('Sync'));
         expect(setSyncEnabled).toHaveBeenCalledWith(true);
-        fireEvent.change(getByLabelText('Sync'), { target: { value: 'Off' } });
-        expect(setSyncEnabled).toHaveBeenCalledWith(false);
     });
 
     it('is disabled when disabled prop is true', () => {
