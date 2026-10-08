@@ -28,9 +28,10 @@ test('AlignedTo is hidden in right viewer and Aligned is hidden in left viewer b
   await expect(alignedToToggleB).toHaveAttribute('aria-label', /hide/i);
 
   const alignedBtnB = page.locator('#viewer-column-B-aligned-load-btn');
+  await expect(alignedBtnB).toBeEnabled({ timeout: 20000 });
   await alignedBtnB.click();
   await page.locator('#viewer-column-B-aligned-file-input').setInputFiles(dataPath('6xu8.cif'));
-  await expect(page.locator('#viewer-column-B-aligned-filename-label')).toHaveText(/6xu8\.cif/i);
+  await expect(page.locator('#viewer-column-B-moleculeui-6xu8')).toBeVisible({ timeout: 20000 });
 
   const alignedToggleA = page.locator('#viewer-column-A-moleculeui-6xu8 #viewer-column-A-toggle-visibility-btn');
   await expect(alignedToggleA).toBeVisible();

@@ -15,6 +15,7 @@ export const repTypeSelectIdSuffix = 'representation-type';
  */
 import React from 'react';
 import ChainSelectButton from './buttons/select/Chain';
+import ChainSelectionTable from './ChainSelectionTable';
 import ResidueSelectButton from './buttons/select/Residue';
 import SubunitSelectButton from './buttons/select/Subunit';
 import { allowedRepresentationTypes, AllowedRepresentationType } from '../types/ribocode';
@@ -201,6 +202,13 @@ interface LoadDataRowProps {
         onZoomExtraRadiusChange?: (value: number) => void;
         zoomMinRadius?: number;
         onZoomMinRadiusChange?: (value: number) => void;
+        chainFinderChainLabels?: Map<string, string>;
+        chainFinderSelectedChainId?: string;
+        chainFinderOnSelectChainId?: (chainId: string) => void;
+        chainFinderTitle?: string;
+        chainFinderQuery?: string;
+        chainFinderOnQueryChange?: (query: string) => void;
+        chainFinderIdPrefix?: string;
         idPrefix: string;
     }
 
@@ -248,157 +256,233 @@ interface LoadDataRowProps {
         onZoomExtraRadiusChange = () => {},
         zoomMinRadius = 0,
         onZoomMinRadiusChange = () => {},
+        chainFinderChainLabels,
+        chainFinderSelectedChainId,
+        chainFinderOnSelectChainId,
+        chainFinderTitle,
+        chainFinderQuery,
+        chainFinderOnQueryChange,
+        chainFinderIdPrefix,
         idPrefix,
-    }) => (
-        <>
-            <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <label htmlFor={`${idPrefix}-zoom-extra-radius`}>Zoom extraRadius:</label>
-                <input
-                    id={`${idPrefix}-zoom-extra-radius`}
-                    type="number"
-                    value={zoomExtraRadius}
-                    min={0}
-                    max={100}
-                    step={1}
-                    style={{ width: 60 }}
-                    onChange={e => onZoomExtraRadiusChange(Number(e.target.value))}
-                />
-                <label htmlFor={`${idPrefix}-zoom-min-radius`}>minRadius:</label>
-                <input
-                    id={`${idPrefix}-zoom-min-radius`}
-                    type="number"
-                    value={zoomMinRadius}
-                    min={0}
-                    max={100}
-                    step={1}
-                    style={{ width: 60 }}
-                    onChange={e => onZoomMinRadiusChange(Number(e.target.value))}
-                />
-            </div>
-            <div className="load-data-control-row">
-                <SubunitSelectButton
-                    disabled={subunitSelectDisabled}
-                    selectedSubunit={selectedSubunit}
-                    onSelect={onSelectSubunit}
-                    id={`${idPrefix}-subunit-select`}
-                />
-            </div>
-            <div className="load-data-control-row">
-                <button
-                    onClick={onSubunitHighlight}
-                    disabled={subunitHighlightDisabled}
-                    aria-pressed={subunitHighlightOn}
-                    className="msp-btn msp-form-control"
-                    id={`${idPrefix}-highlight-subunit-btn`}
-                >
-                    Highlight Subunit (Basic): {subunitHighlightOn ? 'On' : 'Off'}
-                </button>
-            </div>
-            <div className="load-data-control-row">
-                <button
-                    onClick={onSubunitInspect}
-                    disabled={subunitInspectDisabled}
-                    aria-pressed={subunitInspectOn}
-                    className="msp-btn msp-form-control"
-                    id={`${idPrefix}-inspect-subunit-btn`}
-                >
-                    Inspect Subunit: {subunitInspectOn ? 'On' : 'Off'}
-                </button>
-            </div>
-            <div className="load-data-control-row">
-                <button
-                    onClick={onSubunitZoom}
-                    disabled={subunitZoomDisabled}
-                    className="msp-btn msp-form-control"
-                    id={`${idPrefix}-zoom-subunit-btn`}
-                >
-                    Zoom to Subunit: {subunitZoomLabel}
-                </button>
-            </div>
-            <div className="load-data-control-row">
-                <ChainSelectButton
-                     disabled={chainSelectDisabled || !selectedSubunit}
-                     chainLabels={getFilteredChainLabels(selectedSubunit, chainInfo.chainLabels, subunitToChainIds)}
-                     selectedChainId={selectedChainId}
-                     onSelect={onSelectChainId}
-                     id={`${idPrefix}-chain-select`}
-                />
-            </div>
-            <div className="load-data-control-row">
-                <button
-                    onClick={onChainHighlight}
-                    disabled={chainHighlightDisabled}
-                    aria-pressed={chainHighlightOn}
-                    className="msp-btn msp-form-control"
-                    id={`${idPrefix}-highlight-chain-btn`}
-                >
-                    Highlight Chain: {chainHighlightOn ? 'On' : 'Off'}
-                </button>
-            </div>
-            <div className="load-data-control-row">
-                <button
-                    onClick={onChainInspect}
-                    disabled={chainInspectDisabled}
-                    aria-pressed={chainInspectOn}
-                    className="msp-btn msp-form-control"
-                    id={`${idPrefix}-inspect-chain-btn`}
-                >
-                    Inspect Chain: {chainInspectOn ? 'On' : 'Off'}
-                </button>
-            </div>
-            <div className="load-data-control-row">
-                <button
-                    onClick={onChainZoom}
-                    disabled={chainZoomDisabled}
-                    className="msp-btn msp-form-control"
-                    id={`${idPrefix}-zoom-chain-btn`}
-                >
-                    Zoom to Chain: {chainZoomLabel}
-                </button>
-            </div>
-            <div className="load-data-control-row">
-                <ResidueSelectButton
-                    disabled={residueSelectDisabled || !selectedChainId}
-                    residueLabels={residueInfo.residueLabels}
-                    selectedResidueIds={selectedResidueIds}
-                    onSelect={onSelectResidueIds}
-                    id={`${idPrefix}-residue-select`}
-                />
-            </div>
-            <div className="load-data-control-row">
-                <button
-                    onClick={onResidueHighlight}
-                    disabled={residueHighlightDisabled}
-                    aria-pressed={residueHighlightOn}
-                    className="msp-btn msp-form-control"
-                    id={`${idPrefix}-highlight-residue-btn`}
-                >
-                    Highlight Residues: {residueHighlightOn ? 'On' : 'Off'}
-                </button>
-            </div>
-            <div className="load-data-control-row">
-                <button
-                    onClick={onResidueInspect}
-                    disabled={residueInspectDisabled}
-                    aria-pressed={residueInspectOn}
-                    className="msp-btn msp-form-control"
-                    id={`${idPrefix}-inspect-residue-btn`}
-                >
-                    Inspect Residues: {residueInspectOn ? 'On' : 'Off'}
-                </button>
-            </div>
-            <div className="load-data-control-row">
-                <button
-                    onClick={onResidueZoom}
-                    disabled={residueZoomDisabled}
-                    className="msp-btn msp-form-control"
-                    id={`${idPrefix}-zoom-residue-btn`}
-                >
-                    Zoom to Residue: {residueZoomLabel}
-                </button>
-            </div>
-        </>
-    );
+    }) => {
+        const [showSubunitControls, setShowSubunitControls] = React.useState(false);
+        const [showChainControls, setShowChainControls] = React.useState(false);
+        const [showResidueControls, setShowResidueControls] = React.useState(false);
+        const residueSectionDisabled = !selectedChainId;
+
+        React.useEffect(() => {
+            if (residueSectionDisabled) {
+                setShowResidueControls(false);
+            }
+        }, [residueSectionDisabled]);
+
+        return (
+            <>
+                <div className="load-data-control-row">
+                    <button
+                        type="button"
+                        className="msp-btn msp-form-control"
+                        id={`${idPrefix}-subunit-controls-toggle-btn`}
+                        onClick={() => setShowSubunitControls((current) => !current)}
+                    >
+                        {showSubunitControls ? 'Hide Subunit Controls' : 'Show Subunit Controls'}
+                    </button>
+                </div>
+                {showSubunitControls && (
+                    <>
+                        <div className="load-data-control-row">
+                            <SubunitSelectButton
+                                disabled={subunitSelectDisabled}
+                                selectedSubunit={selectedSubunit}
+                                onSelect={onSelectSubunit}
+                                id={`${idPrefix}-subunit-select`}
+                            />
+                        </div>
+                        <div className="load-data-control-row">
+                            <button
+                                onClick={onSubunitHighlight}
+                                disabled={subunitHighlightDisabled}
+                                aria-pressed={subunitHighlightOn}
+                                className="msp-btn msp-form-control"
+                                id={`${idPrefix}-highlight-subunit-btn`}
+                            >
+                                Highlight Subunit (Basic): {subunitHighlightOn ? 'On' : 'Off'}
+                            </button>
+                        </div>
+                        <div className="load-data-control-row">
+                            <button
+                                onClick={onSubunitInspect}
+                                disabled={subunitInspectDisabled}
+                                aria-pressed={subunitInspectOn}
+                                className="msp-btn msp-form-control"
+                                id={`${idPrefix}-inspect-subunit-btn`}
+                            >
+                                Inspect Subunit: {subunitInspectOn ? 'On' : 'Off'}
+                            </button>
+                        </div>
+                        <div className="load-data-control-row">
+                            <button
+                                onClick={onSubunitZoom}
+                                disabled={subunitZoomDisabled}
+                                className="msp-btn msp-form-control"
+                                id={`${idPrefix}-zoom-subunit-btn`}
+                            >
+                                Zoom to Subunit: {subunitZoomLabel}
+                            </button>
+                        </div>
+                    </>
+                )}
+
+                <div className="load-data-control-row">
+                    <button
+                        type="button"
+                        className="msp-btn msp-form-control"
+                        id={`${idPrefix}-chain-controls-toggle-btn`}
+                        onClick={() => setShowChainControls((current) => !current)}
+                    >
+                        {showChainControls ? 'Hide Chain Controls' : 'Show Chain Controls'}
+                    </button>
+                </div>
+                {showChainControls && (
+                    <>
+                        <div className="load-data-control-row">
+                            <ChainSelectButton
+                                 disabled={chainSelectDisabled || !selectedSubunit}
+                                 chainLabels={getFilteredChainLabels(selectedSubunit, chainInfo.chainLabels, subunitToChainIds)}
+                                 selectedChainId={selectedChainId}
+                                 onSelect={onSelectChainId}
+                                 id={`${idPrefix}-chain-select`}
+                            />
+                        </div>
+                        {!!chainFinderChainLabels && (
+                            <ChainSelectionTable
+                                chainLabels={chainFinderChainLabels}
+                                selectedChainId={chainFinderSelectedChainId ?? selectedChainId}
+                                onSelectChainId={chainFinderOnSelectChainId ?? onSelectChainId}
+                                title={chainFinderTitle}
+                                query={chainFinderQuery}
+                                onQueryChange={chainFinderOnQueryChange}
+                                idPrefix={chainFinderIdPrefix ?? idPrefix}
+                            />
+                        )}
+                        <div className="load-data-control-row">
+                            <button
+                                onClick={onChainHighlight}
+                                disabled={chainHighlightDisabled}
+                                aria-pressed={chainHighlightOn}
+                                className="msp-btn msp-form-control"
+                                id={`${idPrefix}-highlight-chain-btn`}
+                            >
+                                Highlight Chain: {chainHighlightOn ? 'On' : 'Off'}
+                            </button>
+                        </div>
+                        <div className="load-data-control-row">
+                            <button
+                                onClick={onChainInspect}
+                                disabled={chainInspectDisabled}
+                                aria-pressed={chainInspectOn}
+                                className="msp-btn msp-form-control"
+                                id={`${idPrefix}-inspect-chain-btn`}
+                            >
+                                Inspect Chain: {chainInspectOn ? 'On' : 'Off'}
+                            </button>
+                        </div>
+                        <div className="load-data-control-row">
+                            <button
+                                onClick={onChainZoom}
+                                disabled={chainZoomDisabled}
+                                className="msp-btn msp-form-control"
+                                id={`${idPrefix}-zoom-chain-btn`}
+                            >
+                                Zoom to Chain: {chainZoomLabel}
+                            </button>
+                        </div>
+                    </>
+                )}
+
+                <div className="load-data-control-row">
+                    <button
+                        type="button"
+                        className="msp-btn msp-form-control"
+                        id={`${idPrefix}-residue-controls-toggle-btn`}
+                        onClick={() => setShowResidueControls((current) => !current)}
+                        disabled={residueSectionDisabled}
+                    >
+                        {showResidueControls ? 'Hide Residue Controls' : 'Show Residue Controls'}
+                    </button>
+                </div>
+                {showResidueControls && (
+                    <>
+                        <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <label htmlFor={`${idPrefix}-zoom-extra-radius`}>Zoom extraRadius:</label>
+                            <input
+                                id={`${idPrefix}-zoom-extra-radius`}
+                                type="number"
+                                value={zoomExtraRadius}
+                                min={0}
+                                max={100}
+                                step={1}
+                                style={{ width: 60 }}
+                                onChange={e => onZoomExtraRadiusChange(Number(e.target.value))}
+                            />
+                            <label htmlFor={`${idPrefix}-zoom-min-radius`}>minRadius:</label>
+                            <input
+                                id={`${idPrefix}-zoom-min-radius`}
+                                type="number"
+                                value={zoomMinRadius}
+                                min={0}
+                                max={100}
+                                step={1}
+                                style={{ width: 60 }}
+                                onChange={e => onZoomMinRadiusChange(Number(e.target.value))}
+                            />
+                        </div>
+                        <div className="load-data-control-row">
+                            <ResidueSelectButton
+                                disabled={residueSelectDisabled || !selectedChainId}
+                                residueLabels={residueInfo.residueLabels}
+                                selectedResidueIds={selectedResidueIds}
+                                onSelect={onSelectResidueIds}
+                                id={`${idPrefix}-residue-select`}
+                            />
+                        </div>
+                        <div className="load-data-control-row">
+                            <button
+                                onClick={onResidueHighlight}
+                                disabled={residueHighlightDisabled}
+                                aria-pressed={residueHighlightOn}
+                                className="msp-btn msp-form-control"
+                                id={`${idPrefix}-highlight-residue-btn`}
+                            >
+                                Highlight Residues: {residueHighlightOn ? 'On' : 'Off'}
+                            </button>
+                        </div>
+                        <div className="load-data-control-row">
+                            <button
+                                onClick={onResidueInspect}
+                                disabled={residueInspectDisabled}
+                                aria-pressed={residueInspectOn}
+                                className="msp-btn msp-form-control"
+                                id={`${idPrefix}-inspect-residue-btn`}
+                            >
+                                Inspect Residues: {residueInspectOn ? 'On' : 'Off'}
+                            </button>
+                        </div>
+                        <div className="load-data-control-row">
+                            <button
+                                onClick={onResidueZoom}
+                                disabled={residueZoomDisabled}
+                                className="msp-btn msp-form-control"
+                                id={`${idPrefix}-zoom-residue-btn`}
+                            >
+                                Zoom to Residue: {residueZoomLabel}
+                            </button>
+                        </div>
+                    </>
+                )}
+            </>
+        );
+    };
 
 
 // Helper to filter chain labels by subunit selection

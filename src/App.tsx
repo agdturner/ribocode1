@@ -3374,27 +3374,29 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     return;
                 }
 
-                try {
-                    const appliedInPlace = await applyInPlaceRealign();
-                    if (appliedInPlace) {
-                        await subunitZoomBAligned.handleButtonClick();
-                        console.log('[Re-align Subunit] Applied in-place transform to existing aligned structures.');
+                await runWithTemporarySyncDisabled(syncEnabled, setSyncEnabled, async () => {
+                    try {
+                        const appliedInPlace = await applyInPlaceRealign();
+                        if (appliedInPlace) {
+                            await subunitZoomBAligned.handleButtonClick();
+                            console.log('[Re-align Subunit] Applied in-place transform to existing aligned structures.');
+                            return;
+                        }
+                    } catch (inPlaceErr) {
+                        console.warn('[Re-align Subunit] In-place transform failed; falling back to reload-based realign.', inPlaceErr);
+                    }
+
+                    const file = new File([alignedFile], alignedFile.name);
+                    await loadMoleculeIntoViewers(file, ReAligned, alignmentData);
+                    pluginA.canvas3d?.requestDraw?.();
+                    const pluginB = viewerB.ref.current;
+                    if (!pluginB) {
+                        console.warn('Viewer B not initialized.');
                         return;
                     }
-                } catch (inPlaceErr) {
-                    console.warn('[Re-align Subunit] In-place transform failed; falling back to reload-based realign.', inPlaceErr);
-                }
-
-                const file = new File([alignedFile], alignedFile.name);
-                await loadMoleculeIntoViewers(file, ReAligned, alignmentData);
-                pluginA.canvas3d?.requestDraw?.();
-                const pluginB = viewerB.ref.current;
-                if (!pluginB) {
-                    console.warn('Viewer B not initialized.');
-                    return;
-                }
-                pluginB.canvas3d?.requestDraw?.();
-                console.log('[Re-align Subunit] Applied reload-based fallback realign.');
+                    pluginB.canvas3d?.requestDraw?.();
+                    console.log('[Re-align Subunit] Applied reload-based fallback realign.');
+                });
             })();
         } catch (err) {
             console.error('Subunit alignment error:', err);
@@ -3575,27 +3577,29 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     return;
                 }
 
-                try {
-                    const appliedInPlace = await applyInPlaceRealign();
-                    if (appliedInPlace) {
-                        await residueZoomBAligned.handleButtonClick();
-                        console.log('[Re-align Residue] Applied in-place transform to existing aligned structures.');
+                await runWithTemporarySyncDisabled(syncEnabled, setSyncEnabled, async () => {
+                    try {
+                        const appliedInPlace = await applyInPlaceRealign();
+                        if (appliedInPlace) {
+                            await residueZoomBAligned.handleButtonClick();
+                            console.log('[Re-align Residue] Applied in-place transform to existing aligned structures.');
+                            return;
+                        }
+                    } catch (inPlaceErr) {
+                        console.warn('[Re-align Residue] In-place transform failed; falling back to reload-based realign.', inPlaceErr);
+                    }
+
+                    const file = new File([alignedFile], alignedFile.name);
+                    await loadMoleculeIntoViewers(file, ReAligned, alignmentData);
+                    pluginAAsync.canvas3d?.requestDraw?.();
+                    const pluginBAsync = viewerB.ref.current;
+                    if (!pluginBAsync) {
+                        console.warn('Viewer B not initialized.');
                         return;
                     }
-                } catch (inPlaceErr) {
-                    console.warn('[Re-align Residue] In-place transform failed; falling back to reload-based realign.', inPlaceErr);
-                }
-
-                const file = new File([alignedFile], alignedFile.name);
-                await loadMoleculeIntoViewers(file, ReAligned, alignmentData);
-                pluginAAsync.canvas3d?.requestDraw?.();
-                const pluginBAsync = viewerB.ref.current;
-                if (!pluginBAsync) {
-                    console.warn('Viewer B not initialized.');
-                    return;
-                }
-                pluginBAsync.canvas3d?.requestDraw?.();
-                console.log('[Re-align Residue] Applied reload-based fallback realign.');
+                    pluginBAsync.canvas3d?.requestDraw?.();
+                    console.log('[Re-align Residue] Applied reload-based fallback realign.');
+                });
             })();
         } catch (err) {
             console.error('Residue alignment error:', err);

@@ -124,9 +124,9 @@ const GeneralControls: React.FC<GeneralControlsProps> = ({
     >
       {canRealignToSubunits
         ? subunitRealignmentExists
-          ? `Already realigned subunits: ${selectedSubunitAlignedTo} -> ${selectedSubunitAligned}`
-          : `Realign to Subunits: ${selectedSubunitAlignedTo} -> ${selectedSubunitAligned}`
-        : 'Realign to Subunits'}
+          ? `Already aligned subunits: ${selectedSubunitAlignedTo} -> ${selectedSubunitAligned}`
+          : `Align Subunits: ${selectedSubunitAlignedTo} -> ${selectedSubunitAligned}`
+        : 'Align Subunits'}
     </button>
     <button
       disabled={!selectedChainIdAlignedTo || !selectedChainIdAligned || realignmentExists}
@@ -135,9 +135,9 @@ const GeneralControls: React.FC<GeneralControlsProps> = ({
     >
       {selectedChainIdAlignedTo && selectedChainIdAligned
         ? realignmentExists
-          ? `Already re-aligned: ${selectedChainIdAlignedTo} → ${selectedChainIdAligned}`
-          : `Re-align : ${selectedChainIdAlignedTo} → ${selectedChainIdAligned}`
-        : 'Re-align to Chains'}
+          ? `Already aligned chains: ${selectedChainIdAlignedTo} → ${selectedChainIdAligned}`
+          : `Align Chains: ${selectedChainIdAlignedTo} → ${selectedChainIdAligned}`
+        : 'Align Chains'}
     </button>
     <button
       disabled={!canRealignToResidues || residueRealignmentExists}
@@ -146,9 +146,9 @@ const GeneralControls: React.FC<GeneralControlsProps> = ({
     >
       {canRealignToResidues
         ? residueRealignmentExists
-          ? `Already realigned residues: ${residueRealignSummary}`
-          : `Realign to Residues: ${residueRealignSummary}`
-        : 'Realign to Residues'}
+          ? `Already aligned residues: ${residueRealignSummary}`
+          : `Align Residues: ${residueRealignSummary}`
+        : 'Align Residues'}
     </button>
   </div>
 );

@@ -219,7 +219,15 @@ describe('ViewerColumn', () => {
 
         fireEvent.click(toggleButton as HTMLElement);
         expect(toggleButton).toHaveTextContent('Hide Select and Zoom Controls');
+        const chainControlsToggle = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-chain-controls-toggle-btn`);
+        expect(chainControlsToggle).toBeInTheDocument();
+        expect(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-chain-table-container`)).toBeNull();
+
+        fireEvent.click(chainControlsToggle as HTMLElement);
         expect(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-chain-table-container`)).toBeInTheDocument();
+
+        fireEvent.click(chainControlsToggle as HTMLElement);
+        expect(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-chain-table-container`)).toBeNull();
 
         fireEvent.click(toggleButton as HTMLElement);
         expect(toggleButton).toHaveTextContent('Show Select and Zoom Controls');
@@ -259,6 +267,9 @@ describe('ViewerColumn', () => {
         );
 
         fireEvent.click(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-select-zoom-controls-toggle-btn`) as HTMLElement);
+        fireEvent.click(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-subunit-controls-toggle-btn`) as HTMLElement);
+        fireEvent.click(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-chain-controls-toggle-btn`) as HTMLElement);
+        fireEvent.click(document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-residue-controls-toggle-btn`) as HTMLElement);
 
         fireEvent.click(screen.getByText('Inspect Subunit: Off'));
         fireEvent.click(screen.getByText('Inspect Chain: Off'));
@@ -290,11 +301,13 @@ describe('ViewerColumn', () => {
 
         const root = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A`);
         const molstarContainer = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-molstar-container`);
+        const clippingToggle = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-clipping-controls-toggle-btn`);
         const selectZoomToggle = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-select-zoom-controls-toggle-btn`);
         const toggleButton = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-advanced-molstar-controls-toggle-btn`);
 
         expect(root).toBeInTheDocument();
         expect(molstarContainer).toBeInTheDocument();
+        expect(clippingToggle).toBeInTheDocument();
         expect(selectZoomToggle).toBeInTheDocument();
         expect(toggleButton).toBeInTheDocument();
 
@@ -305,7 +318,7 @@ describe('ViewerColumn', () => {
         expect(rootChildren[2]?.classList.contains('molecule-row')).toBe(true);
 
         const clippingControls = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clipping-controls`);
-        expect(clippingControls).toBeInTheDocument();
+        expect(clippingControls).toBeNull();
 
         const children = Array.from(root?.children ?? []);
         const selectZoomToggleIndex = children.findIndex((child) => child.id === `${idPrefix}-${viewerColumnIdSuffix}-A-select-zoom-controls-toggle-btn`);
@@ -323,7 +336,7 @@ describe('ViewerColumn', () => {
         expect(panelIndex).toBeGreaterThan(toggleIndex);
     });
 
-    it('renders clipping controls above select/zoom toggle and wires minNear/clipRadius callbacks', () => {
+    it('toggles clipping controls and wires minNear/clipRadius callbacks', () => {
         const idPrefix = 'test-root';
         const onClippingMinNearChange = vi.fn();
         const onClippingRadiusChange = vi.fn();
@@ -352,19 +365,27 @@ describe('ViewerColumn', () => {
 
         const root = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A`);
         const children = Array.from(root?.children ?? []);
+        const clippingToggleIndex = children.findIndex((child) => child.id === `${idPrefix}-${viewerColumnIdSuffix}-A-clipping-controls-toggle-btn`);
         const clippingIndex = children.findIndex((child) => child.id === `${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clipping-controls`);
         const selectZoomToggleIndex = children.findIndex((child) => child.id === `${idPrefix}-${viewerColumnIdSuffix}-A-select-zoom-controls-toggle-btn`);
-        expect(clippingIndex).toBeGreaterThan(-1);
-        expect(selectZoomToggleIndex).toBeGreaterThan(clippingIndex);
+        expect(clippingToggleIndex).toBeGreaterThan(-1);
+        expect(clippingIndex).toBe(-1);
+        expect(selectZoomToggleIndex).toBeGreaterThan(clippingToggleIndex);
+
+        const clippingToggle = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-clipping-controls-toggle-btn`) as HTMLButtonElement;
+        expect(clippingToggle).toHaveTextContent('Show Clipping Controls');
+        fireEvent.click(clippingToggle);
+        expect(clippingToggle).toHaveTextContent('Hide Clipping Controls');
 
         const nearRange = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clip-near-range`) as HTMLInputElement;
         const farRange = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clip-far-range`) as HTMLInputElement;
-        const resetBtn = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clip-reset-btn`) as HTMLButtonElement;
+        const nearResetBtn = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clip-near-reset-btn`) as HTMLButtonElement;
+        const farResetBtn = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clip-far-reset-btn`) as HTMLButtonElement;
 
         expect(nearRange).toBeInTheDocument();
         expect(farRange).toBeInTheDocument();
-        expect(resetBtn).toBeInTheDocument();
-        expect(document.body.textContent).toContain('Matches Mol* clipping settings');
+        expect(nearResetBtn).toBeInTheDocument();
+        expect(farResetBtn).toBeInTheDocument();
 
         fireEvent.change(nearRange, { target: { value: '0.5' } });
         expect(onClippingMinNearChange).toHaveBeenCalledWith(0.5);
@@ -372,8 +393,13 @@ describe('ViewerColumn', () => {
         fireEvent.change(farRange, { target: { value: '80' } });
         expect(onClippingRadiusChange).toHaveBeenCalledWith(80);
 
-        fireEvent.click(resetBtn);
-        expect(onResetClipping).toHaveBeenCalled();
+        fireEvent.click(nearResetBtn);
+        expect(onClippingMinNearChange).toHaveBeenLastCalledWith(1);
+
+        fireEvent.click(farResetBtn);
+        expect(onClippingRadiusChange).toHaveBeenLastCalledWith(100);
+
+        expect(onResetClipping).not.toHaveBeenCalled();
     });
 
     it('keeps representation visibility toggles local to one viewer even when sync is enabled', async () => {

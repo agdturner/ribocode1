@@ -157,6 +157,28 @@ describe('App sync toggle helper', () => {
     expect(setSyncEnabled).toHaveBeenNthCalledWith(1, false);
     expect(setSyncEnabled).toHaveBeenNthCalledWith(2, true);
   });
+
+  it('does not toggle sync when sync is already disabled', async () => {
+    const setSyncEnabled = vi.fn();
+    const action = vi.fn(async () => 'done');
+
+    const result = await runWithTemporarySyncDisabled(false, setSyncEnabled, action);
+
+    expect(result).toBe('done');
+    expect(action).toHaveBeenCalledTimes(1);
+    expect(setSyncEnabled).not.toHaveBeenCalled();
+  });
+
+  it('restores sync when action throws', async () => {
+    const setSyncEnabled = vi.fn();
+    const action = vi.fn(async () => {
+      throw new Error('boom');
+    });
+
+    await expect(runWithTemporarySyncDisabled(true, setSyncEnabled, action)).rejects.toThrow('boom');
+    expect(setSyncEnabled).toHaveBeenNthCalledWith(1, false);
+    expect(setSyncEnabled).toHaveBeenNthCalledWith(2, true);
+  });
 });
 
 // (Session file input trigger tests moved to session.integration.test.tsx)

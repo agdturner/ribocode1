@@ -281,33 +281,37 @@ vi.mock('./components/MolstarContainer', () => {
       updateTree: vi.fn(() => ({ kind: 'mock-tree-update' })),
     };
   };
-  const buildPlugin = () => ({
-    managers: {
-      structure: {
-        hierarchy: {
-          current: {
-            structures: [
-              buildStructure('mock-ref-0'),
-              buildStructure('mock-ref-1'),
-            ],
-          },
-        },
-      },
-    },
-    state: { data: buildStateData() },
-    runTask: vi.fn().mockResolvedValue(undefined),
-    canvas3d: {
+  const buildPlugin = () => {
+    const canvas3d = {
       props: {
         camera: {},
         cameraClipping: { minNear: 0.5, radius: 77, far: true },
       },
-      setProps: vi.fn(function (nextProps: any) {
-        this.props = { ...this.props, ...nextProps };
+      setProps: vi.fn((nextProps: any) => {
+        canvas3d.props = { ...canvas3d.props, ...nextProps };
       }),
       requestDraw: vi.fn(),
       camera: createMockCamera(),
-    },
-  });
+    };
+
+    return {
+      managers: {
+        structure: {
+          hierarchy: {
+            current: {
+              structures: [
+                buildStructure('mock-ref-0'),
+                buildStructure('mock-ref-1'),
+              ],
+            },
+          },
+        },
+      },
+      state: { data: buildStateData() },
+      runTask: vi.fn().mockResolvedValue(undefined),
+      canvas3d,
+    };
+  };
   const mockPluginA = buildPlugin();
   const mockPluginB = buildPlugin();
   // @ts-ignore
@@ -641,6 +645,7 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     const toggle = document.getElementById('viewer-column-A-select-zoom-controls-toggle-btn') as HTMLButtonElement | null;
     expect(toggle).toBeInTheDocument();
     fireEvent.click(toggle!);
+    fireEvent.click(document.getElementById('viewer-column-A-alignedto-chain-controls-toggle-btn') as HTMLButtonElement);
 
     await waitFor(() => {
       const zoomChainButtons = Array.from(
@@ -735,12 +740,25 @@ describe('App integration: AlignedTo and Aligned loading', () => {
 
     fireEvent.click(document.getElementById('viewer-column-A-select-zoom-controls-toggle-btn') as HTMLButtonElement);
     fireEvent.click(document.getElementById('viewer-column-B-select-zoom-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-A-alignedto-subunit-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-A-alignedto-chain-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-B-aligned-subunit-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-B-aligned-chain-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-A-clipping-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-B-clipping-controls-toggle-btn') as HTMLButtonElement);
 
     await waitFor(() => {
       expect(document.getElementById('viewer-column-A-alignedto-subunit-select')).toBeInTheDocument();
       expect(document.getElementById('viewer-column-B-aligned-subunit-select')).toBeInTheDocument();
+      expect(document.getElementById('viewer-column-A-alignedto-chain-select')).toBeInTheDocument();
+      expect(document.getElementById('viewer-column-B-aligned-chain-select')).toBeInTheDocument();
       expect(document.getElementById('generalcontrols-sync-select')).toBeInTheDocument();
     }, { timeout: 5000 });
+
+    fireEvent.change(document.getElementById('viewer-column-A-alignedto-chain-select') as HTMLSelectElement, { target: { value: 'A' } });
+    fireEvent.change(document.getElementById('viewer-column-B-aligned-chain-select') as HTMLSelectElement, { target: { value: 'B' } });
+    fireEvent.click(document.getElementById('viewer-column-A-alignedto-residue-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-B-aligned-residue-controls-toggle-btn') as HTMLButtonElement);
 
     fireEvent.change(document.getElementById('viewer-column-A-alignedto-zoom-extra-radius') as HTMLInputElement, { target: { value: '24' } });
     fireEvent.change(document.getElementById('viewer-column-A-alignedto-zoom-min-radius') as HTMLInputElement, { target: { value: '12' } });
@@ -830,6 +848,12 @@ describe('App integration: AlignedTo and Aligned loading', () => {
 
     fireEvent.click(document.getElementById('viewer-column-A-select-zoom-controls-toggle-btn') as HTMLButtonElement);
     fireEvent.click(document.getElementById('viewer-column-B-select-zoom-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-A-alignedto-subunit-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-A-alignedto-residue-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-B-aligned-subunit-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-B-aligned-residue-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-A-clipping-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-B-clipping-controls-toggle-btn') as HTMLButtonElement);
 
     await waitFor(() => {
       expect((document.getElementById('viewer-column-A-alignedto-zoom-extra-radius') as HTMLInputElement).value).toBe('31');
@@ -943,7 +967,7 @@ describe('App integration: AlignedTo and Aligned loading', () => {
       const residueRealignButton = document.getElementById('generalcontrols-realign-residue-btn') as HTMLButtonElement | null;
       expect(residueRealignButton).toBeInTheDocument();
       expect(residueRealignButton).toBeDisabled();
-      expect(residueRealignButton?.textContent).toContain('Realign to Residues');
+      expect(residueRealignButton?.textContent).toContain('Align Residues');
     }, { timeout: 5000 });
 
     const bothSidesSelected = {
@@ -963,7 +987,7 @@ describe('App integration: AlignedTo and Aligned loading', () => {
       const residueRealignButton = document.getElementById('generalcontrols-realign-residue-btn') as HTMLButtonElement | null;
       expect(residueRealignButton).toBeInTheDocument();
       expect(residueRealignButton).not.toBeDisabled();
-      expect(residueRealignButton?.textContent).toContain('Realign to Residues: 2 to 1');
+      expect(residueRealignButton?.textContent).toContain('Align Residues: 2 to 1');
     }, { timeout: 5000 });
   });
 
@@ -984,6 +1008,8 @@ describe('App integration: AlignedTo and Aligned loading', () => {
 
     fireEvent.click(document.getElementById('viewer-column-A-select-zoom-controls-toggle-btn') as HTMLButtonElement);
     fireEvent.click(document.getElementById('viewer-column-B-select-zoom-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-A-alignedto-chain-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-B-aligned-chain-controls-toggle-btn') as HTMLButtonElement);
 
     const chainSelectAlignedTo = document.getElementById('viewer-column-A-alignedto-chain-select') as HTMLSelectElement;
     const chainSelectAligned = document.getElementById('viewer-column-B-aligned-chain-select') as HTMLSelectElement;
@@ -1025,6 +1051,8 @@ describe('App integration: AlignedTo and Aligned loading', () => {
 
     fireEvent.click(document.getElementById('viewer-column-A-select-zoom-controls-toggle-btn') as HTMLButtonElement);
     fireEvent.click(document.getElementById('viewer-column-B-select-zoom-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-A-alignedto-chain-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-B-aligned-chain-controls-toggle-btn') as HTMLButtonElement);
 
     const chainSelectAlignedTo = document.getElementById('viewer-column-A-alignedto-chain-select') as HTMLSelectElement;
     const chainSelectAligned = document.getElementById('viewer-column-B-aligned-chain-select') as HTMLSelectElement;

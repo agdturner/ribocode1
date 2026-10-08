@@ -105,6 +105,9 @@ describe('LoadDataRow', () => {
 
     it('renders subunit, chain, and residue select controls', () => {
         render(<LoadDataRow {...baseProps} isLoaded={true} />);
+        fireEvent.click(screen.getByText('Show Subunit Controls'));
+        fireEvent.click(screen.getByText('Show Chain Controls'));
+        fireEvent.click(screen.getByText('Show Residue Controls'));
         expect(screen.getByText('Chain A')).toBeInTheDocument();
         expect(screen.getByText('Residue 1')).toBeInTheDocument();
     });
@@ -121,34 +124,36 @@ describe('LoadDataRow', () => {
         expect(baseProps.onAddRepresentationClick).toHaveBeenCalled();
     });
 
-    it('renders select and zoom controls in selector-then-zoom order', () => {
-        const { container } = render(<LoadDataRow {...baseProps} isLoaded={true} />);
+    it('renders grouped select and zoom toggles and keeps residue disabled without chain', () => {
+        const { container, unmount } = render(<LoadDataRow {...baseProps} isLoaded={true} />);
         const controls = container.querySelector('.load-data-controls');
         expect(controls).toBeInTheDocument();
 
         const rowText = Array.from(controls!.children).map(el => (el.textContent || '').trim());
         const findRowIndex = (needle: string) => rowText.findIndex(text => text.includes(needle));
 
-        const zoomParamsIndex = findRowIndex('Zoom extraRadius:');
-        const subunitSelectIndex = findRowIndex('Select Subunit');
-        const subunitZoomIndex = findRowIndex('Zoom to Subunit:');
-        const chainSelectIndex = findRowIndex('Select Chain');
-        const chainZoomIndex = findRowIndex('Zoom to Chain:');
-        const residueSelectIndex = findRowIndex('Select Residues');
-        const residueZoomIndex = findRowIndex('Zoom to Residue:');
+        const subunitToggleIndex = findRowIndex('Show Subunit Controls');
+        const chainToggleIndex = findRowIndex('Show Chain Controls');
+        const residueToggleIndex = findRowIndex('Show Residue Controls');
         const loadColoursIndex = findRowIndex('Load Colours');
         const representationIndex = findRowIndex('Representation:');
 
         expect(representationIndex).toBeGreaterThanOrEqual(0);
         expect(loadColoursIndex).toBeGreaterThan(representationIndex);
-        expect(zoomParamsIndex).toBeGreaterThan(representationIndex);
-        expect(subunitSelectIndex).toBeGreaterThan(zoomParamsIndex);
-        expect(subunitSelectIndex).toBeGreaterThanOrEqual(0);
-        expect(subunitZoomIndex).toBeGreaterThan(subunitSelectIndex);
-        expect(chainSelectIndex).toBeGreaterThan(subunitZoomIndex);
-        expect(chainZoomIndex).toBeGreaterThan(chainSelectIndex);
-        expect(residueSelectIndex).toBeGreaterThan(chainZoomIndex);
-        expect(residueZoomIndex).toBeGreaterThan(residueSelectIndex);
+        expect(subunitToggleIndex).toBeGreaterThan(representationIndex);
+        expect(chainToggleIndex).toBeGreaterThan(subunitToggleIndex);
+        expect(residueToggleIndex).toBeGreaterThan(chainToggleIndex);
+
+        unmount();
+
+        const { getByText } = render(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                selectedChainId=""
+            />
+        );
+        expect((getByText('Show Residue Controls') as HTMLButtonElement).disabled).toBe(true);
     });
 
     it('hides select and zoom controls when showSelectZoomControls is false', () => {
@@ -171,6 +176,9 @@ describe('LoadDataRow', () => {
 
     it('calls subunit/chain/residue basic highlight, inspect, and zoom handlers when buttons are clicked', () => {
         render(<LoadDataRow {...baseProps} isLoaded={true} />);
+        fireEvent.click(screen.getByText('Show Subunit Controls'));
+        fireEvent.click(screen.getByText('Show Chain Controls'));
+        fireEvent.click(screen.getByText('Show Residue Controls'));
         fireEvent.click(screen.getByText('Highlight Subunit (Basic): Off'));
         fireEvent.click(screen.getByText('Inspect Subunit: Off'));
         fireEvent.click(screen.getByText('Zoom to Subunit: All'));
@@ -216,6 +224,10 @@ describe('LoadDataRow', () => {
                 subunitInspectOn={true}
             />
         );
+
+        fireEvent.click(screen.getByText('Show Subunit Controls'));
+        fireEvent.click(screen.getByText('Show Chain Controls'));
+        fireEvent.click(screen.getByText('Show Residue Controls'));
 
         expect(screen.getByText('Inspect Subunit: On')).toBeInTheDocument();
         expect(screen.getByText('Inspect Chain: On')).toBeInTheDocument();

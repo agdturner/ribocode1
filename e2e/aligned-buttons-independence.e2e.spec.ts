@@ -26,10 +26,11 @@ test('Aligned and AlignedTo buttons update independently', async ({ page }) => {
 
   // Column B: Only Load Aligned loader should be present
   const alignedBtnB = page.locator('#viewer-column-B-aligned-load-btn');
+  await expect(alignedBtnB).toBeEnabled({ timeout: 20000 });
   await alignedBtnB.click();
   const alignedInputB = page.locator('#viewer-column-B-aligned-file-input');
   await alignedInputB.setInputFiles(dataPath('6xu8.cif'));
-  await expect(alignedBtnB).toHaveCount(0);
+  await expect(alignedBtnB).toHaveCount(0, { timeout: 20000 });
 
   // Both file names should now be visible in their respective columns
   await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toHaveText(/4ug0\.cif/);

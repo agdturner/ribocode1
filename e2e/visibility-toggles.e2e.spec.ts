@@ -25,9 +25,10 @@ test('Visibility toggles work for Aligned and AlignedTo in both columns', async 
 
   // Load Aligned in column B
   const alignedBtnB = page.locator('#viewer-column-B-aligned-load-btn');
-  await alignedBtnB.click();
+  await expect(alignedBtnB).toBeEnabled({ timeout: 20000 });
   const alignedInputB = page.locator('#viewer-column-B-aligned-file-input');
   await alignedInputB.setInputFiles(dataPath('6xu8.cif'));
+  await alignedBtnB.click();
   await expect(page.locator('#viewer-column-B-aligned-filename-label')).toHaveText(/6xu8\.cif/);
 
   // Toggle visibility for AlignedTo in column A

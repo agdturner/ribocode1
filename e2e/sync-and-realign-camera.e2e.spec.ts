@@ -32,9 +32,14 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('repeat re-align attempts for the same pair are blocked', async ({ page }) => {
+test('repeat align attempts for the same pair remain available', async ({ page }) => {
   await page.goto('http://localhost:5173/');
   await loadAlignedToAndAligned(page);
+
+  await page.click('#viewer-column-A-select-zoom-controls-toggle-btn');
+  await page.click('#viewer-column-B-select-zoom-controls-toggle-btn');
+  await page.click('#viewer-column-A-alignedto-chain-controls-toggle-btn');
+  await page.click('#viewer-column-B-aligned-chain-controls-toggle-btn');
 
   await expect(page.locator('#viewer-column-A-alignedto-chain-select')).toBeVisible();
   await expect(page.locator('#viewer-column-B-aligned-chain-select')).toBeVisible();
@@ -64,14 +69,14 @@ test('repeat re-align attempts for the same pair are blocked', async ({ page }) 
   await expect(realignBtn).toBeEnabled();
 
   await realignBtn.click();
-  await expect(realignBtn).toBeDisabled({ timeout: 10000 });
-  await expect(realignBtn).toHaveText(/Already re-aligned:\s*.+\s*→\s*.+/);
+  await expect(realignBtn).toBeEnabled({ timeout: 10000 });
+  await expect(realignBtn).toHaveText(/Align Chains:\s*.+\s*→\s*.+/);
 
-  // Change away from the pair and back; the already-applied pair should remain blocked.
+  // Change away from the pair and back; same-pair align remains available.
   if (alternateAlignedValue) {
     await page.selectOption('#viewer-column-B-aligned-chain-select', alternateAlignedValue);
     await expect(realignBtn).toBeEnabled();
     await page.selectOption('#viewer-column-B-aligned-chain-select', alignedValue);
-    await expect(realignBtn).toBeDisabled();
+    await expect(realignBtn).toBeEnabled();
   }
 });

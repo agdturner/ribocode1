@@ -45,7 +45,7 @@ describe('GeneralControls', () => {
       canRealignToSubunits: true,
       handleRealignToSubunits,
     };
-    const { getByLabelText, getByRole, container } = render(<GeneralControls {...props} idPrefix="test-controls" />);
+    const { getByLabelText, getByRole, container, unmount } = render(<GeneralControls {...props} idPrefix="test-controls" />);
     // Check for root id
     const root = container.querySelector(`#test-controls-${generalControlsIdSuffix}`);
     expect(root).toBeInTheDocument();
@@ -64,26 +64,27 @@ describe('GeneralControls', () => {
     expect(setSyncEnabled).toHaveBeenCalledWith(false);
 
     // Test realign button
-    const realignBtn = getByRole('button', { name: /Re-align :/i });
+    const realignBtn = getByRole('button', { name: /Align Chains:/i });
     fireEvent.click(realignBtn);
     expect(handleRealignToChains).toHaveBeenCalled();
     expect(realignBtn).not.toBeDisabled();
 
-    const realignResidueBtn = getByRole('button', { name: /Realign to Residues: 2 to 3/i });
+    const realignResidueBtn = getByRole('button', { name: /Align Residues: 2 to 3/i });
     fireEvent.click(realignResidueBtn);
     expect(handleRealignToResidues).toHaveBeenCalled();
     expect(realignResidueBtn).not.toBeDisabled();
 
-    const realignSubunitBtn = getByRole('button', { name: /Realign to Subunits:/i });
+    const realignSubunitBtn = getByRole('button', { name: /Align Subunits:/i });
     fireEvent.click(realignSubunitBtn);
     expect(handleRealignToSubunits).toHaveBeenCalled();
     expect(realignSubunitBtn).not.toBeDisabled();
 
     // Test disabled state
+    unmount();
     const { getByRole: getByRole2 } = render(
       <GeneralControls {...props} selectedChainIdAlignedTo="" />
     );
-    expect(getByRole2('button', { name: /Re-align to Chains/i })).toBeDisabled();
+    expect(getByRole2('button', { name: /Align Chains/i })).toBeDisabled();
   });
 
   it('disables the sync select when syncDisabled is true', () => {

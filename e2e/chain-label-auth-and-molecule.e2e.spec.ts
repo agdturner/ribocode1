@@ -24,6 +24,9 @@ test('Select Chain labels include auth code and molecule name for 6XU6', async (
   await page.locator('#viewer-column-A-alignedto-file-input').setInputFiles(dataPath('6XU6.cif'));
   await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toHaveText(/6xu6\.cif/i);
 
+  await page.click('#viewer-column-A-select-zoom-controls-toggle-btn');
+  await page.click('#viewer-column-A-alignedto-chain-controls-toggle-btn');
+
   const chainSelect = page.locator('#viewer-column-A-alignedto-chain-select');
   await expect(chainSelect).toBeEnabled({ timeout: 30000 });
 

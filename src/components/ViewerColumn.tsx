@@ -13,7 +13,6 @@ import LoadDataRow, { SelectZoomControls } from './LoadMolecule';
 import MoleculeUI from './Molecule';
 import RealignedMoleculeList from './RealignedMoleculeList';
 import MolstarContainer from './MolstarContainer';
-import ChainSelectionTable from './ChainSelectionTable';
 import MolstarAdvancedControls from './MolstarAdvancedControls';
 import { AllowedRepresentationType } from '../types/ribocode';
 import RepresentationSelectButton from './buttons/select/Representation';
@@ -336,6 +335,8 @@ export function getLoadDataRowProps({
 		},
 		clippingMinNear: clipping.minNear,
 		clippingRadius: clipping.clipRadius,
+		clippingDefaultMinNear: Number(clippingDefaults?.minNear ?? clipping.minNear ?? 1),
+		clippingDefaultRadius: Number(clippingDefaults?.clipRadius ?? clipping.clipRadius ?? 0),
 		onClippingMinNearChange: (val: number) => {
 			setClipping.setMinNear(val);
 			updateFog(viewer.ref.current, null, fog.enabled, fog.near, fog.far, val, clipping.clipRadius);
@@ -716,6 +717,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 	const viewerIdPrefix = idPrefix ? `${idPrefix}-${idSuffix}-${viewerKey}` : `${idSuffix}-${viewerKey}`;
 	const [showAdvancedMolstarControls, setShowAdvancedMolstarControls] = React.useState(false);
 	const [showSelectZoomControls, setShowSelectZoomControls] = React.useState(false);
+	const [showClippingControls, setShowClippingControls] = React.useState(false);
 	const chainTableProps = viewerKey === 'A'
 		? {
 			chainLabels: loadDataRowPropsAlignedTo?.chainInfo?.chainLabels as Map<string, string>,
@@ -737,6 +739,8 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 	const activeSelectZoomIdPrefix = viewerKey === 'A' ? `${viewerIdPrefix}-alignedto` : `${viewerIdPrefix}-aligned`;
 	const clippingNear = Number(activeLoadProps?.clippingMinNear ?? 1);
 	const clippingFar = Number(activeLoadProps?.clippingRadius ?? 0);
+	const clippingDefaultNear = Number(activeLoadProps?.clippingDefaultMinNear ?? clippingNear);
+	const clippingDefaultFar = Number(activeLoadProps?.clippingDefaultRadius ?? clippingFar);
 
 	       return (
 		       <div className="Column" id={viewerIdPrefix}>
@@ -756,15 +760,18 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 					   {viewerKey === 'B' && (
 					   <LoadDataRow {...loadDataRowPropsAligned} showSelectZoomControls={false} testMode={testMode} idPrefix={`${viewerIdPrefix}-aligned`} />
 					   )}
-		       <div className="load-data-controls" id={`${activeSelectZoomIdPrefix}-clipping-controls`}>
+		       <button
+			   id={`${viewerIdPrefix}-clipping-controls-toggle-btn`}
+			   data-testid={`${viewerIdPrefix}-clipping-controls-toggle-btn`}
+			   className="molstar-file-btn molstar-advanced-controls-toggle"
+			   type="button"
+			   onClick={() => setShowClippingControls((current) => !current)}
+		       >
+			   {showClippingControls ? 'Hide Clipping Controls' : 'Show Clipping Controls'}
+		       </button>
+		       {showClippingControls && (
+			       <div className="load-data-controls" id={`${activeSelectZoomIdPrefix}-clipping-controls`}>
 				   <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-					   <strong>Clipping</strong>
-					   <span
-						   style={{ fontSize: 12, opacity: 0.8 }}
-						   title="Matches Mol* clipping settings: Min Near controls minimum near plane distance, Clip Radius controls how much of the scene is shown."
-					   >
-						   Matches Mol* clipping settings
-					   </span>
 					   <label htmlFor={`${activeSelectZoomIdPrefix}-clip-near-range`}>Min Near:</label>
 					   <input
 						   id={`${activeSelectZoomIdPrefix}-clip-near-range`}
@@ -785,6 +792,16 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   onChange={(e) => activeLoadProps?.onClippingMinNearChange?.(Number(e.target.value))}
 						   style={{ width: 80 }}
 					   />
+					   <button
+						   type="button"
+						   className="msp-btn msp-form-control"
+						   id={`${activeSelectZoomIdPrefix}-clip-near-reset-btn`}
+						   onClick={() => activeLoadProps?.onClippingMinNearChange?.(clippingDefaultNear)}
+					   >
+						   Reset
+					   </button>
+				   </div>
+				   <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
 					   <label htmlFor={`${activeSelectZoomIdPrefix}-clip-far-range`}>Clip Radius:</label>
 					   <input
 						   id={`${activeSelectZoomIdPrefix}-clip-far-range`}
@@ -808,13 +825,14 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 					   <button
 						   type="button"
 						   className="msp-btn msp-form-control"
-						   id={`${activeSelectZoomIdPrefix}-clip-reset-btn`}
-						   onClick={() => activeLoadProps?.onResetClipping?.()}
+						   id={`${activeSelectZoomIdPrefix}-clip-far-reset-btn`}
+						   onClick={() => activeLoadProps?.onClippingRadiusChange?.(clippingDefaultFar)}
 					   >
-						   Reset Clipping
+						   Reset
 					   </button>
 				   </div>
 		       </div>
+		       )}
 		       <button
 			   id={`${viewerIdPrefix}-select-zoom-controls-toggle-btn`}
 			   data-testid={`${viewerIdPrefix}-select-zoom-controls-toggle-btn`}
@@ -871,18 +889,16 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   onZoomExtraRadiusChange={activeLoadProps.onZoomExtraRadiusChange}
 						   zoomMinRadius={activeLoadProps.zoomMinRadius}
 						   onZoomMinRadiusChange={activeLoadProps.onZoomMinRadiusChange}
+						   chainFinderChainLabels={chainTableProps.chainLabels || new Map<string, string>()}
+						   chainFinderSelectedChainId={chainTableProps.selectedChainId}
+						   chainFinderOnSelectChainId={chainTableProps.onSelectChainId || (() => {})}
+						   chainFinderTitle={chainTableProps.title}
+						   chainFinderQuery={chainTableProps.query}
+						   chainFinderOnQueryChange={chainTableProps.onQueryChange}
+						   chainFinderIdPrefix={viewerIdPrefix}
 						   idPrefix={activeSelectZoomIdPrefix}
 					   />
 				   </div>
-				   <ChainSelectionTable
-					   chainLabels={chainTableProps.chainLabels || new Map<string, string>()}
-					   selectedChainId={chainTableProps.selectedChainId}
-					   onSelectChainId={chainTableProps.onSelectChainId || (() => {})}
-					   title={chainTableProps.title}
-					   query={chainTableProps.query}
-					   onQueryChange={chainTableProps.onQueryChange}
-					   idPrefix={viewerIdPrefix}
-				   />
 			   </>
 			       )}
 			       <button

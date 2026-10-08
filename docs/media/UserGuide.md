@@ -26,7 +26,7 @@ The UI layout is as follows:
    - `Select Sync` control for synchronization
   - `Show UniProt accession in chain labels` toggle for chain selector labels
   - `UniProt cache` status counters (`cached`, `pending`, `in-flight`)
-   - `Re-align to Chains` control
+  - `Align Chains` control
  - Column `A`
    - `Mol* Viewer A`
      - `3D Canvas`
@@ -39,7 +39,9 @@ The UI layout is as follows:
      - `Load Colours` button
    - `Clipping` controls (directly above `Select and Zoom Controls`): `Min Near`, `Clip Radius`, and `Reset Clipping`
    - `Show Select and Zoom Controls` button (collapsed by default)
-  - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, `Residue Zoom` settings, and `AlignedTo Chain Finder`)
+  - `Select and Zoom Controls` panel (shown only when expanded; includes collapsed `Subunit`, `Chain`, and `Residue` subsections)
+    - `Chain` subsection includes `Select Chain` and `AlignedTo Chain Finder` directly below it
+    - `Residue` subsection is disabled until a chain is selected
    - `Show Advanced Mol* Controls` button (toggles advanced Mol* interface for power users)
    - `Advanced Mol* Controls` panel (shown only when expanded; includes Sequence, Left Panel, Structure Tools, and Log sections)
  - Column `B`
@@ -54,14 +56,16 @@ The UI layout is as follows:
      - `Load Colours` button
    - `Clipping` controls (directly above `Select and Zoom Controls`): `Min Near`, `Clip Radius`, and `Reset Clipping`
    - `Show Select and Zoom Controls` button (collapsed by default)
-  - `Select and Zoom Controls` panel (shown only when expanded; includes `Select Subunit`, `Select Chain`, `Select Residues`, `Zoom to ...` controls, `Residue Zoom` settings, and `Aligned Chain Finder`)
+  - `Select and Zoom Controls` panel (shown only when expanded; includes collapsed `Subunit`, `Chain`, and `Residue` subsections)
+    - `Chain` subsection includes `Select Chain` and `Aligned Chain Finder` directly below it
+    - `Residue` subsection is disabled until a chain is selected
    - `Show Advanced Mol* Controls` button (toggles advanced Mol* interface for power users)
    - `Advanced Mol* Controls` panel (shown only when expanded; includes Sequence, Left Panel, Structure Tools, and Log sections)
 ```
 +-------------------------------------------------------------+
 |           RiboCode Mol* Viewer, Version, README             |
 +-------------------------------------------------------------+
-| [General Controls: UniProt labels/status | Sync | Re-align] |
+| [General Controls: UniProt labels/status | Sync | Align] |
 +------------------------------+------------------------------+
 |          Column A            |           Column B           |
 +------------------------------+------------------------------+
@@ -93,9 +97,9 @@ The UI layout is as follows:
 
 When structure data are loaded, Ribocode enriches chain labels used in the respective (`AlignedTo` or `Aligned`):
 - `Select Chain` dropdown; and,
-- `Chain Finder` table below each viewer.
+- `Chain Finder` table inside the `Chain` subsection directly below `Select Chain`.
 
-The `Chain Finder` table appears inside the `Select and Zoom Controls` panel and is hidden by default together with Select/Zoom controls.
+The `Chain Finder` table appears inside the `Chain` subsection of `Select and Zoom Controls` and is hidden by default until that subsection is expanded.
 - Column `A` shows the `AlignedTo Chain Finder`.
 - Column `B` shows the `Aligned Chain Finder`.
 
@@ -108,7 +112,8 @@ Users can use `Chain Finder` search boxes to quickly find chains by any part of 
 
 Selecting a chain can be done both via the `Select Chain` drop down or by selecting a row in the `Chain Finder`.
 
-To access `Select Subunit`, `Select Chain`, `Select Residues`, and zoom-to-selection controls, first click `Show Select and Zoom Controls` in the relevant column.
+To access `Select Subunit`, `Select Chain`, `Select Residues`, and zoom-to-selection controls, first click `Show Select and Zoom Controls` in the relevant column, then expand the relevant subsection (`Subunit`, `Chain`, or `Residue`).
+The `Residue` subsection is disabled until a chain is selected.
 
 Ribocode combines metadata from the loaded mmCIF file and lookup tables to build a richer chain label.
 
@@ -160,7 +165,7 @@ Next, the user can do several things:
 * If a chain is selected, the `Select Residue` control becomes actionable and the `Zoom to Chain` control becomes actionable to zoom to the selected chain.
 * Residue labels in `Select Residues` follow Mol* style: `code number [auth n]` (for example `GLY 70 [auth 70]`, `A 12 [auth 12]`).
 * If a residue is selected, the `Zoom to Residue` control becomes actionable to zoom to the selected residue within the chain. The selected residue will be in the viewer centre. How much is displayed around that depends on the `Residue Zoom` settings.
-* If chains are selected for both `AlignedTo` and `Aligned` molecules, the `Re-align` button can be actioned to apply chain-based re-alignment.
+* If chains are selected for both `AlignedTo` and `Aligned` molecules, the `Align Chains` button can be actioned to apply chain-based re-alignment.
 * Re-aligning a different chain pair is supported repeatedly; repeating the same pair is blocked to avoid cumulative transform/rotation drift.
 
 ### Re-align implementation note

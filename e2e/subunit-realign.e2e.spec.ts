@@ -55,13 +55,20 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('Realign to Subunits button enables and then locks for applied pair', async ({ page }) => {
+test('Align Subunits button enables and remains available for repeated pairs', async ({ page }) => {
   await page.goto('http://localhost:5173/');
   await loadAlignedToAndAligned(page);
 
+  await page.click('#viewer-column-A-select-zoom-controls-toggle-btn');
+  await page.click('#viewer-column-B-select-zoom-controls-toggle-btn');
+  await page.click('#viewer-column-A-alignedto-subunit-controls-toggle-btn');
+  await page.click('#viewer-column-B-aligned-subunit-controls-toggle-btn');
+  await page.click('#viewer-column-A-alignedto-chain-controls-toggle-btn');
+  await page.click('#viewer-column-B-aligned-chain-controls-toggle-btn');
+
   const realignSubunitBtn = page.locator('#generalcontrols-realign-subunit-btn');
   await expect(realignSubunitBtn).toBeDisabled();
-  await expect(realignSubunitBtn).toHaveText('Realign to Subunits');
+  await expect(realignSubunitBtn).toHaveText('Align Subunits');
 
   const alignedToSubunit = await selectSubunitWithChains(
     page,
@@ -75,10 +82,10 @@ test('Realign to Subunits button enables and then locks for applied pair', async
   );
 
   await expect(realignSubunitBtn).toBeEnabled();
-  await expect(realignSubunitBtn).toHaveText(`Realign to Subunits: ${alignedToSubunit} -> ${alignedSubunit}`);
+  await expect(realignSubunitBtn).toHaveText(`Align Subunits: ${alignedToSubunit} -> ${alignedSubunit}`);
 
   await realignSubunitBtn.click();
 
-  await expect(realignSubunitBtn).toBeDisabled({ timeout: 10000 });
-  await expect(realignSubunitBtn).toHaveText(`Already realigned subunits: ${alignedToSubunit} -> ${alignedSubunit}`);
+  await expect(realignSubunitBtn).toBeEnabled({ timeout: 10000 });
+  await expect(realignSubunitBtn).toHaveText(`Align Subunits: ${alignedToSubunit} -> ${alignedSubunit}`);
 });

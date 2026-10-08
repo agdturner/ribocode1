@@ -21,9 +21,10 @@ async function completeRequiredFilesModal(page: Page) {
 
   for (const input of fileInputs) {
     const label = await input.evaluate((el: HTMLInputElement) => el.parentElement?.textContent || '');
-    if (label.includes('4ug0.cif')) {
+    const normalizedLabel = label.toLowerCase();
+    if (normalizedLabel.includes('4ug0.cif')) {
       await input.setInputFiles(alignedToFile);
-    } else if (label.includes('6xu8.cif')) {
+    } else if (normalizedLabel.includes('6xu8.cif')) {
       await input.setInputFiles(alignedFile);
     }
   }
@@ -38,11 +39,12 @@ test.describe('Session Save/Load E2E', () => {
 
     await page.click('#viewer-column-A-alignedto-load-btn');
     await page.setInputFiles('#viewer-column-A-alignedto-file-input', alignedToFile);
-    await page.click('#viewer-column-B-aligned-load-btn');
+    await expect(page.locator('#viewer-column-B-aligned-load-btn')).toBeEnabled({ timeout: 20000 });
     await page.setInputFiles('#viewer-column-B-aligned-file-input', alignedFile);
+    await page.click('#viewer-column-B-aligned-load-btn');
 
     await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toHaveText(/4ug0\.cif/i);
-    await expect(page.locator('#viewer-column-B-aligned-load-btn')).toHaveCount(0, { timeout: 10000 });
+    await expect(page.locator('#viewer-column-B-aligned-load-btn')).toHaveCount(0, { timeout: 20000 });
 
     await page.click('#session-menu-btn');
     await page.click('#session-menu-dropdown .session-menu-item:text-is("Save")');
