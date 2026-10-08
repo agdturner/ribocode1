@@ -587,6 +587,23 @@ export function copyCameraZoomRadiusBetweenViewers(
     targetViewerRef.current?.canvas3d?.requestDraw?.();
 }
 
+export async function runWithTemporarySyncDisabled<T>(
+    isSyncEnabled: boolean,
+    setSyncEnabled: (value: boolean) => void,
+    action: () => Promise<T> | T
+): Promise<T> {
+    if (!isSyncEnabled) {
+        return await action();
+    }
+
+    setSyncEnabled(false);
+    try {
+        return await action();
+    } finally {
+        setSyncEnabled(true);
+    }
+}
+
 function getSelectedSubunitChainIds(
     subunitToChainIds: Map<string, Set<string>>,
     selectedSubunit: string
@@ -3160,30 +3177,32 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     return;
                 }
 
-                try {
-                    const appliedInPlace = await applyInPlaceRealign();
-                    if (appliedInPlace) {
-                        // Match right-viewer zoom to left-viewer zoom without forcing pan/rotation yet.
-                        copyCameraZoomRadius(viewerA.ref, viewerB.ref);
-                        if (ENABLE_REALIGN_DIAGNOSTICS) console.info('[Re-align] Applied in-place transform to existing aligned structures.');
+                await runWithTemporarySyncDisabled(syncEnabled, setSyncEnabled, async () => {
+                    try {
+                        const appliedInPlace = await applyInPlaceRealign();
+                        if (appliedInPlace) {
+                            // Match right-viewer viewpoint to left-viewer viewpoint.
+                            copyCameraZoomRadius(viewerA.ref, viewerB.ref);
+                            if (ENABLE_REALIGN_DIAGNOSTICS) console.info('[Re-align] Applied in-place transform to existing aligned structures.');
+                            return;
+                        }
+                    } catch (inPlaceErr) {
+                        console.warn('[Re-align] In-place transform failed; falling back to reload-based realign.', inPlaceErr);
+                    }
+
+                    const file = new File([alignedFile], alignedFile.name);
+                    await loadMoleculeIntoViewers(file, ReAligned, alignmentData);
+                    pluginA.canvas3d?.requestDraw?.();
+                    const pluginB = viewerB.ref.current;
+                    if (!pluginB) {
+                        console.warn('Viewer B not initialized.');
                         return;
                     }
-                } catch (inPlaceErr) {
-                    console.warn('[Re-align] In-place transform failed; falling back to reload-based realign.', inPlaceErr);
-                }
-
-                const file = new File([alignedFile], alignedFile.name);
-                await loadMoleculeIntoViewers(file, ReAligned, alignmentData);
-                pluginA.canvas3d?.requestDraw?.();
-                const pluginB = viewerB.ref.current;
-                if (!pluginB) {
-                    console.warn('Viewer B not initialized.');
-                    return;
-                }
-                pluginB.canvas3d?.requestDraw?.();
-                // Keep zoom parity in fallback mode as well.
-                copyCameraZoomRadius(viewerA.ref, viewerB.ref);
-                if (ENABLE_REALIGN_DIAGNOSTICS) console.info('[Re-align] Applied reload-based fallback realign.');
+                    pluginB.canvas3d?.requestDraw?.();
+                    // Keep viewpoint parity in fallback mode as well.
+                    copyCameraZoomRadius(viewerA.ref, viewerB.ref);
+                    if (ENABLE_REALIGN_DIAGNOSTICS) console.info('[Re-align] Applied reload-based fallback realign.');
+                });
             })();
             if (ENABLE_REALIGN_DIAGNOSTICS) console.info('Realignment applied to Viewer A and B models.');
         } catch (err) {
