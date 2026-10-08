@@ -1,3 +1,8 @@
+## [v0.12.3] - 2026-10-08
+Release summary: this patch release stabilizes chain realignment behavior when sync is enabled.
+- Updated `Re-align` to chains so sync is temporarily disabled while realignment runs, then restored to its prior enabled state.
+- Added regression coverage for temporary sync disable/restore flow during chain realignment actions.
+
 ## [v0.12.2] - 2026-10-08
 Release summary: this patch release aligns chain re-alignment camera behavior across viewers for a consistent side-by-side viewpoint.
 - Updated chain re-alignment camera behavior so after `Re-align` to chains, the `Aligned` viewer camera matches the `AlignedTo` viewer viewpoint (zoom, pan target, and orientation).
