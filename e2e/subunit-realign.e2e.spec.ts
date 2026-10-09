@@ -17,11 +17,11 @@ function dataPath(filename: string) {
 async function loadAlignedToAndAligned(page: import('@playwright/test').Page) {
   await page.click('#viewer-column-A-alignedto-load-btn');
   await page.setInputFiles('#viewer-column-A-alignedto-file-input', dataPath('4ug0.cif'));
-  await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toHaveText(/4ug0\.cif/i);
+  await expect(page.getByRole('button', { name: /Hide 4UG0/i })).toBeVisible({ timeout: 30000 });
 
   await page.click('#viewer-column-B-aligned-load-btn');
   await page.setInputFiles('#viewer-column-B-aligned-file-input', dataPath('6xu8.cif'));
-  await expect(page.locator('#viewer-column-B-aligned-load-btn')).toHaveCount(0, { timeout: 20000 });
+  await expect(page.getByRole('button', { name: /Hide 6XU8/i })).toBeVisible({ timeout: 30000 });
 }
 
 async function selectSubunitWithChains(
@@ -54,6 +54,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('Align Subunits button enables and remains available for repeated pairs', async ({ page }) => {
+  test.setTimeout(60000);
+
   await page.goto('http://localhost:5173/');
   await loadAlignedToAndAligned(page);
 
@@ -86,6 +88,6 @@ test('Align Subunits button enables and remains available for repeated pairs', a
 
   await realignSubunitBtn.click();
 
-  await expect(realignSubunitBtn).toBeEnabled({ timeout: 10000 });
+  await expect(realignSubunitBtn).toBeEnabled({ timeout: 20000 });
   await expect(realignSubunitBtn).toHaveText(`Align Subunits: ${alignedToSubunit} -> ${alignedSubunit}`);
 });

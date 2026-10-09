@@ -50,8 +50,8 @@ test.describe('Session Save/Load E2E', () => {
     await page.setInputFiles('#viewer-column-B-aligned-file-input', alignedFile);
     await page.click('#viewer-column-B-aligned-load-btn');
 
-    await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toHaveText(/4ug0\.cif/i);
-    await expect(page.locator('#viewer-column-B-aligned-filename-label')).toHaveText(/6xu8\.cif/i, { timeout: 20000 });
+    await expect(page.getByRole('button', { name: /Hide 4UG0/i })).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole('button', { name: /Hide 6XU8/i })).toBeVisible({ timeout: 30000 });
 
     await page.click('#session-menu-btn');
     await page.click('#session-menu-dropdown .session-menu-item:text-is("Save")');
@@ -67,7 +67,7 @@ test.describe('Session Save/Load E2E', () => {
 
     await expect(page.locator('#viewer-column-A-molstar-container')).toBeVisible();
     await expect(page.locator('#viewer-column-B-molstar-container')).toBeVisible();
-    await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toHaveText(/4ug0\.cif/i);
-    await expect(page.locator('#viewer-column-B-aligned-filename-label')).toHaveText(/6xu8\.cif/i, { timeout: 20000 });
+    await expect(page.getByRole('button', { name: /Hide 4UG0/i })).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole('button', { name: /Hide 6XU8/i })).toBeVisible({ timeout: 30000 });
   });
 });

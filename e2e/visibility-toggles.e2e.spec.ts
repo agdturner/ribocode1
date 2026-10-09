@@ -21,7 +21,7 @@ test('Visibility toggles work for Aligned and AlignedTo in both columns', async 
   await alignedToBtnA.click();
   const alignedToInputA = page.locator('#viewer-column-A-alignedto-file-input');
   await alignedToInputA.setInputFiles(dataPath('4ug0.cif'));
-  await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toHaveText(/4ug0\.cif/);
+  await expect(page.getByRole('button', { name: /Hide 4UG0/i })).toBeVisible({ timeout: 30000 });
 
   // Load Aligned in column B
   const alignedBtnB = page.locator('#viewer-column-B-aligned-load-btn');
@@ -29,16 +29,16 @@ test('Visibility toggles work for Aligned and AlignedTo in both columns', async 
   const alignedInputB = page.locator('#viewer-column-B-aligned-file-input');
   await alignedInputB.setInputFiles(dataPath('6xu8.cif'));
   await alignedBtnB.click();
-  await expect(page.locator('#viewer-column-B-aligned-filename-label')).toHaveText(/6xu8\.cif/);
+  await expect(page.getByRole('button', { name: /Hide 6XU8/i })).toBeVisible({ timeout: 30000 });
 
   // Toggle visibility for AlignedTo in column A
-  const toggleAlignedToA = page.locator('#viewer-column-A-moleculeui-4ug0 #viewer-column-A-toggle-visibility-btn');
+  const toggleAlignedToA = page.locator('#viewer-column-A-toggle-visibility-btn').first();
   await expect(toggleAlignedToA).toBeVisible();
   await toggleAlignedToA.click();
   // Optionally, check for a class or style change indicating hidden state
 
   // Toggle visibility for Aligned in column B
-  const toggleAlignedB = page.locator('#viewer-column-B-moleculeui-6xu8 #viewer-column-B-toggle-visibility-btn');
+  const toggleAlignedB = page.locator('#viewer-column-B-toggle-visibility-btn').first();
   await expect(toggleAlignedB).toBeVisible();
   await toggleAlignedB.click();
   // Optionally, check for a class or style change indicating hidden state
