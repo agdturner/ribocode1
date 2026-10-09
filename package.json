@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "start": "vite",
     "dev": "DOTENV_CONFIG_PATH=.env vite",
-    "build": "DOTENV_CONFIG_PATH=.env.production vite build && npm run postbuild",
+    "build": "npm run docs && DOTENV_CONFIG_PATH=.env.production vite build && npm run postbuild",
     "postbuild": "cp -r docs dist/docs",
     "serve": "vite preview",
     "predeploy": "npm run build",

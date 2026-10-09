@@ -97,6 +97,7 @@ From the Ribocode root directory:
 
 * `npm run build`
   - Builds the app for production using settings from `.env.production` (base path is `/ribocode1/`).
+  - Regenerates TypeDoc output first (`npm run docs`) to ensure deployed docs stay in sync with source.
   - Output is placed in the `dist/` directory.
 * `npm run preview`
   - Serves the production build locally for testing (simulates deployment).
@@ -114,6 +115,7 @@ From the Ribocode root directory:
 
 * `npm run deploy`
   - Builds and deploys the app to the `gh-pages` branch for GitHub Pages.
+  - Includes the current docs by copying `docs/` to `dist/docs` during build.
   - The app will be available at `https://<username>.github.io/ribocode1/`.
 
 
