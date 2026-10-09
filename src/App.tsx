@@ -1815,10 +1815,10 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     useEffect(() => {
         if (!viewerAReady) return;
         const plugin = viewerA.ref.current;
-        const subscribe = plugin?.canvas3d?.camera?.stateChanged?.subscribe;
-        if (typeof subscribe !== 'function') return;
+        const stateChanged = plugin?.canvas3d?.camera?.stateChanged;
+        if (!stateChanged || typeof stateChanged.subscribe !== 'function') return;
 
-        const subscription = subscribe(() => {
+        const subscription = stateChanged.subscribe(() => {
             if (clippingSyncTimerARef.current) {
                 clearTimeout(clippingSyncTimerARef.current);
             }
@@ -1840,10 +1840,10 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     useEffect(() => {
         if (!viewerBReady) return;
         const plugin = viewerB.ref.current;
-        const subscribe = plugin?.canvas3d?.camera?.stateChanged?.subscribe;
-        if (typeof subscribe !== 'function') return;
+        const stateChanged = plugin?.canvas3d?.camera?.stateChanged;
+        if (!stateChanged || typeof stateChanged.subscribe !== 'function') return;
 
-        const subscription = subscribe(() => {
+        const subscription = stateChanged.subscribe(() => {
             if (clippingSyncTimerBRef.current) {
                 clearTimeout(clippingSyncTimerBRef.current);
             }
