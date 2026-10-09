@@ -212,6 +212,19 @@
 	display: block;
 }
 
+/* Keep a stable space for Mol* hover/selection info to avoid control layout jumps. */
+.molstar-container-root .msp-viewport {
+	position: relative;
+}
+
+.molstar-container-root .msp-highlight-toast-wrapper {
+	min-height: 48px;
+}
+
+.molstar-container-root .msp-highlight-info {
+	min-height: 40px;
+}
+
 /* =========================
  * 3. Mol* plugin root and stacking
  * ========================= */
