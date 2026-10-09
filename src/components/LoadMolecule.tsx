@@ -664,7 +664,10 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     testMode,
     showSelectZoomControls = true,
     idPrefix
-}) => (
+}) => {
+    const [showRepresentationControls, setShowRepresentationControls] = React.useState(false);
+
+    return (
 
     <div className="load-data-row" id={idPrefix ? `${idPrefix}-${idSuffix}` : idSuffix}>
         <div className="viewer-title">{viewerTitle}</div>
@@ -699,6 +702,18 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
             </div>
         )}
         <div className="load-data-controls">
+            <div className="load-data-control-row">
+                <button
+                    type="button"
+                    className="msp-btn msp-form-control"
+                    id={`${idPrefix}-representation-controls-toggle-btn`}
+                    aria-label={showRepresentationControls ? 'Hide Representation Controls' : 'Show Representation Controls'}
+                    onClick={() => setShowRepresentationControls(prev => !prev)}
+                >
+                    {showRepresentationControls ? 'Hide Representation Controls' : 'Show Representation Controls'}
+                </button>
+            </div>
+            {showRepresentationControls && (
             <div className="load-data-control-row">
                 {representationTypeSelector ? (
                     <span className="rep-type-controls">
@@ -741,6 +756,8 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                     </span>
                 )}
             </div>
+            )}
+            {showRepresentationControls && (
             <div className="load-data-control-row">
                 {colorThemeOptions && colorThemeOptions.length > 0 ? (
                     <>
@@ -799,6 +816,7 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                     id={`${idPrefix}-colours-file-input`}
                 />
             </div>
+            )}
             {showSelectZoomControls && (
                     <SelectZoomControls
                         subunitToChainIds={subunitToChainIds}
@@ -917,6 +935,7 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
         */}
     </div>
 );
+};
 
 interface LoadDataRowProps {
     viewerTitle: string;

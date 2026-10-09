@@ -395,11 +395,15 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     const alignedToInput = document.getElementById('viewer-column-A-alignedto-file-input') as HTMLInputElement | null;
     const alignedInput = document.getElementById('viewer-column-B-aligned-file-input') as HTMLInputElement | null;
     const alignedLoadBtn = document.getElementById('viewer-column-B-aligned-load-btn') as HTMLButtonElement | null;
-    const alignedColoursBtn = document.getElementById('viewer-column-B-aligned-load-colours-btn') as HTMLButtonElement | null;
+    const alignedRepControlsToggle = document.getElementById('viewer-column-B-aligned-representation-controls-toggle-btn') as HTMLButtonElement | null;
 
     expect(alignedToInput).toBeInTheDocument();
     expect(alignedInput).toBeInTheDocument();
     expect(alignedLoadBtn).toBeInTheDocument();
+    expect(alignedRepControlsToggle).toBeInTheDocument();
+    fireEvent.click(alignedRepControlsToggle!);
+
+    const alignedColoursBtn = document.getElementById('viewer-column-B-aligned-load-colours-btn') as HTMLButtonElement | null;
     expect(alignedColoursBtn).toBeInTheDocument();
     expect(alignedColoursBtn).toBeDisabled();
 
@@ -454,6 +458,7 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     expect(alignedToInput).toBeInTheDocument();
 
     fireEvent.change(alignedToInput!, { target: { files: [loadTestFile('4ug0.cif')] } });
+    fireEvent.click(document.getElementById('viewer-column-A-alignedto-representation-controls-toggle-btn') as HTMLButtonElement);
 
     await waitFor(() => {
       expect(document.getElementById('viewer-column-A-alignedto-add-representation-btn')).not.toBeDisabled();
@@ -899,6 +904,7 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     fireEvent.click(document.getElementById('viewer-column-B-aligned-residue-controls-toggle-btn') as HTMLButtonElement);
     fireEvent.click(document.getElementById('viewer-column-A-clipping-controls-toggle-btn') as HTMLButtonElement);
     fireEvent.click(document.getElementById('viewer-column-B-clipping-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-A-alignedto-representation-controls-toggle-btn') as HTMLButtonElement);
 
     await waitFor(() => {
       expect((document.getElementById('viewer-column-A-alignedto-zoom-extra-radius') as HTMLInputElement).value).toBe('31');

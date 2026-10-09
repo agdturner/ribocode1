@@ -131,6 +131,7 @@ describe('LoadDataRow', () => {
 
     it('calls onAddColorsClick when Load Colours is clicked', () => {
         render(<LoadDataRow {...baseProps} isLoaded={true} />);
+        fireEvent.click(screen.getByText('Show Representation Controls'));
         fireEvent.click(screen.getByText('Load Colours'));
         expect(baseProps.onAddColorsClick).toHaveBeenCalled();
     });
@@ -150,6 +151,8 @@ describe('LoadDataRow', () => {
                 removeColorThemeDisabled={true}
             />
         );
+
+        fireEvent.click(screen.getByText('Show Representation Controls'));
 
         const select = document.getElementById('test-viewer-a-colour-theme-select') as HTMLSelectElement;
         expect(select).toBeInTheDocument();
@@ -176,6 +179,8 @@ describe('LoadDataRow', () => {
             />
         );
 
+        fireEvent.click(screen.getByText('Show Representation Controls'));
+
         const removeButton = document.getElementById('test-viewer-a-remove-colour-theme-btn') as HTMLButtonElement;
         expect(removeButton).toBeInTheDocument();
         expect(removeButton.disabled).toBe(false);
@@ -185,6 +190,7 @@ describe('LoadDataRow', () => {
 
     it('calls onAddRepresentationClick when + is clicked', () => {
         render(<LoadDataRow {...baseProps} isLoaded={true} />);
+        fireEvent.click(screen.getByText('Show Representation Controls'));
         fireEvent.click(screen.getByLabelText('Add Representation'));
         expect(baseProps.onAddRepresentationClick).toHaveBeenCalled();
     });
@@ -200,14 +206,17 @@ describe('LoadDataRow', () => {
         const subunitToggleIndex = findRowIndex('Show Subunit Controls');
         const chainToggleIndex = findRowIndex('Show Chain Controls');
         const residueToggleIndex = findRowIndex('Show Residue Controls');
-        const loadColoursIndex = findRowIndex('Load Colours');
-        const representationIndex = findRowIndex('Representation:');
+        const repControlsToggleIndex = findRowIndex('Show Representation Controls');
 
-        expect(representationIndex).toBeGreaterThanOrEqual(0);
-        expect(loadColoursIndex).toBeGreaterThan(representationIndex);
-        expect(subunitToggleIndex).toBeGreaterThan(representationIndex);
+        expect(repControlsToggleIndex).toBeGreaterThanOrEqual(0);
+        expect(subunitToggleIndex).toBeGreaterThan(repControlsToggleIndex);
         expect(chainToggleIndex).toBeGreaterThan(subunitToggleIndex);
         expect(residueToggleIndex).toBeGreaterThan(chainToggleIndex);
+
+        fireEvent.click(screen.getByText('Show Representation Controls'));
+        expect(screen.getByText('Hide Representation Controls')).toBeInTheDocument();
+        expect(screen.getByText('Load Colours')).toBeInTheDocument();
+        expect(screen.getByLabelText('Add Representation')).toBeInTheDocument();
 
         unmount();
 
@@ -235,8 +244,9 @@ describe('LoadDataRow', () => {
         expect(queryByText('Zoom')).not.toBeInTheDocument();
         expect(queryByText('Select Residues')).not.toBeInTheDocument();
         expect(document.getElementById('test-viewer-a-zoom-residue-btn')).toBeNull();
-        expect(queryByText('Load Colours')).toBeInTheDocument();
-        expect(queryByText(/Representation:/)).toBeInTheDocument();
+        expect(queryByText('Show Representation Controls')).toBeInTheDocument();
+        expect(queryByText('Load Colours')).not.toBeInTheDocument();
+        expect(queryByText(/Representation:/)).not.toBeInTheDocument();
     });
 
     it('calls subunit/chain/residue basic highlight, inspect, and zoom handlers when buttons are clicked', () => {
