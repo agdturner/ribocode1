@@ -107,6 +107,8 @@ From the Ribocode root directory:
 - `.env` is used for local development (base path `/`).
 - `.env.production` is used for production builds (base path `/ribocode1/`).
 - The correct environment file is automatically picked up by the npm scripts.
+- Runtime browser code must use Vite environment access (`import.meta.env.*`) rather than CRA-style `process.env.*`.
+- Service worker registration paths should be derived from `import.meta.env.BASE_URL` to avoid incorrect URLs on GitHub Pages subpaths.
 
 #### Deployment
 
