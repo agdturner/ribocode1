@@ -1666,6 +1666,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const [clippingDefaultsB, setClippingDefaultsB] = useState(DEFAULT_CLIPPING);
     const clippingAInitializedRef = useRef(false);
     const clippingBInitializedRef = useRef(false);
+    const clippingSyncTimerARef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const clippingSyncTimerBRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     
     // Per-viewer residue zoom options
     const [zoomExtraRadiusA, setZoomExtraRadiusA] = useState(0);
@@ -1785,6 +1787,80 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         setTimeout(capture, 32);
         setTimeout(capture, 96);
     }, [viewerA.ref, viewerB.ref, setClippingA, setClippingB, setClippingDefaultsA, setClippingDefaultsB]);
+
+    const syncClippingFromMolstarCameraEvent = useCallback((viewerKey: ViewerKey) => {
+        const applyIfChanged = (
+            next: { minNear: number; clipRadius: number },
+            setClipping: React.Dispatch<React.SetStateAction<{ minNear: number; clipRadius: number }>>,
+            setClippingDefaults: React.Dispatch<React.SetStateAction<{ minNear: number; clipRadius: number }>>
+        ) => {
+            const hasChanged = (prev: { minNear: number; clipRadius: number }) =>
+                Math.abs(prev.minNear - next.minNear) > 1e-6 || Math.abs(prev.clipRadius - next.clipRadius) > 1e-6;
+
+            setClipping(prev => (hasChanged(prev) ? next : prev));
+            setClippingDefaults(prev => (hasChanged(prev) ? next : prev));
+        };
+
+        const plugin = viewerKey === A ? viewerA.ref.current : viewerB.ref.current;
+        if (!plugin?.canvas3d) return;
+
+        const clippingFromMolstar = readClippingFromViewer(plugin);
+        if (viewerKey === A) {
+            applyIfChanged(clippingFromMolstar, setClippingA, setClippingDefaultsA);
+        } else {
+            applyIfChanged(clippingFromMolstar, setClippingB, setClippingDefaultsB);
+        }
+    }, [viewerA.ref, viewerB.ref]);
+
+    useEffect(() => {
+        if (!viewerAReady) return;
+        const plugin = viewerA.ref.current;
+        const subscribe = plugin?.canvas3d?.camera?.stateChanged?.subscribe;
+        if (typeof subscribe !== 'function') return;
+
+        const subscription = subscribe(() => {
+            if (clippingSyncTimerARef.current) {
+                clearTimeout(clippingSyncTimerARef.current);
+            }
+            clippingSyncTimerARef.current = setTimeout(() => {
+                clippingSyncTimerARef.current = null;
+                syncClippingFromMolstarCameraEvent(A);
+            }, 0);
+        });
+
+        return () => {
+            if (clippingSyncTimerARef.current) {
+                clearTimeout(clippingSyncTimerARef.current);
+                clippingSyncTimerARef.current = null;
+            }
+            subscription?.unsubscribe?.();
+        };
+    }, [viewerAReady, syncClippingFromMolstarCameraEvent, viewerA.ref]);
+
+    useEffect(() => {
+        if (!viewerBReady) return;
+        const plugin = viewerB.ref.current;
+        const subscribe = plugin?.canvas3d?.camera?.stateChanged?.subscribe;
+        if (typeof subscribe !== 'function') return;
+
+        const subscription = subscribe(() => {
+            if (clippingSyncTimerBRef.current) {
+                clearTimeout(clippingSyncTimerBRef.current);
+            }
+            clippingSyncTimerBRef.current = setTimeout(() => {
+                clippingSyncTimerBRef.current = null;
+                syncClippingFromMolstarCameraEvent(B);
+            }, 0);
+        });
+
+        return () => {
+            if (clippingSyncTimerBRef.current) {
+                clearTimeout(clippingSyncTimerBRef.current);
+                clippingSyncTimerBRef.current = null;
+            }
+            subscription?.unsubscribe?.();
+        };
+    }, [viewerBReady, syncClippingFromMolstarCameraEvent, viewerB.ref]);
 
     // Toggle visibility for moleculeAlignedTo in viewer A.
     const toggleViewerAAlignedTo = {

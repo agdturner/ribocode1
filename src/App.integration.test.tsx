@@ -599,6 +599,30 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     }));
   });
 
+  it('updates clipping controls after Mol* camera zoom events', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(document.getElementById('viewer-column-A-clipping-controls-toggle-btn')).toBeInTheDocument();
+    }, { timeout: 5000 });
+
+    fireEvent.click(document.getElementById('viewer-column-A-clipping-controls-toggle-btn') as HTMLButtonElement);
+
+    const pluginA = (globalThis as any).__mockPluginA;
+    pluginA.canvas3d.props.cameraClipping = {
+      ...(pluginA.canvas3d.props.cameraClipping || {}),
+      minNear: 0.72,
+      radius: 61,
+    };
+
+    pluginA.canvas3d.camera.emit({ radius: 21 });
+
+    await waitFor(() => {
+      expect((document.getElementById('viewer-column-A-alignedto-clip-near-number') as HTMLInputElement).value).toBe('0.72');
+      expect((document.getElementById('viewer-column-A-alignedto-clip-far-number') as HTMLInputElement).value).toBe('61');
+    }, { timeout: 5000 });
+  });
+
   let loadMoleculeFileToViewerMock: any;
   beforeAll(() => {
     Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
