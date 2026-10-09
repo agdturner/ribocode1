@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/ribocode1/service-worker.js', { scope: '/ribocode1/' })})}
