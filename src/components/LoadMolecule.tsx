@@ -705,7 +705,7 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
             <div className="load-data-control-row">
                 <button
                     type="button"
-                    className="msp-btn msp-form-control"
+                    className="molstar-file-btn molstar-advanced-controls-toggle"
                     id={`${idPrefix}-representation-controls-toggle-btn`}
                     aria-label={showRepresentationControls ? 'Hide Representation Controls' : 'Show Representation Controls'}
                     onClick={() => setShowRepresentationControls(prev => !prev)}

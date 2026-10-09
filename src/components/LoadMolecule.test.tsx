@@ -95,6 +95,10 @@ describe('LoadDataRow', () => {
         expect(root).toBeInTheDocument();
         expect(screen.getByText('Viewer A')).toBeInTheDocument();
         expect(screen.getByText('Load AlignedTo')).toBeInTheDocument();
+        const representationToggle = document.getElementById('test-viewer-a-representation-controls-toggle-btn');
+        expect(representationToggle).toBeInTheDocument();
+        expect(representationToggle).toHaveClass('molstar-file-btn');
+        expect(representationToggle).toHaveClass('molstar-advanced-controls-toggle');
     });
 
     it('calls onFileInputClick when file input button is clicked', () => {

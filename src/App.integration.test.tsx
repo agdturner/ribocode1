@@ -905,6 +905,7 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     fireEvent.click(document.getElementById('viewer-column-A-clipping-controls-toggle-btn') as HTMLButtonElement);
     fireEvent.click(document.getElementById('viewer-column-B-clipping-controls-toggle-btn') as HTMLButtonElement);
     fireEvent.click(document.getElementById('viewer-column-A-alignedto-representation-controls-toggle-btn') as HTMLButtonElement);
+    fireEvent.click(document.getElementById('viewer-column-B-aligned-representation-controls-toggle-btn') as HTMLButtonElement);
 
     await waitFor(() => {
       expect((document.getElementById('viewer-column-A-alignedto-zoom-extra-radius') as HTMLInputElement).value).toBe('31');
@@ -920,6 +921,7 @@ describe('App integration: AlignedTo and Aligned loading', () => {
       expect(document.getElementById('viewer-column-B-aligned-show-uniprot-accession')).toHaveAttribute('aria-pressed', 'false');
       expect((document.getElementById('viewer-column-A-alignedto-colour-theme-select') as HTMLSelectElement).value).toBe('AlignedTo-custom-theme-test');
       expect(document.querySelector('#viewer-column-A-alignedto-colour-theme-select option[value="AlignedTo-custom-theme-test"]')).toBeInTheDocument();
+      expect(document.querySelector('#viewer-column-B-aligned-colour-theme-select option[value="AlignedTo-custom-theme-test"]')).toBeInTheDocument();
     }, { timeout: 5000 });
 
     const getSessionState = (globalThis as any).__getSessionState as (() => any) | undefined;
