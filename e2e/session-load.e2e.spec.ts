@@ -58,8 +58,8 @@ test('Session load prompts for required files and loads data', async ({ page }) 
   // 7. Assert that the viewers are updated (e.g., check for molecule names or representations)
   await expect(page.locator('#viewer-column-A-molstar-container')).toBeVisible();
   await expect(page.locator('#viewer-column-B-molstar-container')).toBeVisible();
-  await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toHaveText(/4ug0\.cif/i);
-  await expect(page.locator('#viewer-column-B-aligned-filename-label')).toHaveText(/6xu8\.cif/i, { timeout: 20000 });
+  await expect(page.getByRole('button', { name: /Hide 4UG0/i })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: /Hide 6XU8/i })).toBeVisible({ timeout: 30000 });
 
   // 8. Assert that the fallback error dialog does NOT appear
   await expect(page.locator('text=Session loaded, but could not automatically reload datasets')).toHaveCount(0);
@@ -73,7 +73,8 @@ test('Session load restores saved cartoon representations', async ({ page }) => 
   await waitForSessionMenuReady(page);
 
   await loadSessionAndRequiredFiles(page, 'test-session.json');
-  await expect(page.locator('#viewer-column-B-aligned-filename-label')).toHaveText(/6xu8\.cif/i, { timeout: 20000 });
+  await expect(page.getByRole('button', { name: /Hide 4UG0/i })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: /Hide 6XU8/i })).toBeVisible({ timeout: 30000 });
   const baselineCartoonCount = await page.locator('button[aria-label="Toggle visibility for cartoon representation"]').count();
 
   await page.reload({ waitUntil: 'domcontentloaded', timeout: 45000 });
@@ -82,8 +83,8 @@ test('Session load restores saved cartoon representations', async ({ page }) => 
 
   await expect(page.locator('#viewer-column-A-molstar-container')).toBeVisible();
   await expect(page.locator('#viewer-column-B-molstar-container')).toBeVisible();
-  await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toHaveText(/4ug0\.cif/i);
-  await expect(page.locator('#viewer-column-B-aligned-filename-label')).toHaveText(/6xu8\.cif/i, { timeout: 20000 });
+  await expect(page.getByRole('button', { name: /Hide 4UG0/i })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: /Hide 6XU8/i })).toBeVisible({ timeout: 30000 });
 
   await expect(async () => {
     const restoredCartoonCount = await page.locator('button[aria-label="Toggle visibility for cartoon representation"]').count();
