@@ -1,3 +1,12 @@
+## [v0.14.0] - 2026-10-09
+Release summary: this minor release introduces a per-mode colour theme manager so users can keep multiple loaded themes available, choose the active theme for new representations, and safely manage theme lifecycle.
+- Added a new `Colour Theme` selector for each load panel, with options for the default theme plus all loaded themes for that mode (`AlignedTo`/`Aligned`).
+- Updated `Load Colours` behavior so each uploaded theme is added to a persistent in-session selection list instead of replacing the only available custom theme.
+- Added `Remove Theme` support with guardrails: `Default` cannot be removed, and in-use themes are protected from removal until representations using them are switched.
+- Updated representation creation so new representations always use the currently selected colour theme for the active mode.
+- Extended session `uiState` save/load to persist and restore loaded colour themes (including parsed rows) and per-mode selected theme.
+- Added regression coverage for colour-theme selector interactions, remove-theme behavior, selected-theme application during representation add, and session round-tripping.
+
 ## [v0.13.0] - 2026-10-08
 Release summary: this minor release standardizes `Select and Zoom` control UX across subunit/chain/residue flows, clarifies chain-label controls, and improves selector/test stability.
 - Updated `Re-align` to chains so sync is temporarily disabled while realignment runs, then restored to its prior enabled state.

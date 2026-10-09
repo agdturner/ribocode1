@@ -135,6 +135,54 @@ describe('LoadDataRow', () => {
         expect(baseProps.onAddColorsClick).toHaveBeenCalled();
     });
 
+    it('renders colour theme selector and notifies selection changes', () => {
+        const onSelectedColorThemeNameChange = vi.fn();
+        render(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                colorThemeOptions={[
+                    { value: 'default', label: 'Default' },
+                    { value: 'aligned-custom-1', label: 'Custom 1' },
+                ]}
+                selectedColorThemeName="default"
+                onSelectedColorThemeNameChange={onSelectedColorThemeNameChange}
+                removeColorThemeDisabled={true}
+            />
+        );
+
+        const select = document.getElementById('test-viewer-a-colour-theme-select') as HTMLSelectElement;
+        expect(select).toBeInTheDocument();
+        expect(select.value).toBe('default');
+
+        fireEvent.change(select, { target: { value: 'aligned-custom-1' } });
+        expect(onSelectedColorThemeNameChange).toHaveBeenCalledWith('aligned-custom-1');
+    });
+
+    it('calls onRemoveColorTheme when remove theme button is clicked', () => {
+        const onRemoveColorTheme = vi.fn();
+        render(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                colorThemeOptions={[
+                    { value: 'default', label: 'Default' },
+                    { value: 'aligned-custom-1', label: 'Custom 1' },
+                ]}
+                selectedColorThemeName="aligned-custom-1"
+                onSelectedColorThemeNameChange={vi.fn()}
+                onRemoveColorTheme={onRemoveColorTheme}
+                removeColorThemeDisabled={false}
+            />
+        );
+
+        const removeButton = document.getElementById('test-viewer-a-remove-colour-theme-btn') as HTMLButtonElement;
+        expect(removeButton).toBeInTheDocument();
+        expect(removeButton.disabled).toBe(false);
+        fireEvent.click(removeButton);
+        expect(onRemoveColorTheme).toHaveBeenCalled();
+    });
+
     it('calls onAddRepresentationClick when + is clicked', () => {
         render(<LoadDataRow {...baseProps} isLoaded={true} />);
         fireEvent.click(screen.getByLabelText('Add Representation'));

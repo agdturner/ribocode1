@@ -592,6 +592,131 @@ describe('ViewerColumn', () => {
         );
     });
 
+    it('uses selected colour theme for new representations', () => {
+        const addRepresentationA = vi.fn();
+        const addRepresentationB = vi.fn();
+        const viewer = {
+            key: 'A',
+            moleculeAligned: { filename: '6xu8.cif' },
+            moleculeAlignedTo: null,
+            isMoleculeAlignedVisible: true,
+            isMoleculeAlignedToVisible: true,
+            handleFileInputButtonClick: vi.fn(),
+            fileInputRef: { current: null },
+            ref: { current: null },
+        } as any;
+        const otherViewer = {
+            key: 'B',
+            moleculeAligned: { filename: '6xu8.cif' },
+            moleculeAlignedTo: null,
+            isMoleculeAlignedVisible: true,
+            isMoleculeAlignedToVisible: true,
+            handleFileInputButtonClick: vi.fn(),
+            fileInputRef: { current: null },
+            ref: { current: null },
+        } as any;
+
+        const props = getLoadDataRowProps({
+            viewer,
+            otherViewer,
+            molstar: {
+                addRepresentation: addRepresentationA,
+                representationRefs: {},
+                repIdMap: {},
+                pluginRef: { current: null },
+            },
+            otherMolstar: {
+                addRepresentation: addRepresentationB,
+                representationRefs: {},
+                repIdMap: {},
+                pluginRef: { current: null },
+            },
+            realignedStructRefs: {},
+            otherRealignedStructRefs: {},
+            isMoleculeAlignedLoaded: true,
+            isMoleculeAlignedToLoaded: true,
+            viewerReady: true,
+            otherViewerReady: true,
+            representationType: 'spacefill',
+            setRepresentationType: vi.fn(),
+            colorsFile: { handleButtonClick: vi.fn(), inputRef: { current: null }, handleFileChange: vi.fn() },
+            isMoleculeColoursLoaded: true,
+            colorThemeOptions: [
+                { value: 'default', label: 'Default' },
+                { value: 'Aligned-custom-chain-colors-1', label: 'Custom 1' },
+            ],
+            selectedColorThemeName: 'Aligned-custom-chain-colors-1',
+            setSelectedColorThemeName: vi.fn(),
+            onRemoveColorTheme: vi.fn(),
+            removeColorThemeDisabled: false,
+            structureRef: 'ref-a',
+            otherStructureRef: 'ref-b',
+            selectedSubunit: 'All',
+            setSelectedSubunit: vi.fn(),
+            subunitZoomLabel: 'All',
+            onSubunitHighlight: vi.fn(),
+            subunitHighlightOn: false,
+            subunitHighlightDisabled: false,
+            onSubunitInspect: vi.fn(),
+            subunitInspectOn: false,
+            subunitInspectDisabled: false,
+            onSubunitZoom: vi.fn(),
+            subunitZoomDisabled: false,
+            subunitToChainIds: new Map(),
+            chainInfo: { chainLabels: new Map([['A', 'Chain A']]) },
+            selectedChainId: 'A',
+            setSelectedChainId: vi.fn(),
+            chainZoomLabel: 'Chain A',
+            onChainHighlight: vi.fn(),
+            chainHighlightOn: false,
+            chainHighlightDisabled: false,
+            onChainInspect: vi.fn(),
+            chainInspectOn: false,
+            chainInspectDisabled: false,
+            onChainZoom: vi.fn(),
+            chainZoomDisabled: false,
+            residueInfo: { residueLabels: new Map(), residueToAtomIds: {} },
+            selectedResidueIds: [],
+            setSelectedResidueIds: vi.fn(),
+            residueZoomLabel: '',
+            onResidueHighlight: vi.fn(),
+            residueHighlightOn: false,
+            residueHighlightDisabled: true,
+            onResidueInspect: vi.fn(),
+            residueInspectOn: false,
+            residueInspectDisabled: true,
+            onResidueZoom: vi.fn(),
+            residueZoomDisabled: true,
+            zoomExtraRadius: 0,
+            setZoomExtraRadius: vi.fn(),
+            zoomMinRadius: 0,
+            setZoomMinRadius: vi.fn(),
+            fog: { enabled: false, near: 0, far: 100 },
+            setFog: { setEnabled: vi.fn(), setNear: vi.fn(), setFar: vi.fn() },
+            clipping: { minNear: 1, clipRadius: 100 },
+            setClipping: { setMinNear: vi.fn(), setClipRadius: vi.fn() },
+            updateFog: vi.fn(),
+            handleFileChange: vi.fn(),
+            Aligned: 'Aligned',
+            allowedRepresentationTypes: ['spacefill'] as any,
+            syncEnabled: false,
+            realignedRepRefs: {},
+            setRealignedRepRefs: vi.fn(),
+            setRealignedStructRefs: vi.fn(),
+        });
+
+        props.onAddRepresentationClick();
+
+        expect(addRepresentationA).toHaveBeenCalledWith(
+            'Aligned',
+            'ref-a',
+            'spacefill',
+            { name: 'Aligned-custom-chain-colors-1', params: {} },
+            expect.any(String),
+            true
+        );
+    });
+
     it('resets clipping to per-viewer defaults from getLoadDataRowProps', () => {
         const setMinNear = vi.fn();
         const setClipRadius = vi.fn();

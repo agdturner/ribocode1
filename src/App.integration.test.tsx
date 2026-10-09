@@ -807,6 +807,16 @@ describe('App integration: AlignedTo and Aligned loading', () => {
       subunit: 'Small',
     }));
     expect(session.uiState.chainFinderQueries).toEqual({ alignedTo: '', aligned: '' });
+    expect(session.uiState.colorThemesByMode).toEqual({
+      alignedTo: {
+        selectedThemeName: 'default',
+        themes: [],
+      },
+      aligned: {
+        selectedThemeName: 'default',
+        themes: [],
+      },
+    });
     expect(session.uiState.cameraSnapshots.viewerA).toEqual(expect.objectContaining({ radius: 10 }));
     expect(session.uiState.cameraSnapshots.viewerB).toEqual(expect.objectContaining({ radius: 10 }));
   });
@@ -835,6 +845,25 @@ describe('App integration: AlignedTo and Aligned loading', () => {
         chainFinderQueries: {
           alignedTo: 'auth CU',
           aligned: 'L22-like',
+        },
+        colorThemesByMode: {
+          alignedTo: {
+            selectedThemeName: 'AlignedTo-custom-theme-test',
+            themes: [
+              {
+                value: 'AlignedTo-custom-theme-test',
+                label: 'AlignedTo test theme',
+                rows: [
+                  { pdb_chain: 'A', color: '#ff0000' },
+                  { pdb_chain: 'B', color: '#00ff00' },
+                ],
+              },
+            ],
+          },
+          aligned: {
+            selectedThemeName: 'default',
+            themes: [],
+          },
         },
         selections: {
           alignedTo: { subunit: 'Large', chainId: 'A', residueId: '10' },
@@ -883,6 +912,8 @@ describe('App integration: AlignedTo and Aligned loading', () => {
       expect(document.getElementById('generalcontrols-sync-select')).toHaveTextContent('Sync: On');
       expect(document.getElementById('viewer-column-A-alignedto-show-uniprot-accession')).toHaveAttribute('aria-pressed', 'false');
       expect(document.getElementById('viewer-column-B-aligned-show-uniprot-accession')).toHaveAttribute('aria-pressed', 'false');
+      expect((document.getElementById('viewer-column-A-alignedto-colour-theme-select') as HTMLSelectElement).value).toBe('AlignedTo-custom-theme-test');
+      expect(document.querySelector('#viewer-column-A-alignedto-colour-theme-select option[value="AlignedTo-custom-theme-test"]')).toBeInTheDocument();
     }, { timeout: 5000 });
 
     const getSessionState = (globalThis as any).__getSessionState as (() => any) | undefined;
@@ -892,6 +923,13 @@ describe('App integration: AlignedTo and Aligned loading', () => {
       alignedTo: 'auth CU',
       aligned: 'L22-like',
     });
+    expect(restoredSession.uiState.colorThemesByMode.alignedTo.selectedThemeName).toBe('AlignedTo-custom-theme-test');
+    expect(restoredSession.uiState.colorThemesByMode.alignedTo.themes).toEqual([
+      expect.objectContaining({
+        value: 'AlignedTo-custom-theme-test',
+        label: 'AlignedTo test theme',
+      })
+    ]);
 
     expect(pluginA.canvas3d.camera.setState).toHaveBeenCalledWith(expect.objectContaining({
       position: [10, 11, 12],

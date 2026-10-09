@@ -21,7 +21,6 @@ import { useSessionSaveAll } from './hooks/useSessionSaveAll';
 import { useSessionLoadModal } from './hooks/useSessionLoadModal';
 import { useUpdateChainInfo } from './hooks/useUpdateChainInfo';
 import { useUpdateResidueInfo } from './hooks/useUpdateResidueInfo';
-import { useUpdateColors } from './hooks/useUpdateColors';
 import { PluginCommands as MolPluginCommands } from 'molstar/lib/mol-plugin/commands';
 import ViewerColumn , {
     getLoadDataRowProps,
@@ -33,7 +32,7 @@ import ViewerColumn , {
 import TwoColumnsContainer from './components/TwoColumnsContainer';
 import AppHeader from './components/AppHeader';
 import { AlignedTo, Aligned, ReAligned } from './constants/ribocode';
-import { parseColorFileContent } from './utils/colors';
+import { parseColorFileContent, registerThemeIfNeeded } from './utils/colors';
 import { useFileInput } from './hooks/useFileInput';
 import { useChainState } from './hooks/useChainState';
 import { getAtomDataFromStructureUnits, summarizeAtomCloud } from './utils/data';
@@ -139,7 +138,31 @@ interface SessionUiState {
         alignedTo?: string;
         aligned?: string;
     };
+    colorThemesByMode?: {
+        alignedTo?: {
+            selectedThemeName?: string;
+            themes?: Array<{ value: string; label: string; rows: Array<Record<string, string>> }>;
+        };
+        aligned?: {
+            selectedThemeName?: string;
+            themes?: Array<{ value: string; label: string; rows: Array<Record<string, string>> }>;
+        };
+    };
 }
+
+type ColorThemeMode = 'AlignedTo' | 'Aligned';
+
+interface LoadedColorThemeOption {
+    value: string;
+    label: string;
+}
+
+interface PersistedColorTheme extends LoadedColorThemeOption {
+    rows: Array<Record<string, string>>;
+}
+
+const DEFAULT_COLOR_THEME_NAME = 'default';
+const DEFAULT_COLOR_THEME_LABEL = 'Default';
 
 const UNIPROT_CACHE_STORAGE_KEY = 'ribocode-uniprot-gene-cache-v1';
 const ENABLE_IN_PLACE_CHAIN_REALIGN = true;
@@ -967,10 +990,138 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const alignmentFile = useFileInput<Array<Record<string, string>>>(parseDictionaryFileContent, []);
     const [isMoleculeAlignedToColoursLoaded, setIsMoleculeAlignedToColoursLoaded] = useState(false);
     const [isMoleculeAlignedColoursLoaded, setIsMoleculeAlignedColoursLoaded] = useState(false);
-    const colorsAlignedToFile = useFileInput<Array<Record<string, string>>>(parseColorFileContent, []);
-    const colorsAlignedFile = useFileInput<Array<Record<string, string>>>(parseColorFileContent, []);
+    const colorsAlignedToInputRef = useRef<HTMLInputElement>(null);
+    const colorsAlignedInputRef = useRef<HTMLInputElement>(null);
+    const [loadedColorThemesByMode, setLoadedColorThemesByMode] = useState<Record<ColorThemeMode, LoadedColorThemeOption[]>>({
+        AlignedTo: [{ value: DEFAULT_COLOR_THEME_NAME, label: DEFAULT_COLOR_THEME_LABEL }],
+        Aligned: [{ value: DEFAULT_COLOR_THEME_NAME, label: DEFAULT_COLOR_THEME_LABEL }],
+    });
+    const [selectedColorThemeByMode, setSelectedColorThemeByMode] = useState<Record<ColorThemeMode, string>>({
+        AlignedTo: DEFAULT_COLOR_THEME_NAME,
+        Aligned: DEFAULT_COLOR_THEME_NAME,
+    });
+    const [loadedColorThemeRowsByName, setLoadedColorThemeRowsByName] = useState<Record<string, Array<Record<string, string>>>>({});
     // Chain color map state.
     const [chainColorMaps] = useState<Map<string, Map<string, Color>>>(new Map());
+    const registerLoadedColorTheme = useCallback((themeName: string, rows: Array<Record<string, string>>) => {
+        const themeChainColorMap = new Map<string, Color>();
+        rows.forEach(row => {
+            if (row.pdb_chain && row.color) {
+                try {
+                    themeChainColorMap.set(row.pdb_chain, Color.fromHexStyle(row.color));
+                } catch {
+                    // Ignore invalid rows and keep valid entries.
+                }
+            }
+        });
+        chainColorMaps.set(themeName, themeChainColorMap);
+        const safeRegisterTheme = (plugin: PluginUIContext | null) => {
+            const registry = (plugin as any)?.representation?.structure?.themes?.colorThemeRegistry;
+            if (!plugin || !registry) return;
+            registerThemeIfNeeded(plugin, themeName, chainColorMaps);
+        };
+        safeRegisterTheme(viewerA.ref.current);
+        safeRegisterTheme(viewerB.ref.current);
+    }, [chainColorMaps, viewerA.ref, viewerB.ref]);
+
+    const handleLoadColorThemeClick = useCallback((mode: ColorThemeMode) => {
+        if (mode === AlignedTo) {
+            colorsAlignedToInputRef.current?.click();
+        } else {
+            colorsAlignedInputRef.current?.click();
+        }
+    }, [colorsAlignedInputRef, colorsAlignedToInputRef]);
+
+    const handleColorThemeFileChange = useCallback(async (mode: ColorThemeMode, e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            const parsedRows = await parseColorFileContent('', file);
+            const uniqueThemeName = `${mode}-custom-chain-colors-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const label = file.name.replace(/\.[^.]+$/, '');
+            registerLoadedColorTheme(uniqueThemeName, parsedRows);
+            setLoadedColorThemeRowsByName(prev => ({
+                ...prev,
+                [uniqueThemeName]: parsedRows,
+            }));
+            setLoadedColorThemesByMode(prev => ({
+                ...prev,
+                [mode]: [...prev[mode], { value: uniqueThemeName, label }],
+            }));
+            setSelectedColorThemeByMode(prev => ({ ...prev, [mode]: uniqueThemeName }));
+            if (mode === AlignedTo) {
+                setIsMoleculeAlignedToColoursLoaded(true);
+            } else {
+                setIsMoleculeAlignedColoursLoaded(true);
+            }
+        } catch (err) {
+            console.warn(`[ColorTheme] Failed to parse colour theme file for ${mode}.`, err);
+        } finally {
+            // Allow selecting the same file again.
+            e.target.value = '';
+        }
+    }, [registerLoadedColorTheme]);
+
+    const isThemeInUseForMode = useCallback((mode: ColorThemeMode, themeName: string): boolean => {
+        if (themeName === DEFAULT_COLOR_THEME_NAME) return false;
+        const structureRefs: Array<{ plugin: PluginUIContext | null; structureRef?: string | null }> = [
+            { plugin: viewerA.ref.current, structureRef: molstarA.structureRefs[mode] },
+            { plugin: viewerB.ref.current, structureRef: molstarB.structureRefs[mode] },
+        ];
+        const getThemeName = (theme: any): string => {
+            if (typeof theme === 'string') return theme;
+            return typeof theme?.name === 'string' ? theme.name : '';
+        };
+        return structureRefs.some(({ plugin, structureRef }) => {
+            if (!plugin || !structureRef) return false;
+            const reps = getStructureRepresentations(plugin, structureRef);
+            return reps.some(rep => getThemeName(rep.colorTheme) === themeName);
+        });
+    }, [molstarA.structureRefs, molstarB.structureRefs, viewerA.ref, viewerB.ref]);
+
+    const handleRemoveSelectedColorTheme = useCallback((mode: ColorThemeMode) => {
+        const selectedName = selectedColorThemeByMode[mode];
+        if (selectedName === DEFAULT_COLOR_THEME_NAME) return;
+        if (isThemeInUseForMode(mode, selectedName)) {
+            alert('This colour theme is currently used by one or more representations. Switch those representations to another theme before removing it.');
+            return;
+        }
+        const remainingLoadedThemeCount = loadedColorThemesByMode[mode].filter(option => option.value !== DEFAULT_COLOR_THEME_NAME && option.value !== selectedName).length;
+        setLoadedColorThemesByMode(prev => {
+            const nextOptions = prev[mode].filter(option => option.value !== selectedName);
+            return { ...prev, [mode]: nextOptions };
+        });
+        setSelectedColorThemeByMode(prev => {
+            return { ...prev, [mode]: DEFAULT_COLOR_THEME_NAME };
+        });
+        if (mode === AlignedTo) {
+            setIsMoleculeAlignedToColoursLoaded(remainingLoadedThemeCount > 0);
+        } else {
+            setIsMoleculeAlignedColoursLoaded(remainingLoadedThemeCount > 0);
+        }
+        setLoadedColorThemeRowsByName(prev => {
+            const next = { ...prev };
+            delete next[selectedName];
+            return next;
+        });
+        chainColorMaps.delete(selectedName);
+    }, [chainColorMaps, isThemeInUseForMode, loadedColorThemesByMode, selectedColorThemeByMode]);
+
+    const colorsAlignedToFile = useMemo(() => ({
+        inputRef: colorsAlignedToInputRef,
+        handleButtonClick: () => handleLoadColorThemeClick('AlignedTo'),
+        handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+            void handleColorThemeFileChange('AlignedTo', e);
+        },
+    }), [handleColorThemeFileChange, handleLoadColorThemeClick]);
+
+    const colorsAlignedFile = useMemo(() => ({
+        inputRef: colorsAlignedInputRef,
+        handleButtonClick: () => handleLoadColorThemeClick('Aligned'),
+        handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+            void handleColorThemeFileChange('Aligned', e);
+        },
+    }), [handleColorThemeFileChange, handleLoadColorThemeClick]);
     // Realigned molecule structure/representation refs
     const [realignedStructRefsA, setRealignedStructRefsA] = useState<{ [id: string]: string }>({});
     const [realignedStructRefsB, setRealignedStructRefsB] = useState<{ [id: string]: string }>({});
@@ -1696,49 +1847,25 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const structureRefBAlignedTo: string | null = molstarB.structureRefs[AlignedTo];
     const structureRefBAligned: string | null = molstarB.structureRefs[Aligned];
     
-    // Theme names for custom chain color themes.
-    const themeNameAlignedTo = AlignedTo + '-custom-chain-colors';
-    const themeNameAligned = Aligned + '-custom-chain-colors';
-
     // Representation type state.
     const [representationTypeAlignedTo, setRepresentationTypeAlignedTo] = useState<AllowedRepresentationType>('spacefill');
     const [representationTypeAligned, setRepresentationTypeAligned] = useState<AllowedRepresentationType>('spacefill');
 
-    // Use the custom hook for both color sets (AlignedTo)
-    useUpdateColors(
-        viewerA.ref.current,
-        colorsAlignedToFile.data,
-        setIsMoleculeAlignedToColoursLoaded,
-        themeNameAlignedTo,
-        chainColorMaps,
-        [viewerA.moleculeAlignedTo, viewerB.moleculeAlignedTo, representationTypeAlignedTo, structureRefAAlignedTo, structureRefBAlignedTo]
-    );
-    useUpdateColors(
-        viewerB.ref.current,
-        colorsAlignedToFile.data,
-        setIsMoleculeAlignedToColoursLoaded,
-        themeNameAlignedTo,
-        chainColorMaps,
-        [viewerA.moleculeAlignedTo, viewerB.moleculeAlignedTo, representationTypeAlignedTo, structureRefAAlignedTo, structureRefBAlignedTo]
-    );
-
-    // Use the custom hook for both color sets (Aligned)
-    useUpdateColors(
-        viewerA.ref.current,
-        colorsAlignedFile.data,
-        setIsMoleculeAlignedColoursLoaded,
-        themeNameAligned,
-        chainColorMaps,
-        [viewerA.moleculeAligned, viewerB.moleculeAligned, representationTypeAligned, structureRefAAligned, structureRefBAligned]
-    );
-    useUpdateColors(
-        viewerB.ref.current,
-        colorsAlignedFile.data,
-        setIsMoleculeAlignedColoursLoaded,
-        themeNameAligned,
-        chainColorMaps,
-        [viewerA.moleculeAligned, viewerB.moleculeAligned, representationTypeAligned, structureRefAAligned, structureRefBAligned]
-    );
+    useEffect(() => {
+        const safeRegisterTheme = (plugin: PluginUIContext | null, themeName: string) => {
+            const registry = (plugin as any)?.representation?.structure?.themes?.colorThemeRegistry;
+            if (!plugin || !registry) return;
+            registerThemeIfNeeded(plugin, themeName, chainColorMaps);
+        };
+        const allLoadedThemeNames = [
+            ...loadedColorThemesByMode.AlignedTo.map((option: LoadedColorThemeOption) => option.value),
+            ...loadedColorThemesByMode.Aligned.map((option: LoadedColorThemeOption) => option.value),
+        ].filter(themeName => themeName !== DEFAULT_COLOR_THEME_NAME);
+        allLoadedThemeNames.forEach(themeName => {
+            safeRegisterTheme(viewerA.ref.current, themeName);
+            safeRegisterTheme(viewerB.ref.current, themeName);
+        });
+    }, [loadedColorThemesByMode, chainColorMaps, viewerA.ref, viewerB.ref, viewerAReady, viewerBReady]);
 
     // Custom hooks for updating chain info and subunit-to-chain mapping for both viewers.
     useUpdateChainInfo(
@@ -3666,6 +3793,17 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
 
     // Menu bar handlers
 
+    const buildPersistedColorThemesForMode = useCallback((mode: ColorThemeMode): PersistedColorTheme[] => {
+        return loadedColorThemesByMode[mode]
+            .filter(option => option.value !== DEFAULT_COLOR_THEME_NAME)
+            .map(option => ({
+                value: option.value,
+                label: option.label,
+                rows: loadedColorThemeRowsByName[option.value] ?? [],
+            }))
+            .filter(theme => theme.rows.length > 0);
+    }, [loadedColorThemeRowsByName, loadedColorThemesByMode]);
+
     // Session save: use custom hook
     const handleSaveSession = useSessionSave(() => ({
         viewerA: {
@@ -3743,6 +3881,16 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             chainFinderQueries: {
                 alignedTo: chainFinderQueryAlignedTo,
                 aligned: chainFinderQueryAligned,
+            },
+            colorThemesByMode: {
+                alignedTo: {
+                    selectedThemeName: selectedColorThemeByMode.AlignedTo,
+                    themes: buildPersistedColorThemesForMode('AlignedTo'),
+                },
+                aligned: {
+                    selectedThemeName: selectedColorThemeByMode.Aligned,
+                    themes: buildPersistedColorThemesForMode('Aligned'),
+                },
             },
         } as SessionUiState,
     }));
@@ -3822,6 +3970,16 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 chainFinderQueries: {
                     alignedTo: chainFinderQueryAlignedTo,
                     aligned: chainFinderQueryAligned,
+                },
+                colorThemesByMode: {
+                    alignedTo: {
+                        selectedThemeName: selectedColorThemeByMode.AlignedTo,
+                        themes: buildPersistedColorThemesForMode('AlignedTo'),
+                    },
+                    aligned: {
+                        selectedThemeName: selectedColorThemeByMode.Aligned,
+                        themes: buildPersistedColorThemesForMode('Aligned'),
+                    },
                 },
             } as SessionUiState,
         }),
@@ -3921,6 +4079,54 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 loadedAny = true;
             }
             const uiState = session?.uiState as SessionUiState | undefined;
+            const restoreModeColorThemes = (mode: ColorThemeMode, persisted?: { selectedThemeName?: string; themes?: Array<{ value: string; label: string; rows: Array<Record<string, string>> }> }) => {
+                const validThemes = (persisted?.themes ?? []).filter(theme =>
+                    typeof theme.value === 'string'
+                    && theme.value.length > 0
+                    && typeof theme.label === 'string'
+                    && Array.isArray(theme.rows)
+                );
+
+                const options: LoadedColorThemeOption[] = [
+                    { value: DEFAULT_COLOR_THEME_NAME, label: DEFAULT_COLOR_THEME_LABEL },
+                    ...validThemes.map(theme => ({ value: theme.value, label: theme.label }))
+                ];
+
+                setLoadedColorThemesByMode(prev => ({
+                    ...prev,
+                    [mode]: options,
+                }));
+
+                const selectedCandidate = persisted?.selectedThemeName;
+                const selected = options.some(option => option.value === selectedCandidate)
+                    ? selectedCandidate!
+                    : DEFAULT_COLOR_THEME_NAME;
+                setSelectedColorThemeByMode(prev => ({
+                    ...prev,
+                    [mode]: selected,
+                }));
+
+                setLoadedColorThemeRowsByName(prev => {
+                    const next = { ...prev };
+                    validThemes.forEach(theme => {
+                        next[theme.value] = theme.rows;
+                        registerLoadedColorTheme(theme.value, theme.rows);
+                    });
+                    return next;
+                });
+
+                if (mode === 'AlignedTo') {
+                    setIsMoleculeAlignedToColoursLoaded(validThemes.length > 0);
+                } else {
+                    setIsMoleculeAlignedColoursLoaded(validThemes.length > 0);
+                }
+            };
+
+            if (uiState?.colorThemesByMode) {
+                restoreModeColorThemes('AlignedTo', uiState.colorThemesByMode.alignedTo);
+                restoreModeColorThemes('Aligned', uiState.colorThemesByMode.aligned);
+            }
+
             if (uiState?.zoomByViewer?.viewerA || uiState?.zoomByViewer?.viewerB) {
                 const zoomA = uiState.zoomByViewer?.viewerA;
                 const zoomB = uiState.zoomByViewer?.viewerB;
@@ -4246,6 +4452,12 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     setRepresentationType: setRepresentationTypeAlignedTo,
                                     colorsFile: colorsAlignedToFile,
                                     isMoleculeColoursLoaded: isMoleculeAlignedToColoursLoaded,
+                                    colorThemeOptions: loadedColorThemesByMode.AlignedTo,
+                                    selectedColorThemeName: selectedColorThemeByMode.AlignedTo,
+                                    setSelectedColorThemeName: (themeName: string) => setSelectedColorThemeByMode(prev => ({ ...prev, AlignedTo: themeName })),
+                                    onRemoveColorTheme: () => handleRemoveSelectedColorTheme('AlignedTo'),
+                                    removeColorThemeDisabled: selectedColorThemeByMode.AlignedTo === DEFAULT_COLOR_THEME_NAME
+                                        || isThemeInUseForMode('AlignedTo', selectedColorThemeByMode.AlignedTo),
                                     structureRef: structureRefAAlignedTo,
                                     otherStructureRef: structureRefBAlignedTo,
                                     selectedSubunit: selectedSubunitAlignedTo,
@@ -4328,6 +4540,12 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     setRepresentationType: setRepresentationTypeAligned,
                                     colorsFile: colorsAlignedFile,
                                     isMoleculeColoursLoaded: isMoleculeAlignedColoursLoaded,
+                                    colorThemeOptions: loadedColorThemesByMode.Aligned,
+                                    selectedColorThemeName: selectedColorThemeByMode.Aligned,
+                                    setSelectedColorThemeName: (themeName: string) => setSelectedColorThemeByMode(prev => ({ ...prev, Aligned: themeName })),
+                                    onRemoveColorTheme: () => handleRemoveSelectedColorTheme('Aligned'),
+                                    removeColorThemeDisabled: selectedColorThemeByMode.Aligned === DEFAULT_COLOR_THEME_NAME
+                                        || isThemeInUseForMode('Aligned', selectedColorThemeByMode.Aligned),
                                     structureRef: structureRefAAligned,
                                     otherStructureRef: structureRefBAligned,
                                     selectedSubunit: selectedSubunitAligned,
@@ -4498,6 +4716,12 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     setRepresentationType: setRepresentationTypeAlignedTo,
                                     colorsFile: colorsAlignedToFile,
                                     isMoleculeColoursLoaded: isMoleculeAlignedToColoursLoaded,
+                                    colorThemeOptions: loadedColorThemesByMode.AlignedTo,
+                                    selectedColorThemeName: selectedColorThemeByMode.AlignedTo,
+                                    setSelectedColorThemeName: (themeName: string) => setSelectedColorThemeByMode(prev => ({ ...prev, AlignedTo: themeName })),
+                                    onRemoveColorTheme: () => handleRemoveSelectedColorTheme('AlignedTo'),
+                                    removeColorThemeDisabled: selectedColorThemeByMode.AlignedTo === DEFAULT_COLOR_THEME_NAME
+                                        || isThemeInUseForMode('AlignedTo', selectedColorThemeByMode.AlignedTo),
                                     structureRef: structureRefBAlignedTo,
                                     otherStructureRef: structureRefAAlignedTo,
                                     selectedSubunit: selectedSubunitAlignedTo,
@@ -4580,6 +4804,12 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     setRepresentationType: setRepresentationTypeAligned,
                                     colorsFile: colorsAlignedFile,
                                     isMoleculeColoursLoaded: isMoleculeAlignedColoursLoaded,
+                                    colorThemeOptions: loadedColorThemesByMode.Aligned,
+                                    selectedColorThemeName: selectedColorThemeByMode.Aligned,
+                                    setSelectedColorThemeName: (themeName: string) => setSelectedColorThemeByMode(prev => ({ ...prev, Aligned: themeName })),
+                                    onRemoveColorTheme: () => handleRemoveSelectedColorTheme('Aligned'),
+                                    removeColorThemeDisabled: selectedColorThemeByMode.Aligned === DEFAULT_COLOR_THEME_NAME
+                                        || isThemeInUseForMode('Aligned', selectedColorThemeByMode.Aligned),
                                     structureRef: structureRefBAligned,
                                     otherStructureRef: structureRefAAligned,
                                     selectedSubunit: selectedSubunitAligned,

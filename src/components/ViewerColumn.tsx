@@ -39,6 +39,11 @@ export interface LoadDataRowPropsInput {
 	setRepresentationType: (val: any) => void;
 	colorsFile: any;
 	isMoleculeColoursLoaded: boolean;
+	colorThemeOptions?: Array<{ value: string; label: string }>;
+	selectedColorThemeName?: string;
+	setSelectedColorThemeName?: (themeName: string) => void;
+	onRemoveColorTheme?: () => void;
+	removeColorThemeDisabled?: boolean;
 	structureRef: any;
 	otherStructureRef: any;
 	selectedSubunit: any;
@@ -134,6 +139,11 @@ export function getLoadDataRowProps({
 	setRepresentationType,
 	colorsFile,
 	isMoleculeColoursLoaded,
+	colorThemeOptions,
+	selectedColorThemeName,
+	setSelectedColorThemeName,
+	onRemoveColorTheme,
+	removeColorThemeDisabled,
 	structureRef,
 	otherStructureRef,
 	selectedSubunit,
@@ -229,13 +239,14 @@ export function getLoadDataRowProps({
 		),
 		onAddColorsClick: colorsFile.handleButtonClick,
 			addColorsDisabled: Aligned === 'AlignedTo' ? !isMoleculeAlignedToLoaded : !isMoleculeAlignedLoaded,
+		colorThemeOptions,
+		selectedColorThemeName,
+		onSelectedColorThemeNameChange: setSelectedColorThemeName,
+		onRemoveColorTheme,
+		removeColorThemeDisabled,
 		onAddRepresentationClick: () => {
-			let colorTheme;
-			if (isMoleculeColoursLoaded) {
-				colorTheme = { name: Aligned + '-custom-chain-colors', params: {} };
-			} else {
-				colorTheme = { name: 'default', params: {} };
-			}
+			const colorThemeName = selectedColorThemeName || (isMoleculeColoursLoaded ? Aligned + '-custom-chain-colors' : 'default');
+			const colorTheme = { name: colorThemeName, params: {} };
 			const repId = (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
 			const thisViewerVisible = Aligned === 'AlignedTo'
 				? viewer.isMoleculeAlignedToVisible

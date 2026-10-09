@@ -83,6 +83,11 @@ interface LoadDataRowProps {
     addColorsDisabled: boolean;
     colorsInputRef: React.RefObject<HTMLInputElement | null>;
     onColorsFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    colorThemeOptions?: Array<{ value: string; label: string }>;
+    selectedColorThemeName?: string;
+    onSelectedColorThemeNameChange?: (themeName: string) => void;
+    onRemoveColorTheme?: () => void;
+    removeColorThemeDisabled?: boolean;
     // Subunit selection
     subunitToChainIds: Map<string, Set<string>>;
     selectedSubunit: RibosomeSubunitType;
@@ -596,6 +601,11 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     addColorsDisabled,
     colorsInputRef,
     onColorsFileChange,
+    colorThemeOptions,
+    selectedColorThemeName,
+    onSelectedColorThemeNameChange,
+    onRemoveColorTheme,
+    removeColorThemeDisabled,
     subunitToChainIds,
     selectedSubunit,
     onSelectSubunit,
@@ -732,6 +742,42 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                 )}
             </div>
             <div className="load-data-control-row">
+                {colorThemeOptions && colorThemeOptions.length > 0 ? (
+                    <>
+                        <label htmlFor={`${idPrefix}-colour-theme-select`}>Colour Theme:</label>
+                        <select
+                            id={`${idPrefix}-colour-theme-select`}
+                            value={selectedColorThemeName ?? colorThemeOptions[0].value}
+                            onChange={e => onSelectedColorThemeNameChange?.(e.target.value)}
+                            disabled={addColorsDisabled}
+                            className="msp-select msp-form-control"
+                        >
+                            {colorThemeOptions.map(option => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                        </select>
+                        <button
+                            type="button"
+                            onClick={onAddColorsClick}
+                            disabled={addColorsDisabled}
+                            aria-label="Load Colours"
+                            className="msp-btn msp-form-control"
+                            id={`${idPrefix}-load-colours-btn`}
+                        >
+                            Load Colours
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onRemoveColorTheme}
+                            disabled={removeColorThemeDisabled ?? true}
+                            aria-label="Remove Colour Theme"
+                            className="msp-btn msp-form-control"
+                            id={`${idPrefix}-remove-colour-theme-btn`}
+                        >
+                            Remove Theme
+                        </button>
+                    </>
+                ) : (
                 <button
                     type="button"
                     onClick={onAddColorsClick}
@@ -742,6 +788,7 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                 >
                     Load Colours
                 </button>
+                )}
                 <input
                     type="file"
                     accept=".csv,.tsv,.txt,.json"
