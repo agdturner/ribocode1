@@ -592,7 +592,12 @@ describe('ViewerColumn', () => {
             'spacefill',
             expect.any(Object),
             expect.any(String),
-            false
+            false,
+            expect.objectContaining({
+                activeThemeKind: 'chain',
+                chainThemeName: 'default',
+                residueThemeName: 'default',
+            })
         );
         expect(addRepresentationB).toHaveBeenCalledWith(
             'Aligned',
@@ -600,7 +605,12 @@ describe('ViewerColumn', () => {
             'spacefill',
             expect.any(Object),
             expect.any(String),
-            true
+            true,
+            expect.objectContaining({
+                activeThemeKind: 'chain',
+                chainThemeName: 'default',
+                residueThemeName: 'default',
+            })
         );
     });
 
@@ -725,7 +735,12 @@ describe('ViewerColumn', () => {
             'spacefill',
             { name: 'Aligned-custom-chain-colors-1', params: {} },
             expect.any(String),
-            true
+            true,
+            expect.objectContaining({
+                activeThemeKind: 'chain',
+                chainThemeName: 'Aligned-custom-chain-colors-1',
+                residueThemeName: 'default',
+            })
         );
     });
 

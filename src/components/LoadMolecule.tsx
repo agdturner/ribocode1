@@ -19,6 +19,24 @@ import ResidueSelectButton from './buttons/select/Residue';
 import SubunitSelectButton from './buttons/select/Subunit';
 import { allowedRepresentationTypes, AllowedRepresentationType } from '../types/ribocode';
 import { ResidueLabelInfo } from '../utils/residue';
+
+const RESIDUE_DEFAULT_PALETTE = [
+    '#4E79A7', '#F28E2B', '#E15759', '#76B7B2', '#59A14F',
+    '#EDC948', '#B07AA1', '#FF9DA7', '#9C755F', '#BAB0AC',
+    '#1B9E77', '#D95F02', '#7570B3', '#E7298A', '#66A61E',
+    '#E6AB02', '#A6761D', '#666666', '#2E86AB', '#A23B72'
+];
+
+function getResidueTypeDefaultColor(type: string): string {
+    const key = String(type ?? '').trim().toUpperCase();
+    if (!key) return RESIDUE_DEFAULT_PALETTE[0];
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) {
+        hash = ((hash << 5) - hash + key.charCodeAt(i)) | 0;
+    }
+    const index = Math.abs(hash) % RESIDUE_DEFAULT_PALETTE.length;
+    return RESIDUE_DEFAULT_PALETTE[index];
+}
 import { RibosomeSubunitType } from '../utils/subunit';
 
 /**
@@ -1355,7 +1373,7 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
         setResidueTypeColorDraftById(prev => {
             const next: Record<string, string> = {};
             for (const { type } of allResidueTypeCounts) {
-                const resolved = residueTypeColorsById?.get(type) ?? '#FF00FF';
+                const resolved = residueTypeColorsById?.get(type) ?? getResidueTypeDefaultColor(type);
                 next[type] = resolved;
             }
             // Preserve drafts for residue types not currently shown.
@@ -1378,7 +1396,7 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     const effectiveRemoveChainTheme = onRemoveChainTheme ?? onRemoveColorTheme;
     const effectiveRemoveChainThemeDisabled = removeChainThemeDisabled ?? removeColorThemeDisabled;
 
-    const effectiveResidueThemeOptions = residueThemeOptions ?? colorThemeOptions;
+    const effectiveResidueThemeOptions = (residueThemeOptions ?? colorThemeOptions)?.filter(option => option.value !== 'chain-id');
     const effectiveResidueThemeName = selectedResidueThemeName ?? selectedColorThemeName;
     const effectiveSetResidueThemeName = onSelectedResidueThemeNameChange ?? onSelectedColorThemeNameChange;
     const effectiveLoadResidueColors = onLoadResidueColorsClick ?? onAddColorsClick;
@@ -1663,7 +1681,7 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                     <strong>Residue Types (all chains in loaded dataset)</strong>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {allResidueTypeCounts.map(({ type, count }) => {
-                            const current = residueTypeColorsById?.get(type) ?? '#FF00FF';
+                            const current = residueTypeColorsById?.get(type) ?? getResidueTypeDefaultColor(type);
                             const draft = residueTypeColorDraftById[type] ?? current;
                             return (
                                 <div key={`${type}-${count}`} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>

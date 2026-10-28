@@ -10,6 +10,9 @@ Release summary: this minor release splits Representation Controls colour-theme 
 - Added Playwright regression coverage in `e2e/session-load-all-separate-theme-selectors.e2e.spec.ts` to verify `Save All`/`Load All` restores separate chain and residue theme selections.
 - Updated integration coverage in `src/App.integration.test.tsx` for split chain/residue colour-load controls and expanded saved-session colour-theme state assertions.
 - Updated component and integration tests in `src/components/LoadMolecule.test.tsx` and `src/App.integration.test.tsx` to validate searchable per-chain colour editing behavior.
+- Updated the Mol* submodule in `packages/molstar` to upstream tag `v5.13.1` (gitlink `a4e9cc79415213263090ee47bf380d2a33e0118e`) and refreshed dependency lock state in `package-lock.json` for reproducible installs.
+- Added dual Playwright execution modes for this upgrade cycle: strict mode in `npm run test:e2e` (requires a free local dev port) and reuse mode in `npm run test:e2e:reuse` for running against an already-started dev server.
+- Updated six chain-colour/session E2E specs under `e2e/` to align selectors and interaction flow with the searchable per-chain editor introduced alongside the Mol* `v5.13.1` transition.
 
 ## [v0.19.0] - 2026-10-26
 Release summary: this minor release fixes session reload fidelity for selected-chain colour state so control selection and rendered chain colouring restore identically, and adds stronger regression coverage for session round-trips.

@@ -16,6 +16,11 @@ import { PluginUIContext } from 'molstar/lib/mol-plugin-ui/context';
 import { PluginCommands } from 'molstar/lib/mol-plugin/commands';
 import { allowedRepresentationTypes } from '../types/ribocode';
 
+const INTERNAL_RESIDUE_DEFAULT_THEMES = new Set([
+    'AlignedTo-default-residue-colors',
+    'Aligned-default-residue-colors',
+]);
+
 /**
  * Suffix for the MoleculeUI root id, used for consistent id construction in code and tests.
  */
@@ -60,6 +65,10 @@ interface MoleculeUIProps {
     representationRefs?: string[];
     onDeleteRepresentation?: (ref: string) => void;
     onToggleRepVisibility?: (ref: string) => void;
+    chainThemeOptions?: Array<{ value: string; label: string }>;
+    residueThemeOptions?: Array<{ value: string; label: string }>;
+    onRepresentationChainThemeChange?: (ref: string, themeName: string) => void;
+    onRepresentationResidueThemeChange?: (ref: string, themeName: string) => void;
     extraControls?: React.ReactNode;
     onRemove?: () => void;
     idPrefix?: string;
@@ -94,6 +103,10 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
     representationRefs = [],
     onDeleteRepresentation,
     onToggleRepVisibility,
+    chainThemeOptions = [],
+    residueThemeOptions = [],
+    onRepresentationChainThemeChange,
+    onRepresentationResidueThemeChange,
     onRemove,
     idPrefix,
 }) => {
@@ -207,6 +220,7 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
     };
     // Per-representation menu state
     const [openMenu, setOpenMenu] = useState<string | null>(null);
+    const [themeKindOverrides, setThemeKindOverrides] = useState<Record<string, 'chain' | 'residue-type'>>({});
     // Render the component.
     // Defensive: ensure label is a string
     const safeLabel = typeof label === 'string' ? label : '';
@@ -238,47 +252,140 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
                         if (!typeName) return null;
                         // Use _ribocodeId if available, else fallback to ref
                         const repId = cell?.params?.values?._ribocodeId || ref;
+                        const colorThemeName = cell?.params?.values?.colorTheme?.name;
+                        const persistedKind = cell?.params?.values?._ribocodeActiveThemeKind
+                            ?? cell?.params?.values?.colorTheme?.params?.__ribocodeActiveThemeKind;
+                        const resolvedThemeKind: 'chain' | 'residue-type' =
+                            themeKindOverrides[ref]
+                            ?? (persistedKind === 'residue-type' ? 'residue-type' : 'chain');
+                        const selectedChainTheme = cell?.params?.values?._ribocodeChainTheme
+                            || (colorThemeName && colorThemeName !== 'chain-id' ? colorThemeName : 'default');
+                        const selectedResidueTheme = cell?.params?.values?._ribocodeResidueTheme
+                            || (resolvedThemeKind === 'residue-type' && colorThemeName && colorThemeName !== 'chain-id' ? colorThemeName : 'default');
+                        const displayResidueTheme = INTERNAL_RESIDUE_DEFAULT_THEMES.has(selectedResidueTheme)
+                            ? 'default'
+                            : selectedResidueTheme;
+                        const activeThemeKind: 'chain' | 'residue-type' = resolvedThemeKind;
+                        const effectiveChainThemeOptions = chainThemeOptions.some(option => option.value === selectedChainTheme)
+                            ? chainThemeOptions
+                            : [...chainThemeOptions, { value: selectedChainTheme, label: selectedChainTheme }];
+                        const safeResidueThemeOptions = residueThemeOptions.filter(option => option.value !== 'chain-id');
+                        const effectiveResidueThemeOptions = safeResidueThemeOptions.some(option => option.value === displayResidueTheme)
+                            ? safeResidueThemeOptions
+                            : [...safeResidueThemeOptions, { value: displayResidueTheme, label: displayResidueTheme }];
                         return (
-                            <div key={ref} className="rep-btn-group rep-btn-group-row">
-                                <button
-                                    onClick={() => onToggleRepVisibility ? onToggleRepVisibility(ref) : handleToggleRepVisibility(ref)}
-                                    className="msp-btn msp-form-control"
-                                    disabled={!isLoaded}
-                                    aria-label={`Toggle visibility for ${typeName} representation`}
-                                    id={idPrefix ? `${idPrefix}-${toggleVisibilityRepIdSuffix}-${repId}` : undefined}
-                                >
-                                    {repVisible ? <VisibilityOutlinedSvg /> : <VisibilityOffOutlinedSvg />}
-                                    <span className="molstar-label">{typeName}</span>
-                                </button>
-                                <label
-                                    htmlFor={idPrefix ? `${idPrefix}-rep-opacity-${repId}` : undefined}
-                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                                >
-                                    <span className="molstar-label">Opacity</span>
-                                    <input
-                                        id={idPrefix ? `${idPrefix}-rep-opacity-${repId}` : undefined}
-                                        type="range"
-                                        min={0.1}
-                                        max={1}
-                                        step={0.05}
-                                        value={opacity}
+                            <div key={ref}>
+                                <div className="rep-btn-group rep-btn-group-row">
+                                    <button
+                                        onClick={() => onToggleRepVisibility ? onToggleRepVisibility(ref) : handleToggleRepVisibility(ref)}
+                                        className="msp-btn msp-form-control"
                                         disabled={!isLoaded}
-                                        onChange={e => {
-                                            void setRepOpacity(ref, Number(e.target.value));
-                                        }}
-                                    />
-                                    <span className="molstar-label">{Math.round(opacity * 100)}%</span>
-                                </label>
-                                {/* Delete button */}
-                                <button
-                                    onClick={() => onDeleteRepresentation && onDeleteRepresentation(repId)}
-                                    className="msp-btn msp-btn-danger msp-form-control"
-                                    disabled={!isLoaded}
-                                    aria-label={`Delete ${typeName} representation`}
-                                    id={idPrefix ? `${idPrefix}-delete-rep-${repId}` : undefined}
-                                >
-                                    &#x2716;
-                                </button>
+                                        aria-label={`Toggle visibility for ${typeName} representation`}
+                                        id={idPrefix ? `${idPrefix}-${toggleVisibilityRepIdSuffix}-${repId}` : undefined}
+                                    >
+                                        {repVisible ? <VisibilityOutlinedSvg /> : <VisibilityOffOutlinedSvg />}
+                                        <span className="molstar-label">{typeName}</span>
+                                    </button>
+                                    <label
+                                        htmlFor={idPrefix ? `${idPrefix}-rep-opacity-${repId}` : undefined}
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                                    >
+                                        <span className="molstar-label">Opacity</span>
+                                        <input
+                                            id={idPrefix ? `${idPrefix}-rep-opacity-${repId}` : undefined}
+                                            type="range"
+                                            min={0.1}
+                                            max={1}
+                                            step={0.05}
+                                            value={opacity}
+                                            disabled={!isLoaded}
+                                            onChange={e => {
+                                                void setRepOpacity(ref, Number(e.target.value));
+                                            }}
+                                        />
+                                        <span className="molstar-label">{Math.round(opacity * 100)}%</span>
+                                    </label>
+                                    {/* Delete button */}
+                                    <button
+                                        onClick={() => onDeleteRepresentation && onDeleteRepresentation(repId)}
+                                        className="msp-btn msp-btn-danger msp-form-control"
+                                        disabled={!isLoaded}
+                                        aria-label={`Delete ${typeName} representation`}
+                                        id={idPrefix ? `${idPrefix}-delete-rep-${repId}` : undefined}
+                                    >
+                                        &#x2716;
+                                    </button>
+                                </div>
+                                {(chainThemeOptions.length > 0 || residueThemeOptions.length > 0) && (
+                                    <div className="rep-btn-group rep-btn-group-row" style={{ marginLeft: 28, marginTop: 4 }}>
+                                        <label
+                                            htmlFor={idPrefix ? `${idPrefix}-rep-theme-kind-${repId}` : undefined}
+                                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                                        >
+                                            <span className="molstar-label">Theme Type</span>
+                                            <select
+                                                id={idPrefix ? `${idPrefix}-rep-theme-kind-${repId}` : undefined}
+                                                className="msp-form-control"
+                                                disabled={!isLoaded}
+                                                value={activeThemeKind}
+                                                onChange={e => {
+                                                    const nextKind = e.target.value === 'residue-type' ? 'residue-type' : 'chain';
+                                                    setThemeKindOverrides(prev => ({ ...prev, [ref]: nextKind }));
+                                                    if (nextKind === 'residue-type') {
+                                                        onRepresentationResidueThemeChange?.(ref, selectedResidueTheme);
+                                                    } else {
+                                                        onRepresentationChainThemeChange?.(ref, selectedChainTheme);
+                                                    }
+                                                }}
+                                            >
+                                                <option value="chain">Chain</option>
+                                                <option value="residue-type">Residue</option>
+                                            </select>
+                                        </label>
+                                        {activeThemeKind === 'chain' && effectiveChainThemeOptions.length > 0 && (
+                                            <label
+                                                htmlFor={idPrefix ? `${idPrefix}-rep-chain-theme-${repId}` : undefined}
+                                                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                                            >
+                                                <span className="molstar-label">Chain Theme</span>
+                                                <select
+                                                    id={idPrefix ? `${idPrefix}-rep-chain-theme-${repId}` : undefined}
+                                                    className="msp-form-control"
+                                                    disabled={!isLoaded}
+                                                    value={selectedChainTheme}
+                                                    onChange={e => {
+                                                        onRepresentationChainThemeChange?.(ref, e.target.value);
+                                                    }}
+                                                >
+                                                    {effectiveChainThemeOptions.map(option => (
+                                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                        )}
+                                        {activeThemeKind === 'residue-type' && effectiveResidueThemeOptions.length > 0 && (
+                                            <label
+                                                htmlFor={idPrefix ? `${idPrefix}-rep-residue-theme-${repId}` : undefined}
+                                                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                                            >
+                                                <span className="molstar-label">Residue Theme</span>
+                                                <select
+                                                    id={idPrefix ? `${idPrefix}-rep-residue-theme-${repId}` : undefined}
+                                                    className="msp-form-control"
+                                                    disabled={!isLoaded}
+                                                    value={displayResidueTheme}
+                                                    onChange={e => {
+                                                        onRepresentationResidueThemeChange?.(ref, e.target.value);
+                                                    }}
+                                                >
+                                                    {effectiveResidueThemeOptions.map(option => (
+                                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         );
                     })}

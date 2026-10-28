@@ -21,6 +21,7 @@ Welcome to the Ribocode Developer Guide!
 - [Re-alignment Implementation Notes](#re-alignment-implementation-notes)
   - [Cache and State Hygiene](#cache-and-state-hygiene)
 - [Mol*](#mol*)
+- [Mol* Submodule Workflow](#mol-submodule-workflow)
 - [Highlighting and Selection Colouring](#highlighting-and-selection-colouring)
 - [Documentation](#documentation)
   - [How to Generate Documentation](#how-to-generate-documentation)
@@ -80,6 +81,11 @@ You will need [Git](https://git-scm.com/) to clone the repository and [Node](htt
 
 Please also fork https://github.com/ribocode-slola/ribocode1 and https://github.com/ribocode-slola/molstar, and then clone and use your forks of the ribocode-slola forks.
 
+Note on submodule URL policy:
+- The repository-tracked `.gitmodules` must point to the canonical Ribocode Mol* repository (`https://github.com/ribocode-slola/molstar`).
+- Do not commit personal-fork URLs in `.gitmodules`.
+- Use local submodule remotes to push to your fork.
+
 If you are a member of the Ribocode project and want help getting set up with a development environment or help contributing via a `pull request`, please let it be known.
 
 
@@ -115,6 +121,47 @@ npm run build:lib
 cd ../..
 npm install
 ```
+
+## Mol* Submodule Workflow
+
+Ribocode tracks Mol* as a git submodule at `packages/molstar`.
+
+- Repository default (`.gitmodules`):
+  - `url = https://github.com/ribocode-slola/molstar`
+- Developer push target:
+  - Configure your local `origin` in `packages/molstar` to your own fork.
+- Upstream sync target:
+  - Keep `upstream` set to `https://github.com/ribocode-slola/molstar`.
+
+Recommended one-time local setup:
+
+```sh
+# Initialize/update submodule using canonical URL from .gitmodules
+git submodule sync --recursive
+git submodule update --init --recursive
+
+# In submodule, set your fork as origin (push target)
+cd packages/molstar
+git remote set-url origin https://github.com/<your-github-user>/molstar.git
+
+# Ensure canonical repo is available as upstream (pull/rebase target)
+git remote add upstream https://github.com/ribocode-slola/molstar.git 2>/dev/null || true
+git fetch upstream
+```
+
+Daily update pattern:
+
+```sh
+cd packages/molstar
+git fetch upstream
+git checkout main
+git rebase upstream/main
+git push origin main
+```
+
+Important:
+- Avoid editing `.gitmodules` for personal workflow changes.
+- If `.gitmodules` changes in a PR, verify it still points to the canonical Ribocode Mol* URL.
 
 
 ### Build and run locally
@@ -673,25 +720,31 @@ npx playwright install
 
 ### Running E2E Tests
 
-and E2E tests with:
-
 **Note:** Playwright E2E tests and unit/integration tests (run with Vitest) should be run separately. E2E tests require a real browser and dev server, are slower, and have different dependencies and environments than fast, isolated unit/integration tests. Keeping them separate ensures clarity, speed, and easier debugging.
 
 **Summary:**
-- Start the dev server with `npm run dev` for local development.
 - Run all unit/integration tests with `npm test`.
-- Run all E2E tests with `npm run test:e2e` (the dev server is auto-started by Playwright if needed).
+- Run all E2E tests in strict mode with `npm run test:e2e`.
+- Run all E2E tests while reusing an already-running dev server with `npm run test:e2e:reuse`.
+
+Playwright is configured with a `webServer` entry and starts `npm run dev` on port `5173`.
+- `npm run test:e2e` uses strict mode (`reuseExistingServer: false`) and fails if `5173` is already in use.
+- `npm run test:e2e:reuse` sets `PW_E2E_REUSE_SERVER=1` and reuses an existing dev server on `5173`.
 
 - To run all E2E tests:
   ```sh
   npm run test:e2e
+  # reuse a running dev server (useful during local development)
+  npm run test:e2e:reuse
   # or
   npx playwright test
   ```
 - To run a specific E2E test file:
-  **Good news!** Playwright is now configured to automatically start the Vite dev server using its `webServer` setting. You do **not** need to manually start the dev server before running E2E tests—just run the E2E test command and Playwright will handle it for you.
-  npm run test:e2e:single -- e2e/session-load.e2e.spec.ts
-  **Tip:** You can automate dev server startup by adding a `webServer` section to `playwright.config.ts`. See [Playwright webServer docs](https://playwright.dev/docs/test-advanced#launching-a-development-web-server-during-the-tests) for details.
+  ```sh
+  npm run test:e2e -- e2e/session-load.e2e.spec.ts
+  # or (reuse mode)
+  npm run test:e2e:reuse -- e2e/session-load.e2e.spec.ts
+  # or
   npx playwright test e2e/session-load.e2e.spec.ts
   ```
 - To open the interactive Playwright Test UI:
@@ -705,8 +758,9 @@ and E2E tests with:
 
 The following scripts are available in `package.json`:
 
-- `test:e2e` – Run all Playwright E2E tests
-- `test:e2e:single` – Run a single E2E test file (pass the file as an argument)
+- `test:e2e` – Run all Playwright E2E tests (strict server mode)
+- `test:e2e:reuse` – Run all Playwright E2E tests while reusing an existing dev server on port `5173`
+- `test:e2e:session` – Run the session-load E2E spec (`e2e/session-load.e2e.spec.ts`)
 - `test:e2e:ui` – Open the Playwright Test UI
 
 

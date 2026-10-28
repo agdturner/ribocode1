@@ -718,7 +718,7 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     }, { timeout: 5000 });
   });
 
-  it('applies selected chain colour edits to active chain-id representation (default chain-id theme)', async () => {
+  it('updates editable chain theme without globally recoloring existing representations', async () => {
     (globalThis as any).__mockStructureRepsByRef = {
       'mock-ref-0': [
         {
@@ -788,17 +788,20 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     fireEvent.click(selectedChainColorApplyButton!);
 
     await waitFor(() => {
-      const runTaskCountAfterFirstApply = (pluginA?.runTask?.mock?.calls?.length ?? 0) + (pluginB?.runTask?.mock?.calls?.length ?? 0);
-      expect(runTaskCountAfterFirstApply).toBeGreaterThan(runTaskCountBefore);
+      const chainThemeSelect = document.getElementById('viewer-column-A-alignedto-chain-colour-theme-select') as HTMLSelectElement | null;
+      expect(chainThemeSelect).toBeInTheDocument();
+      expect(chainThemeSelect?.value).toBe('AlignedTo-custom-chain-colors');
     }, { timeout: 5000 });
 
     const runTaskCountAfterFirstApply = (pluginA?.runTask?.mock?.calls?.length ?? 0) + (pluginB?.runTask?.mock?.calls?.length ?? 0);
+    expect(runTaskCountAfterFirstApply).toBe(runTaskCountBefore);
+
     fireEvent.change(selectedChainColorInput!, { target: { value: '#22aaee' } });
     fireEvent.click(selectedChainColorApplyButton!);
 
     await waitFor(() => {
       const runTaskCountAfterSecondApply = (pluginA?.runTask?.mock?.calls?.length ?? 0) + (pluginB?.runTask?.mock?.calls?.length ?? 0);
-      expect(runTaskCountAfterSecondApply).toBeGreaterThan(runTaskCountAfterFirstApply);
+      expect(runTaskCountAfterSecondApply).toBe(runTaskCountAfterFirstApply);
     }, { timeout: 5000 });
   }, 15000);
 
@@ -2078,6 +2081,119 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     const themes = cartoonCalls.map((args: any[]) => args[3]?.name);
     expect(themes).toContain('chain-id');
     expect(themes).toContain('sequence-id');
+  });
+
+  it('restores representation chain/residue theme preferences and active theme kind on session load', async () => {
+    render(<App />);
+    await waitFor(() => expect(screen.getByRole('banner')).toBeInTheDocument());
+
+    const onSessionLoaded = (globalThis as any).__onSessionLoaded as ((session: any, files: Record<string, File>) => Promise<void>) | undefined;
+    expect(onSessionLoaded).toBeDefined();
+
+    const session = {
+      viewerA: {
+        moleculeAlignedTo: {
+          filename: '4ug0.cif',
+          representations: [
+            {
+              type: 'cartoon',
+              colorTheme: { name: 'chain-id', params: {} },
+              chainThemeName: 'AlignedTo-chain-theme-1',
+              residueThemeName: 'AlignedTo-residue-theme-1',
+              activeThemeKind: 'residue-type',
+              visible: true,
+            },
+          ],
+        },
+      },
+      viewerB: { moleculeAligned: { filename: '6xu8.cif', representations: [] } },
+      uiState: {
+        colorThemesByMode: {
+          alignedTo: {
+            selectedChainThemeName: 'AlignedTo-chain-theme-1',
+            selectedResidueThemeName: 'AlignedTo-residue-theme-1',
+            themes: [
+              { value: 'AlignedTo-chain-theme-1', label: 'AlignedTo Chain 1', rows: [{ pdb_chain: 'A', color: '#112233' }] },
+              { value: 'AlignedTo-residue-theme-1', label: 'AlignedTo Residue 1', rows: [{ residue_type: 'ALA', color: '#334455' }] },
+            ],
+          },
+          aligned: { themes: [] },
+        },
+      },
+    };
+
+    await onSessionLoaded!(session, {
+      '4ug0.cif': loadTestFile('4ug0.cif'),
+      '6xu8.cif': loadTestFile('6xu8.cif'),
+    });
+
+    const instances = (globalThis as any).__molstarViewerInstances as any[];
+    const addCalls = instances.flatMap(instance => instance.addRepresentation.mock.calls);
+    const cartoonCall = addCalls.find((args: any[]) => args[2] === 'cartoon');
+    expect(cartoonCall).toBeTruthy();
+    expect(cartoonCall[3]?.name).toBe('AlignedTo-residue-theme-1');
+    expect(cartoonCall[6]).toEqual(expect.objectContaining({
+      chainThemeName: 'AlignedTo-chain-theme-1',
+      residueThemeName: 'AlignedTo-residue-theme-1',
+      activeThemeKind: 'residue-type',
+    }));
+  });
+
+  it('changing default chain theme selector does not recolor existing representations globally', async () => {
+    render(<App />);
+    await waitFor(() => expect(screen.getByRole('banner')).toBeInTheDocument());
+
+    const onSessionLoaded = (globalThis as any).__onSessionLoaded as ((session: any, files: Record<string, File>) => Promise<void>) | undefined;
+    expect(onSessionLoaded).toBeDefined();
+
+    const session = {
+      viewerA: {
+        moleculeAlignedTo: {
+          filename: '4ug0.cif',
+          representations: [
+            { type: 'cartoon', colorTheme: { name: 'chain-id', params: {} }, visible: true },
+          ],
+        },
+      },
+      viewerB: { moleculeAligned: { filename: '6xu8.cif', representations: [] } },
+      uiState: {
+        colorThemesByMode: {
+          alignedTo: {
+            selectedChainThemeName: 'chain-id',
+            selectedResidueThemeName: 'default',
+            themes: [
+              { value: 'AlignedTo-custom-theme-test', label: 'AlignedTo test theme', rows: [{ pdb_chain: 'A', color: '#AA5500' }] },
+            ],
+          },
+          aligned: { themes: [] },
+        },
+      },
+    };
+
+    await onSessionLoaded!(session, {
+      '4ug0.cif': loadTestFile('4ug0.cif'),
+      '6xu8.cif': loadTestFile('6xu8.cif'),
+    });
+
+    fireEvent.click(document.getElementById('viewer-column-A-alignedto-representation-controls-toggle-btn') as HTMLButtonElement);
+
+    const chainThemeSelect = document.getElementById('viewer-column-A-alignedto-chain-colour-theme-select') as HTMLSelectElement | null;
+    expect(chainThemeSelect).toBeInTheDocument();
+
+    const pluginA = (globalThis as any).__mockPluginA;
+    const pluginB = (globalThis as any).__mockPluginB;
+    pluginA?.runTask?.mockClear?.();
+    pluginB?.runTask?.mockClear?.();
+
+    fireEvent.change(chainThemeSelect!, { target: { value: 'AlignedTo-custom-theme-test' } });
+
+    await waitFor(() => {
+      expect((document.getElementById('viewer-column-A-alignedto-chain-colour-theme-select') as HTMLSelectElement).value)
+        .toBe('AlignedTo-custom-theme-test');
+    });
+
+    expect(pluginA?.runTask).not.toHaveBeenCalled();
+    expect(pluginB?.runTask).not.toHaveBeenCalled();
   });
 
   it('replaces type-only matched representation when saved colorTheme differs (regression)', async () => {

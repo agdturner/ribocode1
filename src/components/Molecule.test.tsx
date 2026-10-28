@@ -239,4 +239,100 @@ describe('MoleculeUI', () => {
             expect(onToggleRepVisibility).toHaveBeenCalledTimes(2);
         });
     });
+
+    it('switching Theme Type to Residue applies the stored residue theme for the representation', () => {
+        const repRef = 'rep-ref-theme-switch';
+        const onRepresentationChainThemeChange = vi.fn();
+        const onRepresentationResidueThemeChange = vi.fn();
+        const pluginWithRep = {
+            state: {
+                data: {
+                    cells: new Map([
+                        [repRef, {
+                            params: {
+                                values: {
+                                    type: { name: 'cartoon' },
+                                    _ribocodeId: 'custom-id-theme-switch',
+                                    _ribocodeChainTheme: 'Aligned-chain-theme',
+                                    _ribocodeResidueTheme: 'Aligned-residue-theme',
+                                    _ribocodeActiveThemeKind: 'chain',
+                                    colorTheme: { name: 'Aligned-chain-theme', params: {} },
+                                }
+                            },
+                            state: { isHidden: false }
+                        }]
+                    ])
+                }
+            }
+        } as any;
+
+        render(
+            <MoleculeUI
+                {...baseProps}
+                plugin={pluginWithRep}
+                representationRefs={[repRef]}
+                idPrefix="viewer-column-A-alignedto"
+                chainThemeOptions={[
+                    { value: 'Aligned-chain-theme', label: 'Aligned chain theme' },
+                ]}
+                residueThemeOptions={[
+                    { value: 'Aligned-residue-theme', label: 'Aligned residue theme' },
+                ]}
+                onRepresentationChainThemeChange={onRepresentationChainThemeChange}
+                onRepresentationResidueThemeChange={onRepresentationResidueThemeChange}
+            />
+        );
+
+        const themeTypeSelect = document.getElementById('viewer-column-A-alignedto-rep-theme-kind-custom-id-theme-switch') as HTMLSelectElement | null;
+        expect(themeTypeSelect).toBeInTheDocument();
+        fireEvent.change(themeTypeSelect!, { target: { value: 'residue-type' } });
+
+        expect(themeTypeSelect?.value).toBe('residue-type');
+        expect(onRepresentationResidueThemeChange).toHaveBeenCalledWith(repRef, 'Aligned-residue-theme');
+        expect(onRepresentationChainThemeChange).not.toHaveBeenCalled();
+    });
+
+    it('shows applied residue theme name in selector when residue theme field is missing', () => {
+        const repRef = 'rep-ref-residue-label';
+        const pluginWithRep = {
+            state: {
+                data: {
+                    cells: new Map([
+                        [repRef, {
+                            params: {
+                                values: {
+                                    type: { name: 'cartoon' },
+                                    _ribocodeId: 'custom-id-residue-label',
+                                    _ribocodeChainTheme: 'Aligned-chain-theme',
+                                    _ribocodeActiveThemeKind: 'residue-type',
+                                    colorTheme: { name: 'Aligned-residue-theme-2', params: {} },
+                                }
+                            },
+                            state: { isHidden: false }
+                        }]
+                    ])
+                }
+            }
+        } as any;
+
+        render(
+            <MoleculeUI
+                {...baseProps}
+                plugin={pluginWithRep}
+                representationRefs={[repRef]}
+                idPrefix="viewer-column-A-alignedto"
+                chainThemeOptions={[
+                    { value: 'Aligned-chain-theme', label: 'Aligned chain theme' },
+                ]}
+                residueThemeOptions={[
+                    { value: 'default', label: 'Default' },
+                    { value: 'Aligned-residue-theme-2', label: 'Aligned residue theme 2' },
+                ]}
+            />
+        );
+
+        const residueThemeSelect = document.getElementById('viewer-column-A-alignedto-rep-residue-theme-custom-id-residue-label') as HTMLSelectElement | null;
+        expect(residueThemeSelect).toBeInTheDocument();
+        expect(residueThemeSelect?.value).toBe('Aligned-residue-theme-2');
+    });
 });

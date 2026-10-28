@@ -52,7 +52,12 @@ export interface MolstarViewerState {
         type: AllowedRepresentationType,
         colorTheme: { name: string; params?: Record<string, unknown> },
         repId?: string,
-        visible?: boolean
+        visible?: boolean,
+        themePrefs?: {
+            chainThemeName?: string;
+            residueThemeName?: string;
+            activeThemeKind?: 'chain' | 'residue-type';
+        }
     ) => Promise<string>;
     getChainInfo: (structure: any) => { 
         chainLabels: Map<string, string>;};
@@ -137,7 +142,12 @@ export function useMolstarViewer(pluginRef: React.RefObject<PluginUIContext | nu
             type: AllowedRepresentationType,
             colorTheme: ColorTheme,
             repId?: string,
-            visible: boolean = true
+            visible: boolean = true,
+            themePrefs?: {
+                chainThemeName?: string;
+                residueThemeName?: string;
+                activeThemeKind?: 'chain' | 'residue-type';
+            }
         ): Promise<string> => {
             if (!pluginRef.current) return '';
             const plugin = pluginRef.current;
@@ -184,7 +194,11 @@ export function useMolstarViewer(pluginRef: React.RefObject<PluginUIContext | nu
                     StateTransforms.Representation.StructureRepresentation3D,
                     {
                         type: { name: type, params: {} },
-                        colorTheme: { name: colorTheme.name, params: colorTheme.params ?? {} }
+                        colorTheme: { name: colorTheme.name, params: colorTheme.params ?? {} },
+                        _ribocodeId: newRepId,
+                        _ribocodeChainTheme: themePrefs?.chainThemeName,
+                        _ribocodeResidueTheme: themePrefs?.residueThemeName,
+                        _ribocodeActiveThemeKind: themePrefs?.activeThemeKind,
                     }
                 )
             await builder.commit();

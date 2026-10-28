@@ -51,9 +51,9 @@ The UI layout is as follows:
         - Allows users to add a new representation.
       - `Colour Theme`
         - Enabled after AlignedTo data load.
-        - Allows users to choose, load and remove custom colour themes via the selection dropdown, `Load Colours` and `Remove Theme` buttons.
+        - Allows users to choose, load and remove custom colour themes for chains and residue types. Users choose which theme to detail and this is the one applied when creating a new representation.
         - Custom themes loaded here are available in both `AlignedTo` and `Aligned` colour theme selectors.
-        - `Remove Theme` is blocked if the selected theme is currently used by any representation in either viewer.
+        - The button to remove a theme is blocked if the selected theme is currently used by any representation in either viewer.
     - `Clipping controls`
       - Hidden by default.
       - Allows users to modify clipping in Mol* viewer.
@@ -75,25 +75,41 @@ The UI layout is as follows:
           - `Zoom` `Highlight` `Inspect`
       - `Chain Controls`
         - Hidden by default.
-        - `Selected`
-          - Shows the currently selected chain label.
-        - For chain selection, zoom, highlight and inspection via:
         - `Zoom` `Highlight` `Inspect`
-        - `Select Controls`
-          - Hidden by default.
-          - `Include Uniprot accession in labels`
-            - Allows users to choose whether or not to include Uniprot accession in labels.
+          - The zoom, highlight and inspect controls for all chain and residue selections.
+        - `Include Uniprot accession in labels`
+          - Allows users to choose whether or not to include Uniprot accession in labels in the select tables.
           - Uniprot cache summary
             - A summary of Uniprot data caching.
-      - `Residue Controls`
-        - Hidden by default.
-        - Disabled until a chain is selected.
-        - For residue selection, zoom, highlight and inspection via:
+        - `Selected 1`
+          - Shows the currently selected chain 1.
+        - This allows the selected chain 1 to be, zoomed, highlighted and inspected via:
+        - `Zoom` `Highlight` `Inspect`
+        - `Select 1`
+          - Hidden by default.
           - `Select`
-          - `Zoom` `Highlight` `Inspect`
+            - A searchable selection tool that allows for a single chain to be selected.
+          - `Residue Controls`
+            - Hidden by default.
+            - Disabled until chain 1 is selected.
+            - For residue selection, zoom, highlight and inspection via:
+              - `Select`
+              - `Zoom` `Highlight` `Inspect`
+        - `Select 2`
+          - Hidden by default.
+          - Disabled until chain 1 is selected..
+          - `Select`
+            - A searchable selection tool that allows for a single chain to be selected.
+          - `Residue Controls`
+            - Hidden by default.
+            - Disabled until chain 2 is selected.
+            - For residue selection, zoom, highlight and inspection via:
+              - `Select`
+              - `Zoom` `Highlight` `Inspect`
     - `Show Advanced Mol* Controls` button (collapsed by default)
       - Includes Sequence, Left Panel, Structure Tools, and Log sections.
       - After toggling an additional menu appears in the Mol* viewer to access more functionality from there.
+      
   - Column `B`
     - `Mol* Viewer B`
       - `3D Canvas`
@@ -108,13 +124,13 @@ The UI layout is as follows:
     - `Representation Controls`
       - Hidden by default.
       - `Add Representation`
-        - Enabled after Aligned data load.
+        - Enabled after AlignedTo data load.
         - Allows users to add a new representation.
       - `Colour Theme`
-        - Enabled after Aligned data load.
-        - Allows users to choose, load and remove custom colour themes via the selection dropdown, `Load Colours` and `Remove Theme` buttons.
-        - Custom themes loaded here are available in both `Aligned` and `AlignedTo` colour theme selectors.
-        - `Remove Theme` is blocked if the selected theme is currently used by any representation in either viewer.
+        - Enabled after AlignedTo data load.
+        - Allows users to choose, load and remove custom colour themes for chains and residue types. Users choose which theme to detail and this is the one applied when creating a new representation.
+        - Custom themes loaded here are available in both `AlignedTo` and `Aligned` colour theme selectors.
+        - The button to remove a theme is blocked if the selected theme is currently used by any representation in either viewer.
     - `Clipping controls`
       - Hidden by default.
       - Allows users to modify clipping in Mol* viewer.
@@ -122,7 +138,7 @@ The UI layout is as follows:
       - `Clip Radius` controls and syncs with the Mol* Clip Radius setting. This has a `Reset` to reset to the Mol* default for the current zoom.
     - `Select and Zoom Controls`
       - Hidden by default.
-      - Allows users to select parts of the Aligned data, zoom to it, highlight it and show details of it.
+      - Allows users to select parts of the AlignedTo data, zoom to it, highlight it and show details of it.
       - `Visibility Controls`
         - Hidden by default.
         - Includes:
@@ -136,22 +152,37 @@ The UI layout is as follows:
           - `Zoom` `Highlight` `Inspect`
       - `Chain Controls`
         - Hidden by default.
-        - `Selected`
-          - Shows the currently selected chain label.
-        - For chain selection, zoom, highlight and inspection via:
         - `Zoom` `Highlight` `Inspect`
-        - `Select Controls`
-          - Hidden by default.
-          - `Include Uniprot accession in labels`
-            - Allows users to choose whether or not to include Uniprot accession in labels.
+          - The zoom, highlight and inspect controls for all chain and residue selections.
+        - `Include Uniprot accession in labels`
+          - Allows users to choose whether or not to include Uniprot accession in labels in the select tables.
           - Uniprot cache summary
             - A summary of Uniprot data caching.
-      - `Residue Controls`
-        - Hidden by default.
-        - Disabled until a chain is selected.
-        - For residue selection, zoom, highlight and inspection via:
+        - `Selected 1`
+          - Shows the currently selected chain 1.
+        - This allows the selected chain 1 to be, zoomed, highlighted and inspected via:
+        - `Zoom` `Highlight` `Inspect`
+        - `Select 1`
+          - Hidden by default.
           - `Select`
-          - `Zoom` `Highlight` `Inspect`
+            - A searchable selection tool that allows for a single chain to be selected.
+          - `Residue Controls`
+            - Hidden by default.
+            - Disabled until chain 1 is selected.
+            - For residue selection, zoom, highlight and inspection via:
+              - `Select`
+              - `Zoom` `Highlight` `Inspect`
+        - `Select 2`
+          - Hidden by default.
+          - Disabled until chain 1 is selected..
+          - `Select`
+            - A searchable selection tool that allows for a single chain to be selected.
+          - `Residue Controls`
+            - Hidden by default.
+            - Disabled until chain 2 is selected.
+            - For residue selection, zoom, highlight and inspection via:
+              - `Select`
+              - `Zoom` `Highlight` `Inspect`
     - `Show Advanced Mol* Controls` button (collapsed by default)
       - Includes Sequence, Left Panel, Structure Tools, and Log sections.
       - After toggling an additional menu appears in the Mol* viewer to access more functionality from there.
@@ -197,15 +228,24 @@ The UI layout is as follows:
 |   Select                     |   Select                     |
 |   Zoom Highlight Inspect     |   Zoom Highlight Inspect     |
 |  Chain Controls              |  Chain Controls              |
-|   Selected                   |   Selected                   |
 |   Zoom Highlight Inspect     |   Zoom Highlight Inspect     |
-|   Select Chain Control       |   Select Chain Control       |
-|    Include UniProt | Uniprot |    Include UniProt | Uniprot |
-|    accession in    | cache   |    accession in    | cache   |
-|    labels          |         |    labels          |         |
-|  Residue Controls            |  Residue Controls            |
-|   Select                     |   Select                     |
-|   Zoom Highlight Inspect     |   Zoom Highlight Inspect     |
+|   Include UniProt | Uniprot  |   Include UniProt | Uniprot  |
+|   accession in    | cache    |   accession in    | cache    |
+|   labels          |          |   labels          |          |
+|   Selected 1                 |   Selected 1                 |
+|   Select 1                   |   Select 1                   |
+|    Select                    |    Select                    |
+|    Zoom Highlight Inspect    |    Zoom Highlight Inspect    |
+|    Residue Controls          |    Residue Controls          |
+|     Select                   |     Select                   |
+|     Zoom Highlight Inspect   |     Zoom Highlight Inspect   |
+|   Selected 2                 |   Selected 2                 |
+|   Select 2                   |   Select 2                   |
+|    Select                    |    Select                    |
+|    Zoom Highlight Inspect    |    Zoom Highlight Inspect    |
+|    Residue Controls          |    Residue Controls          |
+|     Select                   |     Select                   |
+|     Zoom Highlight Inspect   |     Zoom Highlight Inspect   |
 | ---------------------------  | ---------------------------  |
 | Advanced Mol* Controls       | Advanced Mol* Controls       |
 | (Sequence/Tools/Log panels)  | (Sequence/Tools/Log panels)  |
