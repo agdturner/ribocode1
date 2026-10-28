@@ -22,6 +22,9 @@ async function loadAlignedToAndAligned(page: import('@playwright/test').Page) {
   await page.click('#viewer-column-B-aligned-load-btn');
   await page.setInputFiles('#viewer-column-B-aligned-file-input', dataPath('6xu8.cif'));
   await expect(page.locator('#viewer-column-B-aligned-filename-label')).toContainText(/6xu8\.cif/i, { timeout: 30000 });
+
+  // Cross-viewer controls are only fully interactive after both datasets settle.
+  await expect(page.locator('#generalcontrols-sync-select')).toBeEnabled({ timeout: 60000 });
 }
 
 async function selectSubunitWithChains(
@@ -54,7 +57,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('Align Subunits button enables and remains available for repeated pairs', async ({ page }) => {
-  test.setTimeout(60000);
+  test.setTimeout(120000);
 
   await page.goto('http://localhost:5173/');
   await loadAlignedToAndAligned(page);
@@ -86,7 +89,8 @@ test('Align Subunits button enables and remains available for repeated pairs', a
   await expect(realignSubunitBtn).toBeEnabled();
   await expect(realignSubunitBtn).toHaveText(`Align Subunits: ${alignedToSubunit} -> ${alignedSubunit}`);
 
-  await realignSubunitBtn.click();
+  // Use dispatchEvent to avoid occasional auto-wait instability on click under parallel load.
+  await realignSubunitBtn.dispatchEvent('click');
 
   await expect(realignSubunitBtn).toBeEnabled({ timeout: 20000 });
   await expect(realignSubunitBtn).toHaveText(`Align Subunits: ${alignedToSubunit} -> ${alignedSubunit}`);

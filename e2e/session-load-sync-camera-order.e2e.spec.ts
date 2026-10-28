@@ -110,13 +110,15 @@ test('session load keeps viewer B camera snapshot stable when sync is restored',
   await expect(page.locator('#viewer-column-A-molstar-container')).toBeVisible();
   await expect(page.locator('#viewer-column-B-molstar-container')).toBeVisible();
 
+  // Session load can still be finalizing while viewer containers are visible.
+  // Wait for the sync control to become interactive before checking sync state.
+  await expect(page.locator('#generalcontrols-sync-select')).toBeEnabled({ timeout: 60000 });
+  await expect(page.locator('#generalcontrols-sync-select')).toHaveText('Sync: On', { timeout: 60000 });
+
   await expect.poll(async () => {
     const syncState = await page.evaluate(() => (window as any).__ribocodeTestApi?.getSyncState?.());
     return syncState?.syncEnabled === true;
   }, { timeout: 30000 }).toBe(true);
-
-  await expect(page.locator('#generalcontrols-sync-select')).toBeEnabled({ timeout: 30000 });
-  await expect(page.locator('#generalcontrols-sync-select')).toHaveText('Sync: On', { timeout: 30000 });
 
   const syncState = await page.evaluate(() => (window as any).__ribocodeTestApi?.getSyncState?.());
   expect(syncState?.syncEnabled).toBe(true);

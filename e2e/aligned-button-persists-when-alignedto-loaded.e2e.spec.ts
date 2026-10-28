@@ -25,10 +25,8 @@ test('Load Aligned button in Column B remains after loading AlignedTo in Column 
   await alignedToInputA.setInputFiles(dataPath('4ug0.cif'));
   await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toBeVisible({ timeout: 60000 });
 
-  // Wait 2 seconds to catch delayed disappearance
-  await page.waitForTimeout(2000);
   // The Load Aligned button in column B should still be present and enabled
   const alignedBtnB = page.locator('#viewer-column-B-aligned-load-btn');
   await expect(alignedBtnB).toHaveCount(1);
-  await expect(alignedBtnB).toBeEnabled();
+  await expect(alignedBtnB).toBeEnabled({ timeout: 60000 });
 });

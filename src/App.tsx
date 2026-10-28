@@ -6533,6 +6533,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         const alignedToFile = (alignedToFilename && files[alignedToFilename]) || (altAlignedToFilename && files[altAlignedToFilename]);
         const alignedFile = (alignedFilename && files[alignedFilename]) || (altAlignedFilename && files[altAlignedFilename]);
         let loadedAny = false;
+        let desiredSyncEnabledAfterLoad: boolean | null = null;
         try {
             if (alignedToFile) {
                 const alignedToMolecule = await loadMoleculeIntoViewers(
@@ -6841,21 +6842,25 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             // Restore per-viewer camera snapshots with sync propagation suspended so
             // one viewer snapshot cannot overwrite the other while state settles.
             const shouldReEnableSyncAfterRestore = uiState?.syncEnabled === true;
+            desiredSyncEnabledAfterLoad = shouldReEnableSyncAfterRestore;
             setIsRestoringSessionCameras(true);
             setSyncEnabled(false);
-            await new Promise(resolve => setTimeout(resolve, 0));
+            try {
+                await new Promise(resolve => setTimeout(resolve, 0));
 
-            if (uiState?.activeViewer === A || uiState?.activeViewer === B) {
-                setActiveViewer(uiState.activeViewer);
-            }
-            if (uiState?.cameraSnapshots) {
-                applySerializableCameraSnapshot(viewerA.ref, uiState.cameraSnapshots.viewerA);
-                applySerializableCameraSnapshot(viewerB.ref, uiState.cameraSnapshots.viewerB);
-            }
+                if (uiState?.activeViewer === A || uiState?.activeViewer === B) {
+                    setActiveViewer(uiState.activeViewer);
+                }
+                if (uiState?.cameraSnapshots) {
+                    applySerializableCameraSnapshot(viewerA.ref, uiState.cameraSnapshots.viewerA);
+                    applySerializableCameraSnapshot(viewerB.ref, uiState.cameraSnapshots.viewerB);
+                }
 
-            await new Promise(resolve => setTimeout(resolve, 0));
-            setIsRestoringSessionCameras(false);
-            setSyncEnabled(shouldReEnableSyncAfterRestore);
+                await new Promise(resolve => setTimeout(resolve, 0));
+            } finally {
+                setIsRestoringSessionCameras(false);
+                setSyncEnabled(shouldReEnableSyncAfterRestore);
+            }
 
             pendingSessionSelectionsRef.current = uiState?.selections ?? null;
             if (uiState?.uniprotGeneNames && typeof uiState.uniprotGeneNames === 'object') {
@@ -6918,6 +6923,10 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             }
         } catch (e) {
             alert('Error loading session: ' + (e instanceof Error ? e.message : String(e)));
+        } finally {
+            if (desiredSyncEnabledAfterLoad !== null) {
+                setSyncEnabled(desiredSyncEnabledAfterLoad);
+            }
         }
     }, [
         loadMoleculeIntoViewers,
