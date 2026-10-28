@@ -255,13 +255,21 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
                         const colorThemeName = cell?.params?.values?.colorTheme?.name;
                         const persistedKind = cell?.params?.values?._ribocodeActiveThemeKind
                             ?? cell?.params?.values?.colorTheme?.params?.__ribocodeActiveThemeKind;
+                        const fallbackThemeKindFromOptions: 'chain' | 'residue-type' = (
+                            !!colorThemeName
+                            && colorThemeName !== 'chain-id'
+                            && residueThemeOptions.some(option => option.value === colorThemeName)
+                            && !chainThemeOptions.some(option => option.value === colorThemeName)
+                        ) ? 'residue-type' : 'chain';
                         const resolvedThemeKind: 'chain' | 'residue-type' =
                             themeKindOverrides[ref]
-                            ?? (persistedKind === 'residue-type' ? 'residue-type' : 'chain');
+                            ?? (persistedKind === 'residue-type'
+                                ? 'residue-type'
+                                : fallbackThemeKindFromOptions);
                         const selectedChainTheme = cell?.params?.values?._ribocodeChainTheme
                             || (colorThemeName && colorThemeName !== 'chain-id' ? colorThemeName : 'default');
                         const selectedResidueTheme = cell?.params?.values?._ribocodeResidueTheme
-                            || (resolvedThemeKind === 'residue-type' && colorThemeName && colorThemeName !== 'chain-id' ? colorThemeName : 'default');
+                            || ((resolvedThemeKind === 'residue-type' || fallbackThemeKindFromOptions === 'residue-type') && colorThemeName && colorThemeName !== 'chain-id' ? colorThemeName : 'default');
                         const displayResidueTheme = INTERNAL_RESIDUE_DEFAULT_THEMES.has(selectedResidueTheme)
                             ? 'default'
                             : selectedResidueTheme;

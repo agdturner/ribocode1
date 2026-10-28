@@ -433,7 +433,12 @@ export function getLoadDataRowProps({
 			const colorThemeName = activeThemeKind === 'residue-type'
 				? selectedResidueTheme
 				: selectedChainTheme;
-			const colorTheme = { name: colorThemeName, params: {} };
+			const colorTheme = {
+				name: colorThemeName,
+				params: {
+					__ribocodeActiveThemeKind: activeThemeKind,
+				},
+			};
 			const themePrefs = {
 				chainThemeName: selectedChainTheme,
 				residueThemeName: selectedResidueTheme,

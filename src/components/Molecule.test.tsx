@@ -335,4 +335,97 @@ describe('MoleculeUI', () => {
         expect(residueThemeSelect).toBeInTheDocument();
         expect(residueThemeSelect?.value).toBe('Aligned-residue-theme-2');
     });
+
+    it('infers Theme Type as Residue when active kind metadata is missing but applied theme is residue-based', () => {
+        const repRef = 'rep-ref-missing-kind';
+        const pluginWithRep = {
+            state: {
+                data: {
+                    cells: new Map([
+                        [repRef, {
+                            params: {
+                                values: {
+                                    type: { name: 'cartoon' },
+                                    _ribocodeId: 'custom-id-missing-kind',
+                                    colorTheme: { name: 'Aligned-residue-theme-3', params: {} },
+                                }
+                            },
+                            state: { isHidden: false }
+                        }]
+                    ])
+                }
+            }
+        } as any;
+
+        render(
+            <MoleculeUI
+                {...baseProps}
+                plugin={pluginWithRep}
+                representationRefs={[repRef]}
+                idPrefix="viewer-column-A-alignedto"
+                chainThemeOptions={[
+                    { value: 'default', label: 'Default' },
+                    { value: 'Aligned-chain-theme', label: 'Aligned chain theme' },
+                ]}
+                residueThemeOptions={[
+                    { value: 'default', label: 'Default' },
+                    { value: 'Aligned-residue-theme-3', label: 'Aligned residue theme 3' },
+                ]}
+            />
+        );
+
+        const themeTypeSelect = document.getElementById('viewer-column-A-alignedto-rep-theme-kind-custom-id-missing-kind') as HTMLSelectElement | null;
+        expect(themeTypeSelect).toBeInTheDocument();
+        expect(themeTypeSelect?.value).toBe('residue-type');
+
+        const residueThemeSelect = document.getElementById('viewer-column-A-alignedto-rep-residue-theme-custom-id-missing-kind') as HTMLSelectElement | null;
+        expect(residueThemeSelect).toBeInTheDocument();
+        expect(residueThemeSelect?.value).toBe('Aligned-residue-theme-3');
+    });
+
+    it('switching Theme Type to Residue uses currently applied residue theme when residue metadata is missing', () => {
+        const repRef = 'rep-ref-residue-switch-missing-meta';
+        const onRepresentationResidueThemeChange = vi.fn();
+        const pluginWithRep = {
+            state: {
+                data: {
+                    cells: new Map([
+                        [repRef, {
+                            params: {
+                                values: {
+                                    type: { name: 'cartoon' },
+                                    _ribocodeId: 'custom-id-residue-switch-missing-meta',
+                                    colorTheme: { name: 'Aligned-residue-theme-4', params: {} },
+                                }
+                            },
+                            state: { isHidden: false }
+                        }]
+                    ])
+                }
+            }
+        } as any;
+
+        render(
+            <MoleculeUI
+                {...baseProps}
+                plugin={pluginWithRep}
+                representationRefs={[repRef]}
+                idPrefix="viewer-column-A-aligned"
+                chainThemeOptions={[
+                    { value: 'default', label: 'Default' },
+                ]}
+                residueThemeOptions={[
+                    { value: 'default', label: 'Default' },
+                    { value: 'Aligned-residue-theme-4', label: 'Aligned residue theme 4' },
+                ]}
+                onRepresentationResidueThemeChange={onRepresentationResidueThemeChange}
+            />
+        );
+
+        const themeTypeSelect = document.getElementById('viewer-column-A-aligned-rep-theme-kind-custom-id-residue-switch-missing-meta') as HTMLSelectElement | null;
+        expect(themeTypeSelect).toBeInTheDocument();
+        fireEvent.change(themeTypeSelect!, { target: { value: 'residue-type' } });
+
+        expect(onRepresentationResidueThemeChange).toHaveBeenCalledWith(repRef, 'Aligned-residue-theme-4');
+    });
 });
