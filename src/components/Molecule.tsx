@@ -274,13 +274,22 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
                         const chainThemeFallback = chainThemeOptions.find(option => option.value === 'default')?.value
                             ?? chainThemeOptions[0]?.value
                             ?? 'default';
+                        const residueThemeFallback = residueThemeOptions.find(option => option.value === 'default')?.value
+                            ?? residueThemeOptions.find(option => option.value !== 'chain-id')?.value
+                            ?? 'default';
                         const selectedChainThemeCandidate = cell?.params?.values?._ribocodeChainTheme
                             || ((colorThemeName && chainThemeValues.has(colorThemeName)) ? colorThemeName : chainThemeFallback);
                         const selectedChainTheme = chainThemeValues.has(selectedChainThemeCandidate)
                             ? selectedChainThemeCandidate
                             : chainThemeFallback;
-                        const selectedResidueTheme = cell?.params?.values?._ribocodeResidueTheme
-                            || ((resolvedThemeKind === 'residue-type' || fallbackThemeKindFromOptions === 'residue-type') && colorThemeName && colorThemeName !== 'chain-id' ? colorThemeName : 'default');
+                        const selectedResidueThemeCandidate = cell?.params?.values?._ribocodeResidueTheme
+                            || ((resolvedThemeKind === 'residue-type' || fallbackThemeKindFromOptions === 'residue-type') && colorThemeName && colorThemeName !== 'chain-id' ? colorThemeName : residueThemeFallback);
+                        const selectedResidueTheme = (
+                            residueThemeValues.has(selectedResidueThemeCandidate)
+                            || INTERNAL_RESIDUE_DEFAULT_THEMES.has(selectedResidueThemeCandidate)
+                        )
+                            ? selectedResidueThemeCandidate
+                            : residueThemeFallback;
                         const displayResidueTheme = INTERNAL_RESIDUE_DEFAULT_THEMES.has(selectedResidueTheme)
                             ? 'default'
                             : selectedResidueTheme;
