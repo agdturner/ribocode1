@@ -2232,8 +2232,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             colorThemeParams: currentThemeParams,
         });
 
-        const tree = plugin.state.data.build().to(repRef).update((old: any) => ({
-            ...old,
+        const nextParams = {
+            ...values,
             colorTheme: {
                 name: next.colorThemeName,
                 params: {
@@ -2244,7 +2244,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             _ribocodeChainTheme: next.chainThemeName,
             _ribocodeResidueTheme: next.residueThemeName,
             _ribocodeActiveThemeKind: next.activeThemeKind,
-        }));
+        };
+
+        const tree = plugin.state.data.build().to(repRef).update(nextParams);
 
         await plugin.runTask(plugin.state.data.updateTree(tree));
         plugin.canvas3d?.requestDraw?.();

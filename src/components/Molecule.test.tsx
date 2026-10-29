@@ -428,4 +428,53 @@ describe('MoleculeUI', () => {
 
         expect(onRepresentationResidueThemeChange).toHaveBeenCalledWith(repRef, 'Aligned-residue-theme-4');
     });
+
+    it('does not include residue themes in chain selector after switching back to chain', () => {
+        const repRef = 'rep-ref-no-theme-mixing';
+        const pluginWithRep = {
+            state: {
+                data: {
+                    cells: new Map([
+                        [repRef, {
+                            params: {
+                                values: {
+                                    type: { name: 'cartoon' },
+                                    _ribocodeId: 'custom-id-no-theme-mixing',
+                                    _ribocodeActiveThemeKind: 'chain',
+                                    colorTheme: { name: 'Aligned-residue-theme-1', params: {} },
+                                }
+                            },
+                            state: { isHidden: false }
+                        }]
+                    ])
+                }
+            }
+        } as any;
+
+        render(
+            <MoleculeUI
+                {...baseProps}
+                plugin={pluginWithRep}
+                representationRefs={[repRef]}
+                idPrefix="viewer-column-A-alignedto"
+                chainThemeOptions={[
+                    { value: 'default', label: 'Default' },
+                    { value: 'Aligned-chain-theme-1', label: 'Aligned chain theme 1' },
+                ]}
+                residueThemeOptions={[
+                    { value: 'default', label: 'Default' },
+                    { value: 'Aligned-residue-theme-1', label: 'Aligned residue theme 1' },
+                ]}
+            />
+        );
+
+        const chainThemeSelect = document.querySelector('select[id*="rep-chain-theme-"]') as HTMLSelectElement | null;
+        expect(chainThemeSelect).toBeInTheDocument();
+        expect(chainThemeSelect?.value).toBe('default');
+
+        const optionValues = Array.from(chainThemeSelect?.options ?? []).map(option => option.value);
+        expect(optionValues).toContain('default');
+        expect(optionValues).toContain('Aligned-chain-theme-1');
+        expect(optionValues).not.toContain('Aligned-residue-theme-1');
+    });
 });
