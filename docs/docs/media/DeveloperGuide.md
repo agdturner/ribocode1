@@ -236,6 +236,52 @@ Notes:
 - Some UI components for loading dictionary/alignment data and for advanced visualization controls (e.g., fog, camera planes) exist but may be hidden or under development.
 - All major logic is modularized for maintainability, with helpers, types, and constants extracted to their own files.
 
+## Theme System Architecture (Important)
+
+This section defines expected behavior for loading, applying, saving, and testing themes.
+
+### Dataset-role ownership
+
+- `AlignedTo` is loaded in Column `A` (`Load AlignedTo`).
+- `Aligned` is loaded in Column `B` (`Load Aligned`).
+- Theme assets (loaded color maps) are shared globally and can be applied to either role.
+- Representation theme callbacks must preserve the caller's role intent (`AlignedTo` vs `Aligned`).
+
+### Where behavior is implemented
+
+- High-level wiring and state orchestration: `src/App.tsx`.
+- Representation UI controls: `src/components/Molecule.tsx`.
+- Column composition and role wiring: `src/components/ViewerColumn.tsx`.
+
+### Theme controls model
+
+- Global controls in `Representation Controls` (`Theme` section):
+  - Select current chain/residue theme.
+  - `Load`, `Save`, and remove (`x`) actions.
+  - These values drive defaults for new representations.
+- Per-representation controls in each representation row:
+  - `Theme Type` (`chain` or `residue-type`).
+  - `Chain Theme` / `Residue Theme` selectors.
+  - These are authoritative for that representation.
+
+### Residue default mapping contract
+
+- UI selection value `default` must resolve to role-specific registered theme names:
+  - `AlignedTo-default-residue-colors` for `AlignedTo`.
+  - `Aligned-default-residue-colors` for `Aligned`.
+- Regressions usually appear when a callback resolves or applies the wrong role for a representation update.
+
+### Sync scope note
+
+- `Sync` currently describes camera synchronization behavior.
+- Theme application logic may still update corresponding representations across viewers, but this should not violate role ownership or mode intent.
+
+### Testing implications for theme regressions
+
+- Prefer representation identity assertions (`repId`) over positional/index assertions.
+- In Playwright, avoid selectors that assume dataset role is encoded in representation row IDs unless that is explicitly true in code.
+- For debugging, use `window.__ribocodeTestApi.getRepresentationThemeStates(mode, viewerKey?)` and assert by `repId` and viewer.
+
 ## Mol* Advanced Controls Toggle
 
 To reduce UI clutter for common workflows, each viewer column includes a dedicated advanced-controls toggle for the embedded Mol* interface.
