@@ -236,6 +236,73 @@ Notes:
 - Some UI components for loading dictionary/alignment data and for advanced visualization controls (e.g., fog, camera planes) exist but may be hidden or under development.
 - All major logic is modularized for maintainability, with helpers, types, and constants extracted to their own files.
 
+## Theme System Architecture (Important)
+
+This section defines expected behavior for loading, applying, saving, and testing themes.
+
+### Dataset-role ownership
+
+- `AlignedTo` is loaded in Column `A` (`Load AlignedTo`).
+- `Aligned` is loaded in Column `B` (`Load Aligned`).
+- Theme assets (loaded color maps) are shared globally and can be applied to either role.
+- Representation theme callbacks must preserve the caller's role intent (`AlignedTo` vs `Aligned`).
+
+### Where behavior is implemented
+
+- High-level wiring and state orchestration: `src/App.tsx`.
+- Representation UI controls: `src/components/Molecule.tsx`.
+- Column composition and role wiring: `src/components/ViewerColumn.tsx`.
+
+### Theme controls model
+
+- Global controls in `Representation Controls` (`Theme` section):
+  - Select current chain/residue theme.
+  - `Load`, `Save`, and remove (`x`) actions.
+  - These values drive defaults for new representations.
+- Per-representation controls in each representation row:
+  - `Theme Type` (`chain` or `residue-type`).
+  - `Chain Theme` / `Residue Theme` selectors.
+  - These are authoritative for that representation.
+
+### Representation theme switching contract
+
+- Switching a representation between `chain` and `residue-type` must update the existing representation in place.
+- Do not recreate/delete-add a representation just to apply a theme change.
+- Representation identity (`repId`) should remain stable across Theme Type switches.
+- Residue theme apply path should use the same in-place update model as chain theme applies.
+
+### Residue theme selection behavior
+
+- If a mode-selected residue theme is available, switching `Theme Type` to `residue-type` should prefer that selected residue theme.
+- If no valid selected residue theme is available, fall back to the mode-specific default residue theme.
+- Loading and selecting a new residue theme while already in `residue-type` mode must apply immediately without requiring a Theme Type toggle.
+
+### Residue default mapping contract
+
+- UI selection value `default` must resolve to role-specific registered theme names:
+  - `AlignedTo-default-residue-colors` for `AlignedTo`.
+  - `Aligned-default-residue-colors` for `Aligned`.
+- Regressions usually appear when a callback resolves or applies the wrong role for a representation update.
+
+### Residue visual refresh note
+
+- Some residue transitions can retain stale visuals if only a single in-place update is applied.
+- Current expected behavior is an in-place two-step refresh for residue theme transitions:
+  1. apply an intermediate neutral theme (`chain-id`),
+  2. then apply the target residue theme.
+- This preserves representation identity while ensuring the rendered colors refresh correctly.
+
+### Sync scope note
+
+- `Sync` currently describes camera synchronization behavior.
+- Theme application logic may still update corresponding representations across viewers, but this should not violate role ownership or mode intent.
+
+### Testing implications for theme regressions
+
+- Prefer representation identity assertions (`repId`) over positional/index assertions.
+- In Playwright, avoid selectors that assume dataset role is encoded in representation row IDs unless that is explicitly true in code.
+- For debugging, use `window.__ribocodeTestApi.getRepresentationThemeStates(mode, viewerKey?)` and assert by `repId` and viewer.
+
 ## Mol* Advanced Controls Toggle
 
 To reduce UI clutter for common workflows, each viewer column includes a dedicated advanced-controls toggle for the embedded Mol* interface.
