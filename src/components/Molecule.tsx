@@ -67,6 +67,7 @@ interface MoleculeUIProps {
     onToggleRepVisibility?: (ref: string) => void;
     chainThemeOptions?: Array<{ value: string; label: string }>;
     residueThemeOptions?: Array<{ value: string; label: string }>;
+    preferredResidueThemeName?: string;
     onRepresentationChainThemeChange?: (ref: string, themeName: string) => void;
     onRepresentationResidueThemeChange?: (ref: string, themeName: string) => void;
     extraControls?: React.ReactNode;
@@ -105,6 +106,7 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
     onToggleRepVisibility,
     chainThemeOptions = [],
     residueThemeOptions = [],
+    preferredResidueThemeName,
     onRepresentationChainThemeChange,
     onRepresentationResidueThemeChange,
     onRemove,
@@ -274,25 +276,42 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
                         const chainThemeFallback = chainThemeOptions.find(option => option.value === 'default')?.value
                             ?? chainThemeOptions[0]?.value
                             ?? 'default';
-                        const residueThemeFallback = residueThemeOptions.find(option => option.value === 'default')?.value
-                            ?? residueThemeOptions.find(option => option.value !== 'chain-id')?.value
+                        const residueThemeFallback = residueThemeOptions.find(option => option.value !== 'chain-id')?.value
                             ?? 'default';
                         const selectedChainThemeCandidate = cell?.params?.values?._ribocodeChainTheme
                             || ((colorThemeName && chainThemeValues.has(colorThemeName)) ? colorThemeName : chainThemeFallback);
                         const selectedChainTheme = chainThemeValues.has(selectedChainThemeCandidate)
                             ? selectedChainThemeCandidate
                             : chainThemeFallback;
-                        const selectedResidueThemeCandidate = cell?.params?.values?._ribocodeResidueTheme
+                        const rawResidueThemeCandidate = cell?.params?.values?._ribocodeResidueTheme
                             || ((resolvedThemeKind === 'residue-type' || fallbackThemeKindFromOptions === 'residue-type') && colorThemeName && colorThemeName !== 'chain-id' ? colorThemeName : residueThemeFallback);
+                        const selectedResidueThemeCandidate = (
+                            !!rawResidueThemeCandidate
+                            && rawResidueThemeCandidate !== 'chain-id'
+                            && !chainThemeValues.has(rawResidueThemeCandidate)
+                        )
+                            ? rawResidueThemeCandidate
+                            : residueThemeFallback;
                         const selectedResidueTheme = (
                             residueThemeValues.has(selectedResidueThemeCandidate)
                             || INTERNAL_RESIDUE_DEFAULT_THEMES.has(selectedResidueThemeCandidate)
+                            || (!!selectedResidueThemeCandidate && selectedResidueThemeCandidate !== 'chain-id' && !chainThemeValues.has(selectedResidueThemeCandidate))
                         )
                             ? selectedResidueThemeCandidate
                             : residueThemeFallback;
-                        const displayResidueTheme = INTERNAL_RESIDUE_DEFAULT_THEMES.has(selectedResidueTheme)
-                            ? 'default'
-                            : selectedResidueTheme;
+                        const displayResidueTheme = selectedResidueTheme;
+                        const preferredResidueTheme = (() => {
+                            if (!preferredResidueThemeName) return undefined;
+                            if (residueThemeValues.has(preferredResidueThemeName)) return preferredResidueThemeName;
+                            if (INTERNAL_RESIDUE_DEFAULT_THEMES.has(preferredResidueThemeName)) return preferredResidueThemeName;
+                            if (!chainThemeValues.has(preferredResidueThemeName) && preferredResidueThemeName !== 'chain-id') {
+                                return preferredResidueThemeName;
+                            }
+                            return undefined;
+                        })();
+                        const residueThemeForKindSwitch = preferredResidueTheme
+                            ?? selectedResidueTheme
+                            ?? residueThemeFallback;
                         const activeThemeKind: 'chain' | 'residue-type' = resolvedThemeKind;
                         const effectiveChainThemeOptions = chainThemeOptions.some(option => option.value === selectedChainTheme)
                             ? chainThemeOptions
@@ -363,7 +382,7 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
                                                     const nextKind = e.target.value === 'residue-type' ? 'residue-type' : 'chain';
                                                     setThemeKindOverrides(prev => ({ ...prev, [ref]: nextKind }));
                                                     if (nextKind === 'residue-type') {
-                                                        onRepresentationResidueThemeChange?.(ref, selectedResidueTheme);
+                                                        onRepresentationResidueThemeChange?.(ref, residueThemeForKindSwitch);
                                                     } else {
                                                         onRepresentationChainThemeChange?.(ref, selectedChainTheme);
                                                     }
