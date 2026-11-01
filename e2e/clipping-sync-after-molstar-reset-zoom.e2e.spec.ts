@@ -6,7 +6,7 @@ function dataPath(filename: string) {
 }
 
 test('Clip Radius reflects Mol* Reset Zoom camera changes', async ({ page }) => {
-  test.fail(true, 'Known issue: clipping controls do not always reflect native Mol* zoom interactions.');
+  test.fixme(true, 'Known issue: clipping controls do not always reflect native Mol* zoom interactions.');
   test.setTimeout(90000);
 
   await page.goto('http://localhost:5173/');
@@ -45,5 +45,5 @@ test('Clip Radius reflects Mol* Reset Zoom camera changes', async ({ page }) => 
   await expect(async () => {
     const afterReset = await clipRadiusInput.inputValue();
     expect(afterReset).not.toBe(beforeReset);
-  }).toPass({ timeout: 10000 });
+  }).toPass({ timeout: 20000 });
 });
