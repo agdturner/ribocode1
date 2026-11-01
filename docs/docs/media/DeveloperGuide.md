@@ -264,12 +264,33 @@ This section defines expected behavior for loading, applying, saving, and testin
   - `Chain Theme` / `Residue Theme` selectors.
   - These are authoritative for that representation.
 
+### Representation theme switching contract
+
+- Switching a representation between `chain` and `residue-type` must update the existing representation in place.
+- Do not recreate/delete-add a representation just to apply a theme change.
+- Representation identity (`repId`) should remain stable across Theme Type switches.
+- Residue theme apply path should use the same in-place update model as chain theme applies.
+
+### Residue theme selection behavior
+
+- If a mode-selected residue theme is available, switching `Theme Type` to `residue-type` should prefer that selected residue theme.
+- If no valid selected residue theme is available, fall back to the mode-specific default residue theme.
+- Loading and selecting a new residue theme while already in `residue-type` mode must apply immediately without requiring a Theme Type toggle.
+
 ### Residue default mapping contract
 
 - UI selection value `default` must resolve to role-specific registered theme names:
   - `AlignedTo-default-residue-colors` for `AlignedTo`.
   - `Aligned-default-residue-colors` for `Aligned`.
 - Regressions usually appear when a callback resolves or applies the wrong role for a representation update.
+
+### Residue visual refresh note
+
+- Some residue transitions can retain stale visuals if only a single in-place update is applied.
+- Current expected behavior is an in-place two-step refresh for residue theme transitions:
+  1. apply an intermediate neutral theme (`chain-id`),
+  2. then apply the target residue theme.
+- This preserves representation identity while ensuring the rendered colors refresh correctly.
 
 ### Sync scope note
 
