@@ -1,3 +1,7 @@
+## [v0.20.1] - 2026-11-03
+Release summary: this patch release fixes residue-theme customization so editing one residue from a default residue theme preserves all other residue colours from the source theme.
+- Fixed default residue-theme customization in `src/App.tsx` so creating a custom residue theme seeds from the currently edited default residue-theme rows (with canonical fallback) instead of starting from a single edited residue, preventing unintended magenta fallback for untouched residues.
+
 ## [v0.20.0] - 2026-10-27
 Release summary: this minor release splits Representation Controls colour-theme management into separate Chain Theme and Residue Theme workflows, with independent save/load/selection persistence and new round-trip regression coverage.
 - Split Representation Controls colour-theme UI in `src/components/LoadMolecule.tsx` into separate `Chain Theme` and `Residue Theme` sections, each with dedicated theme dropdown, load, remove, and save actions.
