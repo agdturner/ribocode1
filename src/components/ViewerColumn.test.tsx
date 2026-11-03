@@ -733,7 +733,10 @@ describe('ViewerColumn', () => {
             'Aligned',
             'ref-a',
             'spacefill',
-            { name: 'Aligned-custom-chain-colors-1', params: {} },
+            {
+                name: 'Aligned-custom-chain-colors-1',
+                params: { __ribocodeActiveThemeKind: 'chain' },
+            },
             expect.any(String),
             true,
             expect.objectContaining({

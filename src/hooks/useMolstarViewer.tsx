@@ -199,7 +199,7 @@ export function useMolstarViewer(pluginRef: React.RefObject<PluginUIContext | nu
                         _ribocodeChainTheme: themePrefs?.chainThemeName,
                         _ribocodeResidueTheme: themePrefs?.residueThemeName,
                         _ribocodeActiveThemeKind: themePrefs?.activeThemeKind,
-                    }
+                    } as any
                 )
             await builder.commit();
             

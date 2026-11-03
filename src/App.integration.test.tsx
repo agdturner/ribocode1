@@ -9,7 +9,7 @@
  * @see https://github.com/ribocode-slola/ribocode1 
  */
 import React from 'react';
-import { render, screen, waitFor, fireEvent, within, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within, cleanup, act } from '@testing-library/react';
 import App from './App';
 import * as structureUtils from './utils/structure';
 import { vi, beforeAll, beforeEach, afterEach } from 'vitest';
@@ -803,6 +803,74 @@ describe('App integration: AlignedTo and Aligned loading', () => {
       const runTaskCountAfterSecondApply = (pluginA?.runTask?.mock?.calls?.length ?? 0) + (pluginB?.runTask?.mock?.calls?.length ?? 0);
       expect(runTaskCountAfterSecondApply).toBe(runTaskCountAfterFirstApply);
     }, { timeout: 5000 });
+  }, 15000);
+
+  it('seeds custom residue theme from active default residue theme rows when editing a single residue', async () => {
+    render(<App />);
+    await waitFor(() => expect(screen.getByRole('banner')).toBeInTheDocument());
+
+    const onSessionLoaded = (globalThis as any).__onSessionLoaded as ((session: any, files: Record<string, File>) => Promise<void>) | undefined;
+    expect(onSessionLoaded).toBeDefined();
+
+    const session = {
+      viewerA: {
+        moleculeAlignedTo: {
+          filename: '4ug0.cif',
+          representations: [
+            { type: 'cartoon', colorTheme: { name: 'AlignedTo-default-residue-colors', params: {} }, visible: true },
+          ],
+        },
+      },
+      viewerB: { moleculeAligned: { filename: '6xu8.cif', representations: [] } },
+      uiState: {
+        colorThemesByMode: {
+          alignedTo: {
+            selectedChainThemeName: 'default',
+            selectedResidueThemeName: 'default',
+            themes: [
+              {
+                value: 'AlignedTo-default-residue-colors',
+                label: 'Default',
+                rows: [
+                  { residue_type: 'ALA', color: '#112233' },
+                  { residue_type: 'GLY', color: '#445566' },
+                ],
+              },
+            ],
+          },
+          aligned: { themes: [] },
+        },
+      },
+    };
+
+    await onSessionLoaded!(session, {
+      '4ug0.cif': loadTestFile('4ug0.cif'),
+      '6xu8.cif': loadTestFile('6xu8.cif'),
+    });
+
+    const testApi = (globalThis as any).__ribocodeTestApi as {
+      editResidueThemeColor?: (themeName: string, residueType: string, color: string, mode?: 'AlignedTo' | 'Aligned') => void;
+    } | undefined;
+    expect(testApi?.editResidueThemeColor).toEqual(expect.any(Function));
+
+    await act(async () => {
+      testApi?.editResidueThemeColor?.('default', 'ALA', '#ABCDEF', 'AlignedTo');
+    });
+
+    const getSessionState = (globalThis as any).__getSessionState as (() => any) | undefined;
+    expect(getSessionState).toBeDefined();
+
+    await waitFor(() => {
+      const saved = getSessionState!();
+      expect(saved?.uiState?.colorThemesByMode?.alignedTo?.selectedResidueThemeName).toBe('residue-type-custom-alignedto');
+      const themes = saved?.uiState?.colorThemesByMode?.alignedTo?.themes ?? [];
+      const customTheme = themes.find((theme: any) => theme?.value === 'residue-type-custom-alignedto');
+      expect(customTheme).toBeDefined();
+      expect(customTheme.rows).toEqual(expect.arrayContaining([
+        expect.objectContaining({ residue_type: 'ALA', color: '#ABCDEF' }),
+        expect.objectContaining({ residue_type: 'GLY', color: '#445566' }),
+      ]));
+    });
   }, 15000);
 
   it('keeps Viewer A and Viewer B visibility toggles independent', async () => {

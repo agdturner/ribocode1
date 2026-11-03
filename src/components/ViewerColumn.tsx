@@ -667,6 +667,7 @@ export function getMoleculeUIAlignedToProps({
 	AlignedTo,
 	chainThemeOptions,
 	residueThemeOptions,
+	preferredResidueThemeName,
 	onRepresentationChainThemeChange,
 	onRepresentationResidueThemeChange,
 }: {
@@ -693,6 +694,7 @@ export function getMoleculeUIAlignedToProps({
 	AlignedTo: string,
 	chainThemeOptions?: Array<{ value: string; label: string }>,
 	residueThemeOptions?: Array<{ value: string; label: string }>,
+	preferredResidueThemeName?: string,
 	onRepresentationChainThemeChange?: (ref: string, themeName: string) => void,
 	onRepresentationResidueThemeChange?: (ref: string, themeName: string) => void,
 }) {
@@ -751,6 +753,7 @@ export function getMoleculeUIAlignedToProps({
 		},
 		chainThemeOptions,
 		residueThemeOptions,
+		preferredResidueThemeName,
 		onRepresentationChainThemeChange,
 		onRepresentationResidueThemeChange,
 	};
@@ -785,6 +788,7 @@ export function getMoleculeUIAlignedProps({
 	Aligned,
 	chainThemeOptions,
 	residueThemeOptions,
+	preferredResidueThemeName,
 	onRepresentationChainThemeChange,
 	onRepresentationResidueThemeChange,
 	chainInfoAligned,
@@ -815,6 +819,7 @@ export function getMoleculeUIAlignedProps({
 	Aligned: string,
 	chainThemeOptions?: Array<{ value: string; label: string }>,
 	residueThemeOptions?: Array<{ value: string; label: string }>,
+	preferredResidueThemeName?: string,
 	onRepresentationChainThemeChange?: (ref: string, themeName: string) => void,
 	onRepresentationResidueThemeChange?: (ref: string, themeName: string) => void,
 	chainInfoAligned: any,
@@ -877,6 +882,7 @@ export function getMoleculeUIAlignedProps({
 		},
 		chainThemeOptions,
 		residueThemeOptions,
+		preferredResidueThemeName,
 		onRepresentationChainThemeChange,
 		onRepresentationResidueThemeChange,
 	};

@@ -21,6 +21,42 @@ In publications, users should acknowledge the data sources used, and the underly
 
 The Ribocode User Interface (UI) is best displayed on a screen at a width of 1200 pixels and a height of at least 800 pixels. UI interaction is normally via a mouse and keyboard.
 
+### Important ownership model
+
+Ribocode has two data roles and two viewer columns:
+
+- `AlignedTo` is the reference dataset role.
+- `Aligned` is the dataset-to-align role.
+- Column `A` is where you load `AlignedTo`.
+- Column `B` is where you load `Aligned`.
+
+Both columns can show controls for both roles in `MoleculeUI`, but data ownership still follows the load points above.
+
+### Theme workflow quick start
+
+Use this flow when working with chain/residue themes:
+
+1. Load `AlignedTo` in Column `A`.
+2. Optionally load `Aligned` in Column `B`.
+3. Open `Representation Controls` in either column.
+4. In `Theme`, choose `Chain` or `Residue` mode.
+5. Use `Load` to import a theme file, then pick it in the theme dropdown.
+6. Add a representation (or select an existing one) and set that row's `Theme Type` plus `Chain Theme` or `Residue Theme`.
+7. Use `Save` to export the currently selected theme.
+8. Use `x` to remove a theme that is not currently used by any representation.
+
+Theme library behavior:
+
+- Loaded custom themes are shared and can be applied to either dataset role (`AlignedTo` or `Aligned`).
+- The top `Theme` selector in `Representation Controls` sets what newly added representations will use by default for that mode.
+- Per-representation selectors are authoritative for that specific representation row.
+
+Residue `Default` behavior:
+
+- Choosing `Default` in a representation's residue selector maps to a role-specific default:
+  - `AlignedTo-default-residue-colors` for `AlignedTo` representations.
+  - `Aligned-default-residue-colors` for `Aligned` representations.
+
 The UI layout is as follows:
   - Title containing the version with a link to this README.
   - `General Controls`

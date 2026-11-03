@@ -5,12 +5,20 @@
  * 
  * @author Andy Turner <agdturner@gmail.com>
  * @version 1.0.0
- * @lastModified 2026-04-24
+ * @lastModified 2026-10-24
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { defineConfig, devices } from '@playwright/test';
 
 const reuseExistingServer = process.env.PW_E2E_REUSE_SERVER === '1';
+const forceWebGL = process.env.PW_E2E_FORCE_WEBGL === '1';
+const webglLaunchArgs = [
+  '--enable-webgl',
+  '--ignore-gpu-blocklist',
+  '--use-gl=angle',
+  '--use-angle=swiftshader',
+  '--enable-unsafe-swiftshader',
+];
 
 // See https://playwright.dev/docs/test-configuration for more details.
 export default defineConfig({
@@ -19,14 +27,19 @@ export default defineConfig({
   expect: {
     timeout: 5000
   },
-  fullyParallel: true,
+  fullyParallel: !forceWebGL,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 1 : (forceWebGL ? 1 : undefined),
   reporter: 'list',
   use: {
     trace: 'on-first-retry',
     baseURL: 'http://localhost:5173',
+    launchOptions: forceWebGL
+      ? {
+          args: webglLaunchArgs,
+        }
+      : undefined,
     ...devices['Desktop Chrome'],
   },
   webServer: {

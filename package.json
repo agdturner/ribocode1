@@ -1,6 +1,6 @@
 {
   "name": "ribocode1",
-  "version": "0.20.0",
+  "version": "0.20.1",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -19,6 +19,8 @@
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
     "test:e2e:reuse": "PW_E2E_REUSE_SERVER=1 playwright test",
+    "test:e2e:webgl": "PW_E2E_FORCE_WEBGL=1 playwright test",
+    "test:e2e:webgl:reuse": "PW_E2E_FORCE_WEBGL=1 PW_E2E_REUSE_SERVER=1 playwright test",
     "test:e2e:session": "playwright test e2e/session-load.e2e.spec.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",

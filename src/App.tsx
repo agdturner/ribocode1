@@ -1671,7 +1671,17 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             ? `residue-type-custom-${targetMode.toLowerCase()}`
             : themeName;
         const currentRows = getThemeRowsByName(editableThemeName);
-        const updatedRows = [...currentRows];
+        const preferredSourceThemeName = getPreferredResidueThemeIdForMode(targetMode);
+        const preferredSourceRows = getThemeRowsByName(preferredSourceThemeName);
+        const sourceRows = editableThemeName !== themeName
+            ? (
+                preferredSourceRows.length > 0
+                    ? preferredSourceRows
+                    : []
+            )
+            : [];
+        const baselineRows = currentRows.length > 0 ? currentRows : sourceRows;
+        const updatedRows = [...baselineRows];
         const idx = updatedRows.findIndex(row => String(row.residue_type ?? '').trim().toUpperCase() === normalizedResidueType);
         if (idx >= 0) {
             updatedRows[idx] = { ...updatedRows[idx], residue_type: normalizedResidueType, color: normalizedColor };
@@ -1698,6 +1708,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             [targetMode]: effectiveThemeName,
         }));
     }, [
+        getPreferredResidueThemeIdForMode,
         getThemeRowsByName,
         isThemeInUseForFork,
         registerLoadedColorTheme,
@@ -3055,6 +3066,10 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
 
                 return rows;
             },
+            editResidueThemeColor: (themeName: string, residueType: string, color: string, mode?: ColorThemeMode) => {
+                updateResidueTypeColorInTheme(themeName, residueType, color, mode);
+            },
+            getColorThemeRowsByName: (themeName: string) => getThemeRowsByName(themeName),
         };
 
         return () => {
@@ -3073,6 +3088,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         subunitToChainIdsAlignedTo,
         subunitToChainIdsAligned,
         syncEnabled,
+        getThemeRowsByName,
+        updateResidueTypeColorInTheme,
         viewerA.ref,
         viewerB.ref,
     ]);
