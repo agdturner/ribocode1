@@ -1,3 +1,16 @@
+## [v0.21.0] - 2026-11-04
+Release summary: this minor release improves file-load validation/error feedback, fixes deployed docs routing behavior, and clarifies supported load-file formats in the user guide.
+- Added explicit CIF/mmCIF validation and user-facing load failure alerts in `src/App.tsx` for manual dataset loading, so selecting non-`.cif`/`.mmcif` files no longer fails silently.
+- Added a lightweight CIF content sniff in `src/App.tsx` so `.cif` files with non-CIF text are rejected early with a clear user-facing message instead of failing silently.
+- Added integration regression coverage in `src/App.integration.test.tsx` to verify unsupported file selections are rejected with an alert and no load attempt is made.
+- Fixed deployed docs routing in `vite.config.js` by excluding `/docs/` paths from Workbox SPA navigation fallback, so `https://.../ribocode1/docs/index.html` serves TypeDoc instead of the app shell.
+- Added release note guidance for existing installs: after deployment, users with a previously cached service worker may need a hard refresh or `Session > Reset Local Caches` to pick up the docs-route fix immediately.
+- Updated `UserGuide.md` with a dedicated `Supported File Formats` section clarifying accepted formats for `Load AlignedTo`, `Load Aligned`, theme file loading, and session file loading.
+
+## [v0.20.1] - 2026-11-03
+Release summary: this patch release fixes residue-theme customization so editing one residue from a default residue theme preserves all other residue colours from the source theme.
+- Fixed default residue-theme customization in `src/App.tsx` so creating a custom residue theme seeds from the currently edited default residue-theme rows (with canonical fallback) instead of starting from a single edited residue, preventing unintended magenta fallback for untouched residues.
+
 ## [v0.20.0] - 2026-10-27
 Release summary: this minor release splits Representation Controls colour-theme management into separate Chain Theme and Residue Theme workflows, with independent save/load/selection persistence and new round-trip regression coverage.
 - Split Representation Controls colour-theme UI in `src/components/LoadMolecule.tsx` into separate `Chain Theme` and `Residue Theme` sections, each with dedicated theme dropdown, load, remove, and save actions.

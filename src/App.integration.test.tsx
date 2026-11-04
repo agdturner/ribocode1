@@ -355,8 +355,8 @@ vi.mock('./components/MolstarContainer', () => {
 });
 
 // Lightweight helper for creating deterministic mock files used by integration tests.
-function loadTestFile(filename: string): File {
-  return new File(['mock-file-content'], filename, { type: 'text/plain' });
+function loadTestFile(filename: string, content = 'data_mock\n#\nloop_\n_atom_site.group_PDB\nATOM\n'): File {
+  return new File([content], filename, { type: 'text/plain' });
 }
 
 describe('App integration: AlignedTo and Aligned loading', () => {
@@ -398,6 +398,44 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     await waitFor(() => {
       expect(document.getElementById('viewer-column-B-aligned-load-btn')).not.toBeDisabled();
     }, { timeout: 5000 });
+  });
+
+  it('shows an alert and skips loading when selected file is not .cif/.mmcif', async () => {
+    render(<App />);
+
+    const alignedToInput = document.getElementById('viewer-column-A-alignedto-file-input') as HTMLInputElement | null;
+    expect(alignedToInput).toBeInTheDocument();
+
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    fireEvent.change(alignedToInput!, { target: { files: [loadTestFile('not-a-cif.txt')] } });
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        "Unsupported file type for 'not-a-cif.txt'. Please choose a CIF/mmCIF file (.cif or .mmcif)."
+      );
+    }, { timeout: 5000 });
+    expect(loadMoleculeFileToViewerMock).not.toHaveBeenCalled();
+
+    alertSpy.mockRestore();
+  });
+
+  it('shows an alert and skips loading when .cif content is not CIF-like', async () => {
+    render(<App />);
+
+    const alignedToInput = document.getElementById('viewer-column-A-alignedto-file-input') as HTMLInputElement | null;
+    expect(alignedToInput).toBeInTheDocument();
+
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    fireEvent.change(alignedToInput!, { target: { files: [loadTestFile('invalid.cif', 'not a cif file')] } });
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        "'invalid.cif' does not look like a valid CIF/mmCIF structure file. Please choose a valid text CIF/mmCIF file."
+      );
+    }, { timeout: 5000 });
+    expect(loadMoleculeFileToViewerMock).not.toHaveBeenCalled();
+
+    alertSpy.mockRestore();
   });
 
   it('disables Column B Load Chain/Residue Colours until Aligned data are loaded', async () => {

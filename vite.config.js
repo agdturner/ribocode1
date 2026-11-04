@@ -12,9 +12,13 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 console.log('VITE_BASE_PATH:', process.env.VITE_BASE_PATH);
+const basePath = process.env.VITE_BASE_PATH || '/';
+const normalizedBasePath = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
+const docsPathPrefix = `${normalizedBasePath}/docs/`.replace(/\/{2,}/g, '/');
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export default defineConfig({
-  base: process.env.VITE_BASE_PATH || '/', //'/ribocode1/', // Replace with your repository name
+  base: basePath, //'/ribocode1/', // Replace with your repository name
   plugins: [
     react(),
     VitePWA({
@@ -22,14 +26,18 @@ export default defineConfig({
       filename: 'service-worker.js',
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // Keep docs routes out of SPA fallback so /docs/index.html serves TypeDoc.
+        navigateFallbackDenylist: [
+          new RegExp(`^${escapeRegExp(docsPathPrefix)}`),
+        ],
       },
       includeAssets: ['favicon.ico', 'robots.txt', 'logo192.png', 'logo512.png'],
       manifest: {
         name: 'Ribocode',
         short_name: 'Ribocode',
         description: 'Ribosome structure analysis and alignment viewer.',
-        start_url: process.env.VITE_BASE_PATH || '/',
-        scope: process.env.VITE_BASE_PATH || '/',
+        start_url: basePath,
+        scope: basePath,
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#0f172a',

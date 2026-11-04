@@ -7,6 +7,7 @@ Welcome to the ribocode1 User Guide!
 - [Data and Mol* Acknowledgements](#data-and-mol-acknowledgements)
 - [User Interface](#user-interface)
 - [Chain Selection](#chain-selection)
+- [Supported File Formats](#supported-file-formats)
 - [Sessions](#sessions)
 - [Troubleshooting Before Reporting Issues](#troubleshooting-before-reporting-issues)
 
@@ -321,6 +322,48 @@ Example enriched label:
 - There is a control for each of `AlignedTo` and `Aligned` which can be configured independently.
 - Each chain section also displays UniProt cache progress (`cached`, `pending`, `in-flight`).
 - The per-dataset toggle state is saved and restored as part of session `uiState`.
+
+## Supported File Formats
+
+This section defines what can be loaded in each file picker.
+
+### 1) Structure datasets (`Load AlignedTo`, `Load Aligned`)
+
+- Required format: [CIF/mmCIF text structure files](https://www.iucr.org/resources/cif/spec/version1.1).
+- Expected extensions: `.cif` or `.mmcif`.
+- Ribocode validates both:
+  - filename extension (`.cif` / `.mmcif`), and
+  - file content looks CIF-like.
+- If either check fails, loading is rejected with a user-facing message.
+
+Examples:
+- `4UG0.cif`
+- `6XU8.cif`
+
+### 2) Colour/theme files (`Load` in Representation Controls)
+
+Supported theme file extensions:
+- `.csv`, `.tsv`, `.txt`, `.json`
+
+Supported table shapes:
+- Chain themes: two columns equivalent to `chain,color`
+- Residue themes: two columns equivalent to `residue_type,color`
+
+Header aliases accepted:
+- chain: `chain`, `chain_id`, `pdb_chain`, `auth_asym_id`, `label_asym_id`
+- residue type: `residue_type`, `residue`, `residue_name`, `comp_id`
+- color: `color` or `colour`
+
+Notes:
+- Legacy multi-column mapping files (for example `mapping_with_colour_animal.txt`) are not the target format for current colour loading.
+- For chain themes, values should be chain IDs.
+- For residue themes, values should be residue codes (for example `ALA`, `LYS`, `G`).
+
+### 3) Session files (`Session > Load`, `Session > Load All`)
+
+- Session files are JSON (`.json`).
+- `Load` restores session state and then asks you to manually select required datasets.
+- `Load All` restores state and embedded data from a single session file (when present).
 
 
 ## Sessions

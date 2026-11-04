@@ -326,6 +326,35 @@ const SUBUNIT_REALIGN_CHAIN_ID = '__subunit__';
 const RESIDUE_REALIGN_CHAIN_ID = '__residue__';
 const DEFAULT_CLIPPING = { minNear: 1, clipRadius: 0 };
 
+function isCifLikeFilename(filename: string): boolean {
+    const lower = String(filename ?? '').toLowerCase();
+    return lower.endsWith('.cif') || lower.endsWith('.mmcif');
+}
+
+function looksLikeCifContent(sample: string): boolean {
+    const normalized = String(sample ?? '').replace(/\r/g, '');
+    if (!normalized.trim()) return false;
+    const lines = normalized
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => !!line && !line.startsWith('#'));
+    if (lines.length === 0) return false;
+
+    const hasDataBlock = lines.some(line => line.toLowerCase().startsWith('data_'));
+    const hasCifSignal = /\bloop_\b/i.test(normalized)
+        || /_(atom_site|entry|struct|entity|exptl|cell)\./i.test(normalized);
+    return hasDataBlock && hasCifSignal;
+}
+
+async function sniffCifLikeFileContent(file: File): Promise<boolean> {
+    try {
+        const sample = await file.slice(0, 16 * 1024).text();
+        return looksLikeCifContent(sample);
+    } catch {
+        return false;
+    }
+}
+
 function round3(value: number): number {
     return Number.isFinite(value) ? Number(value.toFixed(3)) : value;
 }
@@ -1127,9 +1156,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     }, [processUniProtQueue, syncUniProtQueueCounts]);
 
     const discoverUniprotAccessionsFromFile = useCallback(async (file: File, mode?: string) => {
-        const lower = file.name.toLowerCase();
-        const isCifLike = lower.endsWith('.cif') || lower.endsWith('.mmcif');
-        if (!isCifLike) return;
+        if (!isCifLikeFilename(file.name)) return;
 
         try {
             const text = await file.text();
@@ -3525,15 +3552,34 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         async (e: React.ChangeEvent<HTMLInputElement>, mode: string) => {
             const file = e.target.files?.[0];
             if (!file) return;
-            if (mode === AlignedTo && expectedAlignedToFilename && file.name !== expectedAlignedToFilename) {
-                alert(`You must select the file '${expectedAlignedToFilename}' for AlignedTo as required by the loaded session.`);
-                return;
+            try {
+                if (!isCifLikeFilename(file.name)) {
+                    alert(`Unsupported file type for '${file.name}'. Please choose a CIF/mmCIF file (.cif or .mmcif).`);
+                    return;
+                }
+                const isCifLikeContent = await sniffCifLikeFileContent(file);
+                if (!isCifLikeContent) {
+                    alert(`'${file.name}' does not look like a valid CIF/mmCIF structure file. Please choose a valid text CIF/mmCIF file.`);
+                    return;
+                }
+                if (mode === AlignedTo && expectedAlignedToFilename && file.name !== expectedAlignedToFilename) {
+                    alert(`You must select the file '${expectedAlignedToFilename}' for AlignedTo as required by the loaded session.`);
+                    return;
+                }
+                // Use the ref for alignmentData to avoid async state issues
+                const alignmentData = mode === Aligned ? alignmentDataRef.current : undefined;
+                const loaded = await loadMoleculeIntoViewers(file, mode, alignmentData, [], [], {
+                    hideInRightViewerByDefault: true,
+                });
+                if (!loaded) {
+                    alert(`Could not load '${file.name}'. Please ensure it is a valid CIF/mmCIF structure file.`);
+                }
+            } catch (err) {
+                console.error(`[Load File] Failed to load ${file.name}.`, err);
+                alert(`Could not load '${file.name}'. Please ensure it is a valid CIF/mmCIF structure file.`);
+            } finally {
+                e.target.value = '';
             }
-            // Use the ref for alignmentData to avoid async state issues
-            const alignmentData = mode === Aligned ? alignmentDataRef.current : undefined;
-            await loadMoleculeIntoViewers(file, mode, alignmentData, [], [], {
-                hideInRightViewerByDefault: true,
-            });
         },
         [expectedAlignedToFilename]
     );
