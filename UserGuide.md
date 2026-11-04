@@ -347,7 +347,21 @@ Supported theme file extensions:
 
 Supported table shapes:
 - Chain themes: two columns equivalent to `chain,color`
+
+```csv
+chain,color
+LY,#3366FF
+e,#FF8800
+```
+
 - Residue themes: two columns equivalent to `residue_type,color`
+
+```csv
+residue_type,color
+ALA,#8CFF8C
+LYS,#4747B8
+G,#32CD32
+```
 
 Header aliases accepted:
 - chain: `chain`, `chain_id`, `pdb_chain`, `auth_asym_id`, `label_asym_id`
@@ -387,34 +401,6 @@ Next, the user can do several things:
   - The 3D representation of the dataset in `Viewer A` can be rotated, zoomed and panned using mouse controls as normal with a Mol* viewer.
   - An `Aligned` dataset can be loaded via the `Load Aligned` button.
   - Subunits and chains can be selected and once selected more things can be done...
-
-### Colour File Format
-
-`Load Colours` now supports simple two-column themes.
-
-- Chain theme format:
-
-```csv
-chain,color
-LY,#3366FF
-e,#FF8800
-```
-
-- Residue-type theme format:
-
-```csv
-residue_type,color
-ALA,#8CFF8C
-LYS,#4747B8
-G,#32CD32
-```
-
-- Supported file extensions: `.csv`, `.tsv`, `.txt`, `.json`.
-- Header aliases are accepted:
-  - chain: `chain`, `chain_id`, `pdb_chain`, `auth_asym_id`, `label_asym_id`
-  - residue type: `residue_type`, `residue`, `residue_name`, `comp_id`
-  - color: `color` or `colour`
-- Legacy multi-column mapping files (for example `mapping_with_colour_animal.txt`) are not a target format for current colour loading.
   
 * As an `Aligned` dataset is loaded, it's atom positions are centralized and aligned with the centralized `AlignedTo` atom positions using an algorithm.
 * In `Viewer A`, the loaded `Aligned` dataset is hidden by default. Use the `Aligned` visibility (eye) button in `MoleculeUI` to show it.
