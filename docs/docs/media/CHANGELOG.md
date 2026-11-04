@@ -1,3 +1,11 @@
+## [Unreleased]
+Release summary: upcoming patch improves file-load error handling by surfacing clear feedback when users select unsupported or invalid structure files.
+- Added explicit CIF/mmCIF validation and user-facing load failure alerts in `src/App.tsx` for manual dataset loading, so selecting non-`.cif`/`.mmcif` files no longer fails silently.
+- Added a lightweight CIF content sniff in `src/App.tsx` so `.cif` files with non-CIF text are rejected early with a clear user-facing message instead of failing silently.
+- Added integration regression coverage in `src/App.integration.test.tsx` to verify unsupported file selections are rejected with an alert and no load attempt is made.
+- Fixed deployed docs routing in `vite.config.js` by excluding `/docs/` paths from Workbox SPA navigation fallback, so `https://.../ribocode1/docs/index.html` serves TypeDoc instead of the app shell.
+- Added release note guidance for existing installs: after deployment, users with a previously cached service worker may need a hard refresh or `Session > Reset Local Caches` to pick up the docs-route fix immediately.
+
 ## [v0.20.1] - 2026-11-03
 Release summary: this patch release fixes residue-theme customization so editing one residue from a default residue theme preserves all other residue colours from the source theme.
 - Fixed default residue-theme customization in `src/App.tsx` so creating a custom residue theme seeds from the currently edited default residue-theme rows (with canonical fallback) instead of starting from a single edited residue, preventing unintended magenta fallback for untouched residues.
