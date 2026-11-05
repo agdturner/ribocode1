@@ -26,6 +26,7 @@ export interface SubunitSelectButtonProps {
     onSelect: (subunit: RibosomeSubunitType) => void;
     label?: string;
     id: string;
+    title?: string;
 }
 
 /**
@@ -42,7 +43,8 @@ const SubunitSelectButton: React.FC<SubunitSelectButtonProps> = ({
     selectedSubunit,
     onSelect,
     label,
-    id
+    id,
+    title
 }) => (
         <GenericSelectButton
             label={label || 'Select'}
@@ -51,6 +53,7 @@ const SubunitSelectButton: React.FC<SubunitSelectButtonProps> = ({
             onSelect={(value: string) => onSelect(value as RibosomeSubunitType)}
             disabled={disabled}
             id={id ?? selectIdSuffix}
+            title={title}
         />
 );
 

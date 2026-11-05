@@ -17,6 +17,7 @@ Welcome to the Ribocode Developer Guide!
   - [General Rules](#general-rules)
   - [Examples](#examples)
   - [Updating Existing Components](#updating-existing-components)
+  - [Tooltip Conventions](#tooltip-conventions)
 - [Mol* Advanced Controls Toggle](#mol-advanced-controls-toggle)
 - [Re-alignment Implementation Notes](#re-alignment-implementation-notes)
   - [Cache and State Hygiene](#cache-and-state-hygiene)
@@ -436,6 +437,24 @@ To ensure robust, maintainable, and testable UI code, Ribocode uses the followin
 
 ### Updating Existing Components
 If you add a new modal, file input, or dynamic UI element, ensure it has a `data-testid` attribute following the conventions above. Update the relevant tests to use these selectors.
+
+### Tooltip Conventions
+
+Use concise, state-aware tooltip text for interactive controls:
+
+- **Action-first wording** for enabled controls (for example, "Zoom to...", "Load...", "Save...").
+- **Current-state wording** for toggles and mode selectors (for example, On/Off or current selected mode).
+- **Disabled guidance** for blocked controls, explicitly stating what prerequisite must be met.
+
+Implementation guidance:
+
+- Prefer `title` attributes on controls and, where native browser behavior is inconsistent for certain elements (for example disabled/select controls), also place matching tooltip text on a wrapper or label.
+- Keep wording consistent across parallel controls (`Select 1`/`Select 2`, `AlignedTo`/`Aligned`) by reusing shared helper functions.
+
+Testing guidance:
+
+- Add focused assertions for tooltip text in the nearest component/integration test file.
+- Verify both enabled and disabled-state wording when behavior changes by state.
 
 
 ## Mol*

@@ -375,6 +375,14 @@ describe('App integration: AlignedTo and Aligned loading', () => {
     expect(header).toBeInTheDocument();
     expect(header.id).toBe('app-header');
     expect(header.tagName.toLowerCase()).toBe('header');
+    expect(screen.getByRole('link', { name: 'README' })).toHaveAttribute(
+      'title',
+      'Open README documentation in a web browser.'
+    );
+    expect(screen.getByRole('link', { name: 'User Guide' })).toHaveAttribute(
+      'title',
+      'Open User Guide documentation in a web browser.'
+    );
   });
 
   it('toggles visibility for all representations', async () => {

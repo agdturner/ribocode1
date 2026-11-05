@@ -65,6 +65,7 @@ const AppHeader: React.FC = () => (
         href={LOCAL_DOCS_README_URL}
         target="_blank"
         rel="noopener noreferrer"
+        title="Open README documentation in a web browser."
         onClick={(event) => { void openDocsLinkWithFallback(event, LOCAL_DOCS_README_URL, CANONICAL_README_URL, 'README'); }}
       >
         README
@@ -74,6 +75,7 @@ const AppHeader: React.FC = () => (
         href={LOCAL_DOCS_USER_GUIDE_URL}
         target="_blank"
         rel="noopener noreferrer"
+        title="Open User Guide documentation in a web browser."
         onClick={(event) => { void openDocsLinkWithFallback(event, LOCAL_DOCS_USER_GUIDE_URL, CANONICAL_USER_GUIDE_URL, 'User Guide'); }}
       >
         User Guide

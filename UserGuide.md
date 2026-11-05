@@ -6,6 +6,7 @@ Welcome to the ribocode1 User Guide!
 
 - [Data and Mol* Acknowledgements](#data-and-mol-acknowledgements)
 - [User Interface](#user-interface)
+  - [Tooltips](#tooltips)
 - [Chain Selection](#chain-selection)
 - [Supported File Formats](#supported-file-formats)
 - [Sessions](#sessions)
@@ -51,6 +52,16 @@ Theme library behavior:
 - Loaded custom themes are shared and can be applied to either dataset role (`AlignedTo` or `Aligned`).
 - The top `Theme` selector in `Representation Controls` sets what newly added representations will use by default for that mode.
 - Per-representation selectors are authoritative for that specific representation row.
+
+### Tooltips
+
+Most controls in Ribocode provide hover tooltips.
+
+- Tooltips describe what a control does.
+- For toggle-style controls, tooltips describe the current state (for example, On/Off).
+- For disabled controls, tooltips explain what must happen before the control becomes enabled.
+
+This is especially useful in `Representation Controls`, `Clipping Controls`, and `Select and Zoom Controls`, where some actions depend on current dataset load state and current chain/residue selections.
 
 Residue `Default` behavior:
 

@@ -15,6 +15,7 @@ export interface ChainSelectionTableProps {
   selectedChainId: string;
   onSelectChainId: (chainId: string) => void;
   title?: string;
+  titleTooltip?: string;
   idPrefix: string;
   query?: string;
   onQueryChange?: (query: string) => void;
@@ -25,6 +26,7 @@ const ChainSelectionTable: React.FC<ChainSelectionTableProps> = ({
   selectedChainId,
   onSelectChainId,
   title = 'Chain Finder',
+  titleTooltip,
   idPrefix,
   query,
   onQueryChange,
@@ -54,7 +56,7 @@ const ChainSelectionTable: React.FC<ChainSelectionTableProps> = ({
   return (
     <div className="chain-selection-table-container" id={`${idPrefix}-chain-table-container`}>
       <div className="chain-selection-table-header">
-        <strong>{title}</strong>
+        <strong title={titleTooltip}>{title}</strong>
       </div>
       <input
         id={`${idPrefix}-chain-table-search`}
@@ -65,6 +67,7 @@ const ChainSelectionTable: React.FC<ChainSelectionTableProps> = ({
         onChange={e => setActiveQuery(e.target.value)}
         placeholder="Search chain, auth, UniProt, molecule..."
         aria-label={`${title} search`}
+        title={titleTooltip}
       />
       <div className="chain-selection-table-scroll">
         <table className="chain-selection-table" id={`${idPrefix}-chain-table`}>

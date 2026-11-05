@@ -2,7 +2,10 @@
 A chronological version based list of changes.
 
 ## [Unreleased]
-Release summary: upcoming patch improves session export file-save UX and default naming.
+Release summary: upcoming changes.
+
+## [v0.22.0] - 2026-11-05
+Release summary: this release improves session export UX and rolls out comprehensive, state-aware tooltip guidance across key controls.
 - Improved session export UX in `src/hooks/useSessionSave.ts` and `src/hooks/useSessionSaveAll.ts` by using `showSaveFilePicker` when available so users can choose filename/location, with versioned date-time default names and automatic fallback to browser download behavior when the picker is unavailable.
 - Added explicit session export metadata (`schemaVersion` and `sessionMetadata` including `appVersion`, `exportedAt`, and `exportMode`) to saved session payloads for forward/backward compatibility workflows.
 - Added Save/Save All menu hover guidance in `src/App.tsx` clarifying browser-dependent file-picker behavior and download fallback.
@@ -20,6 +23,14 @@ Release summary: upcoming patch improves session export file-save UX and default
 - Improved selector tooltip reliability in `src/components/LoadMolecule.tsx` by attaching tooltip text to selector wrappers/labels (including disabled-state cases) and fixing the Representation label `htmlFor` target.
 - Fixed Add Representation selector tooltip propagation for the default `spacefill` dropdown path by threading `title` through `RepresentationSelectButton`/`GenericSelectButton` and wiring tooltip text from `ViewerColumn`.
 - Updated Add Representation selector tooltip wording to include the active selection, e.g. `Choose the representation type to add, currently set to spacefill`.
+- Added clipping-control tooltip guidance in `src/components/ViewerColumn.tsx` for `Min Near` and `Clip Radius` sliders plus both `Reset` buttons, with focused assertions in `src/components/ViewerColumn.test.tsx`.
+- Added header-link tooltip guidance in `src/components/AppHeader.tsx` so `README` and `User Guide` explicitly indicate they open documentation in a web browser.
+- Added Visibility Controls tooltip guidance in `src/components/LoadMolecule.tsx` for `Zoom extraRadius`, `minRadius`, highlight display mode (including current selection), `Dim unselected`, and opacity strength controls.
+- Added Subunit Controls tooltip guidance in `src/components/LoadMolecule.tsx` for the subunit selector plus `Zoom`, `Highlight`, and `Inspect` actions, including current-state messaging.
+- Added Chain Controls tooltip guidance in `src/components/LoadMolecule.tsx` for combined `Zoom`, `Highlight`, and `Inspect` actions plus `Include UniProt accession in labels`, including state-aware messaging.
+- Expanded Select/Zoom tooltip guidance in `src/components/LoadMolecule.tsx` for Chain Controls `Select 1/2` workflows (chain select, chain zoom/highlight/inspect) and Residue Controls actions (`Select`, `Select All`, `Clear`, `Invert`, `Select Shared`, residue-type `Add/Remove`, residue zoom/highlight/inspect).
+- Refined Residue Controls `Select Shared` disabled tooltip messaging to explain the cross-view dependency on matching AlignedTo/Aligned chain selections for both `Select 1` and `Select 2`.
+- Updated `UserGuide.md` and `DeveloperGuide.md` with tooltip guidance: user-facing tooltip behavior summary plus contributor conventions for state-aware wording and tooltip test coverage.
 - Added focused hook test coverage in `src/hooks/useSessionSave.test.tsx` and `src/hooks/useSessionSaveAll.test.tsx` for picker flow, fallback flow, and default filename conventions.
 
 ## [v0.21.0] - 2026-11-04

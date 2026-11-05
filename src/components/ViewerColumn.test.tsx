@@ -407,14 +407,36 @@ describe('ViewerColumn', () => {
         expect(clippingToggle).toHaveAttribute('title', 'Hide Clipping Controls.');
 
         const nearRange = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clip-near-range`) as HTMLInputElement;
+        const nearNumber = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clip-near-number`) as HTMLInputElement;
         const farRange = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clip-far-range`) as HTMLInputElement;
+        const farNumber = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clip-far-number`) as HTMLInputElement;
         const nearResetBtn = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clip-near-reset-btn`) as HTMLButtonElement;
         const farResetBtn = document.getElementById(`${idPrefix}-${viewerColumnIdSuffix}-A-alignedto-clip-far-reset-btn`) as HTMLButtonElement;
 
         expect(nearRange).toBeInTheDocument();
+        expect(nearNumber).toBeInTheDocument();
         expect(farRange).toBeInTheDocument();
+        expect(farNumber).toBeInTheDocument();
         expect(nearResetBtn).toBeInTheDocument();
         expect(farResetBtn).toBeInTheDocument();
+        expect(nearRange).toHaveAttribute(
+            'title',
+            'Adjust the minimum near clipping distance to control how much of the nearest geometry is clipped.'
+        );
+        expect(farRange).toHaveAttribute(
+            'title',
+            'Adjust the clipping radius to control how much of the structure remains visible.'
+        );
+        expect(nearNumber).toHaveAttribute(
+            'title',
+            'Adjust the minimum near clipping distance to control how much of the nearest geometry is clipped.'
+        );
+        expect(farNumber).toHaveAttribute(
+            'title',
+            'Adjust the clipping radius to control how much of the structure remains visible.'
+        );
+        expect(nearResetBtn).toHaveAttribute('title', 'Reset Min Near to its default value.');
+        expect(farResetBtn).toHaveAttribute('title', 'Reset Clip Radius to its default value.');
 
         fireEvent.change(nearRange, { target: { value: '0.5' } });
         expect(onClippingMinNearChange).toHaveBeenCalledWith(0.5);

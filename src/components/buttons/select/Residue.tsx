@@ -28,6 +28,7 @@ export interface ResidueSelectButtonProps {
 	onSelect: (residueIds: string[]) => void;
 	label?: string;
 	id: string;
+	title?: string;
 }
 
 /**
@@ -52,7 +53,8 @@ const ResidueSelectButton: React.FC<ResidueSelectButtonProps> = ({
 	selectedResidueIds = [],
 	onSelect,
 	label,
-	id
+	id,
+	title
 }) => {
 	// Sort by sequence number (ascending), with insertion code as tiebreaker
 	const orderedEntries = Array.from(residueLabels.entries()).sort(
@@ -60,7 +62,7 @@ const ResidueSelectButton: React.FC<ResidueSelectButtonProps> = ({
 			a.seqNumber - b.seqNumber || a.insCode.localeCompare(b.insCode)
 	);
 	return (
-		<label>
+		<label title={title}>
 			{label || 'Select'}
 			<select
 				className="msp-select msp-form-control"
@@ -73,6 +75,7 @@ const ResidueSelectButton: React.FC<ResidueSelectButtonProps> = ({
 				}}
 				disabled={disabled}
 				id={id ?? selectIdSuffix}
+				title={title}
 			>
 				{orderedEntries.map(([residueId, info]) => (
 					<option key={residueId} value={residueId}>{info.name}</option>

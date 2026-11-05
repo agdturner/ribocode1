@@ -128,6 +128,146 @@ const getChainColourApplyTooltip = (chainId: string, disabled: boolean): string 
         ? `Disabled until chain ${chainId} has an unsaved colour change.`
         : `Apply the selected colour to chain ${chainId}.`;
 
+const getZoomExtraRadiusTooltip = (): string =>
+    'Adjust extraRadius padding used when zooming to selections.';
+
+const getZoomMinRadiusTooltip = (): string =>
+    'Adjust the minimum zoom radius used when zooming to selections.';
+
+const getHighlightDisplayTooltip = (selectionDisplayMode: 'halo' | 'overlay' | 'hybrid'): string =>
+    `Choose how highlights are displayed, currently set to ${selectionDisplayMode}.`;
+
+const getDimUnselectedTooltip = (dimUnselected: boolean): string =>
+    dimUnselected
+        ? 'Dim unselected atoms/residues is currently On. Click to turn it Off.'
+        : 'Dim unselected atoms/residues is currently Off. Click to turn it On.';
+
+const getDimOpacityTooltip = (dimUnselected: boolean): string =>
+    dimUnselected
+        ? 'Adjust opacity strength applied to unselected atoms/residues.'
+        : 'Disabled until Dim unselected is turned On.';
+
+const getSubunitSelectTooltip = (disabled: boolean, selectedSubunit: RibosomeSubunitType): string =>
+    disabled
+        ? 'Disabled until subunit selection is available for the loaded dataset.'
+        : `Choose the active subunit selection, currently set to ${selectedSubunit}.`;
+
+const getSubunitZoomTooltip = (disabled: boolean, subunitZoomLabel: string): string =>
+    disabled
+        ? 'Disabled until a zoomable subunit selection is available.'
+        : `Zoom to current subunit selection (${subunitZoomLabel}).`;
+
+const getSubunitHighlightTooltip = (disabled: boolean, subunitHighlightOn: boolean): string =>
+    disabled
+        ? 'Disabled until subunit highlighting is available.'
+        : subunitHighlightOn
+            ? 'Subunit highlight is On. Click to turn it Off.'
+            : 'Subunit highlight is Off. Click to turn it On.';
+
+const getSubunitInspectTooltip = (disabled: boolean, subunitInspectOn: boolean): string =>
+    disabled
+        ? 'Disabled until subunit inspection is available.'
+        : subunitInspectOn
+            ? 'Subunit inspect is On. Click to turn it Off.'
+            : 'Subunit inspect is Off. Click to turn it On.';
+
+const getCombinedSelectionZoomTooltip = (disabled: boolean): string =>
+    disabled
+        ? 'Disabled until a combined chain selection is available.'
+        : 'Zoom to the current combined selection across selected chains.';
+
+const getCombinedSelectionHighlightTooltip = (disabled: boolean, highlightOn: boolean): string =>
+    disabled
+        ? 'Disabled until combined-selection highlighting is available.'
+        : highlightOn
+            ? 'Combined-selection highlight is On. Click to turn it Off.'
+            : 'Combined-selection highlight is Off. Click to turn it On.';
+
+const getCombinedSelectionInspectTooltip = (disabled: boolean, inspectOn: boolean): string =>
+    disabled
+        ? 'Disabled until combined-selection inspection is available.'
+        : inspectOn
+            ? 'Combined-selection inspect is On. Click to turn it Off.'
+            : 'Combined-selection inspect is Off. Click to turn it On.';
+
+const getUniprotLabelToggleTooltip = (enabled: boolean): string =>
+    enabled
+        ? 'UniProt accessions in chain labels are On. Click to turn them Off.'
+        : 'UniProt accessions in chain labels are Off. Click to turn them On.';
+
+const getChainSelectTooltip = (slot: 'Select 1' | 'Select 2'): string =>
+    `Select a chain for ${slot}.`;
+
+const getChainZoomTooltip = (slot: 'Select 1' | 'Select 2', disabled: boolean, label: string): string =>
+    disabled
+        ? `Disabled until ${slot} has a zoomable chain selection.`
+        : `Zoom to the current ${slot} chain selection (${label}).`;
+
+const getChainHighlightTooltip = (slot: 'Select 1' | 'Select 2', disabled: boolean, on: boolean): string =>
+    disabled
+        ? `Disabled until ${slot} chain highlighting is available.`
+        : on
+            ? `${slot} chain highlight is On. Click to turn it Off.`
+            : `${slot} chain highlight is Off. Click to turn it On.`;
+
+const getChainInspectTooltip = (slot: 'Select 1' | 'Select 2', disabled: boolean, on: boolean): string =>
+    disabled
+        ? `Disabled until ${slot} chain inspection is available.`
+        : on
+            ? `${slot} chain inspect is On. Click to turn it Off.`
+            : `${slot} chain inspect is Off. Click to turn it On.`;
+
+const getResidueSelectTooltip = (slot: 'Select 1' | 'Select 2', disabled: boolean): string =>
+    disabled
+        ? `Disabled until a chain is selected for ${slot}.`
+        : `Select one or more residues for ${slot}.`;
+
+const getResidueBulkSelectTooltip = (
+    action: 'all' | 'clear' | 'invert' | 'shared',
+    slot: 'Select 1' | 'Select 2',
+    disabled: boolean
+): string => {
+    if (disabled) {
+        if (action === 'shared') {
+            return `Disabled until matching chains are selected in both AlignedTo and Aligned views and shared residues are available for ${slot}.`;
+        }
+        return `Disabled until residue selection is available for ${slot}.`;
+    }
+    if (action === 'all') return `Select all residues for ${slot}.`;
+    if (action === 'clear') return `Clear the current residue selection for ${slot}.`;
+    if (action === 'invert') return `Invert the current residue selection for ${slot}.`;
+    return `Select residues shared between ${slot} and the other selection.`;
+};
+
+const getResidueTypeToggleTooltip = (
+    actionLabel: 'Add' | 'Remove',
+    type: string,
+    slot: 'Select 1' | 'Select 2',
+    disabled: boolean
+): string =>
+    disabled
+        ? `Disabled until residue type selection is available for ${slot}.`
+        : `${actionLabel} all ${type} residues in ${slot}.`;
+
+const getResidueZoomTooltip = (slot: 'Select 1' | 'Select 2', disabled: boolean, label: string): string =>
+    disabled
+        ? `Disabled until ${slot} has a zoomable residue selection.`
+        : `Zoom to the current ${slot} residue selection (${label}).`;
+
+const getResidueHighlightTooltip = (slot: 'Select 1' | 'Select 2', disabled: boolean, on: boolean): string =>
+    disabled
+        ? `Disabled until ${slot} residue highlighting is available.`
+        : on
+            ? `${slot} residue highlight is On. Click to turn it Off.`
+            : `${slot} residue highlight is Off. Click to turn it On.`;
+
+const getResidueInspectTooltip = (slot: 'Select 1' | 'Select 2', disabled: boolean, on: boolean): string =>
+    disabled
+        ? `Disabled until ${slot} residue inspection is available.`
+        : on
+            ? `${slot} residue inspect is On. Click to turn it Off.`
+            : `${slot} residue inspect is Off. Click to turn it On.`;
+
 /**
  * Suffix for the LoadMolecule root id, used for consistent id construction in code and tests.
  */
@@ -705,6 +845,9 @@ interface LoadDataRowProps {
             selectedChainIdSlot: string;
             showSharedButton: boolean;
         }) => (
+            (() => {
+                const slotLabel: 'Select 1' | 'Select 2' = slot === '2' ? 'Select 2' : 'Select 1';
+                return (
             <>
                 <div className="load-data-control-row" style={{ marginLeft: 36 }}>
                     <ResidueSelectButton
@@ -712,6 +855,7 @@ interface LoadDataRowProps {
                         residueLabels={residueInfoSlot.residueLabels}
                         selectedResidueIds={selectedResidueIdsSlot}
                         onSelect={onSelectResidueIdsSlot}
+                        title={getResidueSelectTooltip(slotLabel, residueSelectDisabled || !selectedChainIdSlot)}
                         id={`${idPrefix}-residue${slot}-select`}
                     />
                 </div>
@@ -721,6 +865,7 @@ interface LoadDataRowProps {
                         className="msp-btn msp-form-control"
                         id={`${idPrefix}-residue${slot}-select-all-btn`}
                         disabled={residueSelectDisabled || orderedResidueIdsSlot.length === 0}
+                        title={getResidueBulkSelectTooltip('all', slotLabel, residueSelectDisabled || orderedResidueIdsSlot.length === 0)}
                         onClick={() => onSelectResidueIdsSlot(orderedResidueIdsSlot)}
                     >
                         Select All
@@ -730,6 +875,7 @@ interface LoadDataRowProps {
                         className="msp-btn msp-form-control"
                         id={`${idPrefix}-residue${slot}-clear-selection-btn`}
                         disabled={residueSelectDisabled || selectedResidueIdsSlot.length === 0}
+                        title={getResidueBulkSelectTooltip('clear', slotLabel, residueSelectDisabled || selectedResidueIdsSlot.length === 0)}
                         onClick={() => onSelectResidueIdsSlot([])}
                     >
                         Clear
@@ -739,6 +885,7 @@ interface LoadDataRowProps {
                         className="msp-btn msp-form-control"
                         id={`${idPrefix}-residue${slot}-invert-selection-btn`}
                         disabled={residueSelectDisabled || orderedResidueIdsSlot.length === 0}
+                        title={getResidueBulkSelectTooltip('invert', slotLabel, residueSelectDisabled || orderedResidueIdsSlot.length === 0)}
                         onClick={() => {
                             const selectedSet = new Set(selectedResidueIdsSlot);
                             const inverted = orderedResidueIdsSlot.filter(id => !selectedSet.has(id));
@@ -753,6 +900,7 @@ interface LoadDataRowProps {
                             className="msp-btn msp-form-control"
                             id={`${idPrefix}-residue${slot}-select-common-btn`}
                             disabled={residueSelectDisabled || residueCommonIdsSlot.length === 0}
+                            title={getResidueBulkSelectTooltip('shared', slotLabel, residueSelectDisabled || residueCommonIdsSlot.length === 0)}
                             onClick={() => {
                                 const available = new Set(orderedResidueIdsSlot);
                                 const common = residueCommonIdsSlot.filter(id => available.has(id));
@@ -778,6 +926,7 @@ interface LoadDataRowProps {
                                         className="msp-btn msp-form-control"
                                         id={`${idPrefix}-residue${slot}-type-toggle-${btnIdSafeType}-btn`}
                                         disabled={residueSelectDisabled || residueIds.length === 0}
+                                        title={getResidueTypeToggleTooltip(actionLabel as 'Add' | 'Remove', type, slotLabel, residueSelectDisabled || residueIds.length === 0)}
                                         onClick={() => {
                                             const nextSet = new Set(selectedResidueIdsSlot);
                                             if (allSelected) {
@@ -800,6 +949,7 @@ interface LoadDataRowProps {
                         onClick={onZoom}
                         disabled={zoomDisabled}
                         aria-label={`Zoom (${zoomLabel})`}
+                        title={getResidueZoomTooltip(slotLabel, zoomDisabled, zoomLabel)}
                         className="msp-btn msp-form-control"
                         id={`${idPrefix}-zoom-residue${slot}-btn`}
                     >
@@ -809,6 +959,7 @@ interface LoadDataRowProps {
                         onClick={onHighlight}
                         disabled={highlightDisabled}
                         aria-pressed={highlightOn}
+                        title={getResidueHighlightTooltip(slotLabel, highlightDisabled, highlightOn)}
                         className="msp-btn msp-form-control"
                         id={`${idPrefix}-highlight-residue${slot}-btn`}
                     >
@@ -818,6 +969,7 @@ interface LoadDataRowProps {
                         onClick={onInspect}
                         disabled={inspectDisabled}
                         aria-pressed={inspectOn}
+                        title={getResidueInspectTooltip(slotLabel, inspectDisabled, inspectOn)}
                         className="msp-btn msp-form-control"
                         id={`${idPrefix}-inspect-residue${slot}-btn`}
                     >
@@ -825,6 +977,8 @@ interface LoadDataRowProps {
                     </button>
                 </div>
             </>
+                );
+            })()
         );
 
         return (
@@ -852,6 +1006,7 @@ interface LoadDataRowProps {
                                 max={100}
                                 step={1}
                                 style={{ width: 60 }}
+                                title={getZoomExtraRadiusTooltip()}
                                 onChange={e => onZoomExtraRadiusChange(Number(e.target.value))}
                             />
                             <label htmlFor={`${idPrefix}-zoom-min-radius`}>minRadius:</label>
@@ -863,6 +1018,7 @@ interface LoadDataRowProps {
                                 max={100}
                                 step={1}
                                 style={{ width: 60 }}
+                                title={getZoomMinRadiusTooltip()}
                                 onChange={e => onZoomMinRadiusChange(Number(e.target.value))}
                             />
                         </div>
@@ -872,6 +1028,7 @@ interface LoadDataRowProps {
                                 id={`${idPrefix}-selection-display-mode`}
                                 value={selectionDisplayMode}
                                 onChange={e => onSelectionDisplayModeChange(e.target.value as 'halo' | 'overlay' | 'hybrid')}
+                                title={getHighlightDisplayTooltip(selectionDisplayMode)}
                                 className="msp-select msp-form-control"
                             >
                                 <option value="halo">Highlight (halo)</option>
@@ -885,6 +1042,7 @@ interface LoadDataRowProps {
                                 className="msp-btn msp-form-control"
                                 id={`${idPrefix}-dim-unselected-toggle-btn`}
                                 aria-pressed={dimUnselected}
+                                title={getDimUnselectedTooltip(dimUnselected)}
                                 onClick={() => onDimUnselectedChange(!dimUnselected)}
                             >
                                 Dim unselected: {dimUnselected ? 'On' : 'Off'}
@@ -900,6 +1058,7 @@ interface LoadDataRowProps {
                                     value={Math.round(dimUnselectedStrength * 100)}
                                     onChange={e => onDimUnselectedStrengthChange(Number(e.target.value) / 100)}
                                     disabled={!dimUnselected}
+                                    title={getDimOpacityTooltip(dimUnselected)}
                                 />
                                 <span>{Math.round(dimUnselectedStrength * 100)}%</span>
                             </div>
@@ -925,6 +1084,7 @@ interface LoadDataRowProps {
                                 selectedSubunit={selectedSubunit}
                                 onSelect={onSelectSubunit}
                                 id={`${idPrefix}-subunit-select`}
+                                title={getSubunitSelectTooltip(subunitSelectDisabled, selectedSubunit)}
                             />
                         </div>
                         <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 12 }}>
@@ -932,6 +1092,7 @@ interface LoadDataRowProps {
                                 onClick={onSubunitZoom}
                                 disabled={subunitZoomDisabled}
                                 aria-label={`Zoom (${subunitZoomLabel})`}
+                                title={getSubunitZoomTooltip(subunitZoomDisabled, subunitZoomLabel)}
                                 className="msp-btn msp-form-control"
                                 id={`${idPrefix}-zoom-subunit-btn`}
                             >
@@ -941,6 +1102,7 @@ interface LoadDataRowProps {
                                 onClick={onSubunitHighlight}
                                 disabled={subunitHighlightDisabled}
                                 aria-pressed={subunitHighlightOn}
+                                title={getSubunitHighlightTooltip(subunitHighlightDisabled, subunitHighlightOn)}
                                 className="msp-btn msp-form-control"
                                 id={`${idPrefix}-highlight-subunit-btn`}
                             >
@@ -950,6 +1112,7 @@ interface LoadDataRowProps {
                                 onClick={onSubunitInspect}
                                 disabled={subunitInspectDisabled}
                                 aria-pressed={subunitInspectOn}
+                                title={getSubunitInspectTooltip(subunitInspectDisabled, subunitInspectOn)}
                                 className="msp-btn msp-form-control"
                                 id={`${idPrefix}-inspect-subunit-btn`}
                             >
@@ -976,6 +1139,7 @@ interface LoadDataRowProps {
                             <button
                                 onClick={onCombinedSelectionZoom}
                                 disabled={combinedSelectionZoomDisabled}
+                                title={getCombinedSelectionZoomTooltip(combinedSelectionZoomDisabled)}
                                 className="msp-btn msp-form-control"
                                 id={`${idPrefix}-zoom-combined-selection-btn`}
                             >
@@ -985,6 +1149,7 @@ interface LoadDataRowProps {
                                 onClick={onCombinedSelectionHighlight}
                                 disabled={combinedSelectionHighlightDisabled}
                                 aria-pressed={combinedSelectionHighlightOn}
+                                title={getCombinedSelectionHighlightTooltip(combinedSelectionHighlightDisabled, combinedSelectionHighlightOn)}
                                 className="msp-btn msp-form-control"
                                 id={`${idPrefix}-highlight-combined-selection-btn`}
                             >
@@ -994,6 +1159,7 @@ interface LoadDataRowProps {
                                 onClick={onCombinedSelectionInspect}
                                 disabled={combinedSelectionInspectDisabled}
                                 aria-pressed={combinedSelectionInspectOn}
+                                title={getCombinedSelectionInspectTooltip(combinedSelectionInspectDisabled, combinedSelectionInspectOn)}
                                 className="msp-btn msp-form-control"
                                 id={`${idPrefix}-inspect-combined-selection-btn`}
                             >
@@ -1007,6 +1173,7 @@ interface LoadDataRowProps {
                                     className="msp-btn msp-form-control"
                                     id={`${idPrefix}-show-uniprot-accession`}
                                     aria-pressed={showUniprotAccessionInChainLabels}
+                                    title={getUniprotLabelToggleTooltip(showUniprotAccessionInChainLabels)}
                                     onClick={() => onShowUniprotAccessionInChainLabelsChange(!showUniprotAccessionInChainLabels)}
                                 >
                                     Include UniProt accession in labels: {showUniprotAccessionInChainLabels ? 'On' : 'Off'}
@@ -1042,6 +1209,7 @@ interface LoadDataRowProps {
                                             selectedChainId={chainFinderSelectedChainId ?? selectedChainId}
                                             onSelectChainId={chainFinderOnSelectChainId ?? onSelectChainId}
                                             title={chainFinderTitle}
+                                            titleTooltip={getChainSelectTooltip('Select 1')}
                                             query={chainFinderQuery}
                                             onQueryChange={chainFinderOnQueryChange}
                                             idPrefix={chainFinderIdPrefix ?? idPrefix}
@@ -1053,6 +1221,7 @@ interface LoadDataRowProps {
                                         onClick={onChainZoom}
                                         disabled={chainZoomDisabled}
                                         aria-label={`Zoom (${chainZoomLabel})`}
+                                        title={getChainZoomTooltip('Select 1', chainZoomDisabled, chainZoomLabel)}
                                         className="msp-btn msp-form-control"
                                         id={`${idPrefix}-zoom-chain-btn`}
                                     >
@@ -1062,6 +1231,7 @@ interface LoadDataRowProps {
                                         onClick={onChainHighlight}
                                         disabled={chainHighlightDisabled}
                                         aria-pressed={chainHighlightOn}
+                                        title={getChainHighlightTooltip('Select 1', chainHighlightDisabled, chainHighlightOn)}
                                         className="msp-btn msp-form-control"
                                         id={`${idPrefix}-highlight-chain-btn`}
                                     >
@@ -1071,6 +1241,7 @@ interface LoadDataRowProps {
                                         onClick={onChainInspect}
                                         disabled={chainInspectDisabled}
                                         aria-pressed={chainInspectOn}
+                                        title={getChainInspectTooltip('Select 1', chainInspectDisabled, chainInspectOn)}
                                         className="msp-btn msp-form-control"
                                         id={`${idPrefix}-inspect-chain-btn`}
                                     >
@@ -1162,6 +1333,7 @@ interface LoadDataRowProps {
                                             selectedChainId={selectedChainId2}
                                             onSelectChainId={onSelectChainId2 ?? (() => {})}
                                             title="Select"
+                                            titleTooltip={getChainSelectTooltip('Select 2')}
                                             idPrefix={`${idPrefix}-chain2`}
                                         />
                                     )}
@@ -1174,6 +1346,7 @@ interface LoadDataRowProps {
                                         onClick={onChainZoom2}
                                         disabled={chainZoomDisabled2}
                                         aria-label={`Zoom (${chainZoomLabel2})`}
+                                        title={getChainZoomTooltip('Select 2', chainZoomDisabled2, chainZoomLabel2)}
                                     >
                                         Zoom
                                     </button>
@@ -1184,6 +1357,7 @@ interface LoadDataRowProps {
                                         onClick={onChainHighlight2}
                                         disabled={chainHighlightDisabled2}
                                         aria-pressed={chainHighlightOn2}
+                                        title={getChainHighlightTooltip('Select 2', chainHighlightDisabled2, chainHighlightOn2)}
                                     >
                                         Highlight: {chainHighlightOn2 ? 'On' : 'Off'}
                                     </button>
@@ -1194,6 +1368,7 @@ interface LoadDataRowProps {
                                         onClick={onChainInspect2}
                                         disabled={chainInspectDisabled2}
                                         aria-pressed={chainInspectOn2}
+                                        title={getChainInspectTooltip('Select 2', chainInspectDisabled2, chainInspectOn2)}
                                     >
                                         Inspect: {chainInspectOn2 ? 'On' : 'Off'}
                                     </button>

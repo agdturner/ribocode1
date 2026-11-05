@@ -26,6 +26,15 @@ export const idSuffix = 'viewer-column';
 const getSectionToggleTitle = (label: string, showing: boolean): string =>
 	showing ? `Hide ${label}.` : `Show ${label}.`;
 
+const getClippingNearSliderTooltip = (): string =>
+	'Adjust the minimum near clipping distance to control how much of the nearest geometry is clipped.';
+
+const getClippingRadiusSliderTooltip = (): string =>
+	'Adjust the clipping radius to control how much of the structure remains visible.';
+
+const getClippingResetTooltip = (label: 'Min Near' | 'Clip Radius'): string =>
+	`Reset ${label} to its default value.`;
+
 // Props for the ViewerColumn component
 export interface LoadDataRowPropsInput {
 	viewer: any;
@@ -1096,6 +1105,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   max={100}
 						   step={0.1}
 						   value={clippingNear}
+						   title={getClippingNearSliderTooltip()}
 						   onChange={(e) => activeLoadProps?.onClippingMinNearChange?.(Number(e.target.value))}
 					   />
 					   <input
@@ -1105,6 +1115,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   max={100}
 						   step={0.1}
 						   value={clippingNear}
+						   title={getClippingNearSliderTooltip()}
 						   onChange={(e) => activeLoadProps?.onClippingMinNearChange?.(Number(e.target.value))}
 						   style={{ width: 80 }}
 					   />
@@ -1112,6 +1123,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   type="button"
 						   className="msp-btn msp-form-control"
 						   id={`${activeSelectZoomIdPrefix}-clip-near-reset-btn`}
+						   title={getClippingResetTooltip('Min Near')}
 						   onClick={() => activeLoadProps?.onClippingMinNearChange?.(clippingDefaultNear)}
 					   >
 						   Reset
@@ -1126,6 +1138,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   max={99}
 						   step={1}
 						   value={clippingFar}
+						   title={getClippingRadiusSliderTooltip()}
 						   onChange={(e) => activeLoadProps?.onClippingRadiusChange?.(Number(e.target.value))}
 					   />
 					   <input
@@ -1135,6 +1148,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   max={99}
 						   step={1}
 						   value={clippingFar}
+						   title={getClippingRadiusSliderTooltip()}
 						   onChange={(e) => activeLoadProps?.onClippingRadiusChange?.(Number(e.target.value))}
 						   style={{ width: 90 }}
 					   />
@@ -1142,6 +1156,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   type="button"
 						   className="msp-btn msp-form-control"
 						   id={`${activeSelectZoomIdPrefix}-clip-far-reset-btn`}
+						   title={getClippingResetTooltip('Clip Radius')}
 						   onClick={() => activeLoadProps?.onClippingRadiusChange?.(clippingDefaultFar)}
 					   >
 						   Reset
