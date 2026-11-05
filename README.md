@@ -8,7 +8,7 @@ Ribocode orchestrates a User Interface (UI) based on two styled [Mol*](https://g
 
 An official Ribocode release includes deployment of the GitHub Pages PWA build.
 
-The user requires a recent [Web browser](https://en.wikipedia.org/wiki/Web_browser) (e.g. [Firefox](https://www.firefox.com/)) that will run [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript).
+The user requires a recent [Web browser](https://en.wikipedia.org/wiki/Web_browser) (e.g. [Firefox](https://www.firefox.com/)) that will run [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript), a large screen, a keyboard and a mouse.
 
 Once installed as a PWA, Ribocode can be used offline.
 
@@ -112,8 +112,7 @@ Contributions from others are also welcome, please see the [Developer Guide](./D
 
 ## Acknowledgements
 
-This work is funded by [UKRI](https://www.ukri.org/) under research grant [BB/X003086/1](https://gtr.ukri.org/projects?ref=BB%2FX003086%2F1).
+[UKRI](https://www.ukri.org/) funded the initial development of this tool under research grant [BB/X003086/1](https://gtr.ukri.org/projects?ref=BB%2FX003086%2F1).
 
-This project has benefited from the use of many open-source tools and resources.
-
-GitHub Copilot has been used extensively to help develop the software, providing code suggestions, refactoring support, and assistance with documentation and testing.
+The tool is based on other open source technology and has been developed with the use of both open source and proprietary technology and platforms. [GitHub](https://github.com) provided the main platform for developing the software. [GitHub Copilot](https://github.com/features/copilot) and [Microsoft Copilot](https://www.microsoft.com/en-gb/copilot) have been used to help develop the software and supporting documentation. Key tools used in development include [Visual Studio Code](https://code.visualstudio.com/), [Node](https://nodejs.org/en), [Vite](https://vite.dev/) and [TypeDoc](https://typedoc.org/). A considerable number of third party dependencies listed in [package-lock.json](./package-lock.json) are required for the tool to function. Without these dependencies building this tool would have not been possible with the resources available. The main third party dependency is [Mol*](https://github.com/molstar/molstar) which should be acknowledged/cited in any publication along the following lines:
+- David Sehnal, Sebastian Bittrich, Mandar Deshpande, Radka Svobodová, Karel Berka, Václav Bazgier, Sameer Velankar, Stephen K Burley, Jaroslav Koča, Alexander S Rose: [Mol* Viewer: modern web app for 3D visualization and analysis of large biomolecular structures](https://doi.org/10.1093/nar/gkab314), *Nucleic Acids Research*, 2021; https://doi.org/10.1093/nar/gkab314.
