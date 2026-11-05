@@ -1,0 +1,961 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>DeveloperGuide | ribocode1 - v0.21.0</title><meta name="description" content="Documentation for ribocode1"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">ribocode1 - v0.21.0</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">DeveloperGuide</a></li></ul></div><div class="tsd-panel tsd-typography"><h1 id="developer-guide" class="tsd-anchor-link">Developer Guide<a href="#developer-guide" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>Welcome to the Ribocode Developer Guide!</p>
+<h2 id="table-of-contents" class="tsd-anchor-link">Table of Contents<a href="#table-of-contents" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><a href="#quick-test">Quick Test</a></li>
+<li><a href="#setup">Setup</a>
+<ul>
+<li><a href="#recommended-set-up">Recommended set up</a></li>
+<li><a href="#build-and-run-locally">Build and run locally</a></li>
+<li><a href="#production-build--preview">Production Build &amp; Preview</a></li>
+<li><a href="#notes-on-environment-files">Notes on Environment Files</a></li>
+<li><a href="#deployment">Deployment</a></li>
+</ul>
+</li>
+<li><a href="#source-code-overview">Source Code Overview</a></li>
+<li><a href="#ui-element-ids-and-data-testid-conventions">UI Element IDs and data-testid Conventions</a>
+<ul>
+<li><a href="#general-rules">General Rules</a></li>
+<li><a href="#examples">Examples</a></li>
+<li><a href="#updating-existing-components">Updating Existing Components</a></li>
+</ul>
+</li>
+<li><a href="#mol-advanced-controls-toggle">Mol* Advanced Controls Toggle</a></li>
+<li><a href="#re-alignment-implementation-notes">Re-alignment Implementation Notes</a>
+<ul>
+<li><a href="#cache-and-state-hygiene">Cache and State Hygiene</a></li>
+</ul>
+</li>
+<li><a href="#mol*">Mol*</a></li>
+<li><a href="#mol-submodule-workflow">Mol* Submodule Workflow</a></li>
+<li><a href="#highlighting-and-selection-colouring">Highlighting and Selection Colouring</a></li>
+<li><a href="#documentation">Documentation</a>
+<ul>
+<li><a href="#how-to-generate-documentation">How to Generate Documentation</a></li>
+<li><a href="#configuration">Configuration</a></li>
+<li><a href="#deployment-recommendation">Deployment Recommendation</a></li>
+<li><a href="#docs-only-deployment">Docs-only Deployment</a></li>
+</ul>
+</li>
+<li><a href="#deployment">Deployment</a></li>
+<li><a href="#versioning">Versioning</a></li>
+<li><a href="#roadmap">Roadmap</a></li>
+<li><a href="#tests">Tests</a>
+<ul>
+<li><a href="#test-file-structure">Test File Structure</a></li>
+<li><a href="#creating-tests">Creating Tests</a></li>
+<li><a href="#running-tests">Running Tests</a></li>
+<li><a href="#alignment-regression-testing">Alignment Regression Testing</a></li>
+<li><a href="#end-to-end-e2e-testing-with-playwright">End-to-End (E2E) Testing with Playwright</a>
+<ul>
+<li><a href="#e2e-test-structure">E2E Test Structure</a></li>
+<li><a href="#system-dependencies-for-playwright-linux">System Dependencies for Playwright (Linux)</a></li>
+<li><a href="#installing-playwright">Installing Playwright</a></li>
+<li><a href="#running-e2e-tests">Running E2E Tests</a></li>
+<li><a href="#using-real-datasets-in-e2e-tests">Using Real Datasets in E2E Tests</a></li>
+<li><a href="#e2e-test-best-practices">E2E Test Best Practices</a>
+<ul>
+<li><a href="#session-round-trip-regression-patterns">Session Round-Trip Regression Patterns</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#test-types-overview">Test Types Overview</a></li>
+</ul>
+</li>
+<li><a href="#contributing">Contributing</a></li>
+</ul>
+<h2 id="quick-test" class="tsd-anchor-link">Quick Test<a href="#quick-test" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="sh"><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">clone</span><span class="hl-1"> </span><span class="hl-2">https://github.com/ribocode-slola/ribocode1.git</span><br/><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-2">ribocode1</span><br/><span class="hl-0">mkdir</span><span class="hl-1"> </span><span class="hl-5">-p</span><span class="hl-1"> </span><span class="hl-2">packages</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">clone</span><span class="hl-1"> </span><span class="hl-2">https://github.com/ribocode-slola/molstar.git</span><span class="hl-1"> </span><span class="hl-2">packages/molstar</span><br/><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-2">packages/molstar</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">build:lib</span><br/><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-2">../..</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">dev</span><br/><span class="hl-7"># Visit http://localhost:5173/</span>
+</code><button type="button">Copy</button></pre>
+
+<p>For E2E tests:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test:e2e</span>
+</code><button type="button">Copy</button></pre>
+
+<p>For unit/integration tests:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">test</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="setup" class="tsd-anchor-link">Setup<a href="#setup" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>You will need <a href="https://git-scm.com/">Git</a> to clone the repository and <a href="https://nodejs.org/">Node</a>. It is recommended to use Node version 24.11.0 or later.</p>
+<p>Please also fork <a href="https://github.com/ribocode-slola/ribocode1">https://github.com/ribocode-slola/ribocode1</a> and <a href="https://github.com/ribocode-slola/molstar">https://github.com/ribocode-slola/molstar</a>, and then clone and use your forks of the ribocode-slola forks.</p>
+<p>Note on submodule URL policy:</p>
+<ul>
+<li>The repository-tracked <code>.gitmodules</code> must point to the canonical Ribocode Mol* repository (<code>https://github.com/ribocode-slola/molstar</code>).</li>
+<li>Do not commit personal-fork URLs in <code>.gitmodules</code>.</li>
+<li>Use local submodule remotes to push to your fork.</li>
+</ul>
+<p>If you are a member of the Ribocode project and want help getting set up with a development environment or help contributing via a <code>pull request</code>, please let it be known.</p>
+<h3 id="recommended-set-up" class="tsd-anchor-link">Recommended set up<a href="#recommended-set-up" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ol>
+<li>Fork the Ribocode repository.</li>
+<li>Fork <a href="https://github.com/ribocode-slola/molstar">Ribocode Mol*</a>.</li>
+<li>Clone your Ribocode fork into a local directory (Ribocode root).</li>
+<li>Clone your Mol* fork into <code>packages/molstar</code> inside the Ribocode root.</li>
+<li>In <code>packages/molstar</code>, add the Ribocode Mol* repository as <code>upstream</code>.</li>
+<li>Build Mol* library outputs before running Ribocode.</li>
+</ol>
+<p>Example commands:</p>
+<pre><code class="sh"><span class="hl-7"># Clone Ribocode</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">clone</span><span class="hl-1"> </span><span class="hl-2">https://github.com/</span><span class="hl-1">&lt;</span><span class="hl-2">your-github-use</span><span class="hl-1">r&gt;</span><span class="hl-2">/ribocode1.git</span><br/><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-2">ribocode1</span><br/><br/><span class="hl-7"># Clone your Mol* fork to the expected local path</span><br/><span class="hl-0">mkdir</span><span class="hl-1"> </span><span class="hl-5">-p</span><span class="hl-1"> </span><span class="hl-2">packages</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">clone</span><span class="hl-1"> </span><span class="hl-2">https://github.com/</span><span class="hl-1">&lt;</span><span class="hl-2">your-github-use</span><span class="hl-1">r&gt;</span><span class="hl-2">/molstar.git</span><span class="hl-1"> </span><span class="hl-2">packages/molstar</span><br/><br/><span class="hl-7"># Track the canonical Ribocode Mol* repo</span><br/><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-2">packages/molstar</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">remote</span><span class="hl-1"> </span><span class="hl-2">add</span><span class="hl-1"> </span><span class="hl-2">upstream</span><span class="hl-1"> </span><span class="hl-2">https://github.com/ribocode-slola/molstar.git</span><br/><br/><span class="hl-7"># Install and build the Mol* lib output consumed by Ribocode</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">build:lib</span><br/><br/><span class="hl-7"># Back to Ribocode root</span><br/><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-2">../..</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="mol-submodule-workflow" class="tsd-anchor-link">Mol* Submodule Workflow<a href="#mol-submodule-workflow" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Ribocode tracks Mol* as a git submodule at <code>packages/molstar</code>.</p>
+<ul>
+<li>Repository default (<code>.gitmodules</code>):
+<ul>
+<li><code>url = https://github.com/ribocode-slola/molstar</code></li>
+</ul>
+</li>
+<li>Developer push target:
+<ul>
+<li>Configure your local <code>origin</code> in <code>packages/molstar</code> to your own fork.</li>
+</ul>
+</li>
+<li>Upstream sync target:
+<ul>
+<li>Keep <code>upstream</code> set to <code>https://github.com/ribocode-slola/molstar</code>.</li>
+</ul>
+</li>
+</ul>
+<p>Recommended one-time local setup:</p>
+<pre><code class="sh"><span class="hl-7"># Initialize/update submodule using canonical URL from .gitmodules</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">submodule</span><span class="hl-1"> </span><span class="hl-2">sync</span><span class="hl-1"> </span><span class="hl-5">--recursive</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">submodule</span><span class="hl-1"> </span><span class="hl-2">update</span><span class="hl-1"> </span><span class="hl-5">--init</span><span class="hl-1"> </span><span class="hl-5">--recursive</span><br/><br/><span class="hl-7"># In submodule, set your fork as origin (push target)</span><br/><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-2">packages/molstar</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">remote</span><span class="hl-1"> </span><span class="hl-2">set-url</span><span class="hl-1"> </span><span class="hl-2">origin</span><span class="hl-1"> </span><span class="hl-2">https://github.com/</span><span class="hl-1">&lt;</span><span class="hl-2">your-github-use</span><span class="hl-1">r&gt;</span><span class="hl-2">/molstar.git</span><br/><br/><span class="hl-7"># Ensure canonical repo is available as upstream (pull/rebase target)</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">remote</span><span class="hl-1"> </span><span class="hl-2">add</span><span class="hl-1"> </span><span class="hl-2">upstream</span><span class="hl-1"> </span><span class="hl-2">https://github.com/ribocode-slola/molstar.git</span><span class="hl-1"> 2&gt;</span><span class="hl-2">/dev/null</span><span class="hl-1"> || </span><span class="hl-0">true</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">fetch</span><span class="hl-1"> </span><span class="hl-2">upstream</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Daily update pattern:</p>
+<pre><code class="sh"><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-2">packages/molstar</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">fetch</span><span class="hl-1"> </span><span class="hl-2">upstream</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">checkout</span><span class="hl-1"> </span><span class="hl-2">main</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">rebase</span><span class="hl-1"> </span><span class="hl-2">upstream/main</span><br/><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">push</span><span class="hl-1"> </span><span class="hl-2">origin</span><span class="hl-1"> </span><span class="hl-2">main</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Important:</p>
+<ul>
+<li>Avoid editing <code>.gitmodules</code> for personal workflow changes.</li>
+<li>If <code>.gitmodules</code> changes in a PR, verify it still points to the canonical Ribocode Mol* URL.</li>
+</ul>
+<h3 id="build-and-run-locally" class="tsd-anchor-link">Build and run locally<a href="#build-and-run-locally" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<h4 id="local-development" class="tsd-anchor-link">Local Development<a href="#local-development" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>From the Ribocode root directory:</p>
+<ul>
+<li><code>npm install</code>
+<ul>
+<li>Installs all dependencies.</li>
+</ul>
+</li>
+<li><code>npm --workspace packages/molstar install</code>
+<ul>
+<li>Installs Mol* workspace dependencies (useful for first-time setup and after Mol* dependency updates).</li>
+</ul>
+</li>
+<li><code>npm --workspace packages/molstar run build:lib</code>
+<ul>
+<li>Builds the <code>packages/molstar/lib</code> output that Ribocode imports from.</li>
+<li>Run this at least once after cloning Mol* and again after any Mol* source changes.</li>
+<li>Equivalent from within <code>packages/molstar</code>: <code>npm run build:lib</code>.</li>
+</ul>
+</li>
+<li><code>npm run dev</code>
+<ul>
+<li>Starts the Vite development server using settings from <code>.env</code> (base path is <code>/</code>).</li>
+<li>Visit the local URL shown in the terminal (usually <a href="http://localhost:5173/">http://localhost:5173/</a>).</li>
+</ul>
+</li>
+</ul>
+<h4 id="production-build-preview" class="tsd-anchor-link">Production Build &amp; Preview<a href="#production-build-preview" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li><code>npm run build</code>
+<ul>
+<li>Builds the app for production using settings from <code>.env.production</code> (base path is <code>/ribocode1/</code>).</li>
+<li>Regenerates TypeDoc output first (<code>npm run docs</code>) to ensure deployed docs stay in sync with source.</li>
+<li>Output is placed in the <code>dist/</code> directory.</li>
+</ul>
+</li>
+<li><code>npm run preview</code>
+<ul>
+<li>Serves the production build locally for testing (simulates deployment).</li>
+<li>Visit the local preview URL (usually <a href="http://localhost:5173/ribocode1/">http://localhost:5173/ribocode1/</a>).</li>
+</ul>
+</li>
+</ul>
+<h4 id="notes-on-environment-files" class="tsd-anchor-link">Notes on Environment Files<a href="#notes-on-environment-files" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li><code>.env</code> is used for local development (base path <code>/</code>).</li>
+<li><code>.env.production</code> is used for production builds (base path <code>/ribocode1/</code>).</li>
+<li>The correct environment file is automatically picked up by the npm scripts.</li>
+<li>Runtime browser code must use Vite environment access (<code>import.meta.env.*</code>) rather than CRA-style <code>process.env.*</code>.</li>
+<li>Service worker registration paths should be derived from <code>import.meta.env.BASE_URL</code> to avoid incorrect URLs on GitHub Pages subpaths.</li>
+</ul>
+<h4 id="deployment" class="tsd-anchor-link">Deployment<a href="#deployment" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li><code>npm run deploy</code>
+<ul>
+<li>Builds and deploys the app to the <code>gh-pages</code> branch for GitHub Pages.</li>
+<li>Includes the current docs by copying <code>docs/</code> to <code>dist/docs</code> during build.</li>
+<li>The app will be available at <code>https://&lt;username&gt;.github.io/ribocode1/</code>.</li>
+</ul>
+</li>
+</ul>
+<h2 id="source-code-overview" class="tsd-anchor-link">Source Code Overview<a href="#source-code-overview" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Configuration files are in the top-level directory. The main source code is in the <code>src</code> directory, with additional dependencies in <code>packages</code>.</p>
+<ul>
+<li><a href="https://github.com/ribocode-slola/molstar">Ribocode Mol*</a> is located in the <code>packages/molstar</code> directory.</li>
+<li>The <code>src</code> directory contains:
+<ul>
+<li><code>App.tsx</code>: The top-level application component, responsible for composing the main UI and wiring together state, providers, and layout.</li>
+<li><code>App.css</code>: Global CSS for styling all components.</li>
+<li><code>App.test.tsx</code>: Basic test for the App component.</li>
+<li><code>session.integration.test.tsx</code>: Integration tests for session-related flows, such as session load/save, file input triggers, and modal appearance. Use this file for tests that simulate user workflows involving session management, rather than placing them in App.test.tsx or App.integration.test.tsx.</li>
+<li><code>components/</code>: UI components, including ViewerColumn, GeneralControls, AppHeader, and others. Each major component typically has a corresponding <code>.test.tsx</code> file for tests.</li>
+<li><code>context/</code>: React context providers and objects for sharing state and logic (e.g., SelectionContext, SyncContext, ViewerStateContext).</li>
+<li><code>handlers/</code>: Event and UI handler logic, such as <code>uiHandlers.ts</code> for shared UI event logic.</li>
+<li><code>hooks/</code>: Custom React hooks for encapsulating stateful logic and side effects (e.g., useMolstarViewer, useMoleculeLoader, useUpdateColors, useSessionSave, etc.).</li>
+<li><code>constants/</code>: Centralized runtime constants (e.g., ribocode.ts for alignment and viewer key constants).</li>
+<li><code>types/</code>: Shared TypeScript types and interfaces (e.g., ribocode.ts for core app types, molstar.d.ts for Mol* types).</li>
+<li><code>utils/</code>: Utility functions and helpers for data processing, color themes, structure manipulation, and viewer helpers. Includes files like <code>chain.ts</code>, <code>residue.ts</code>, <code>colors.ts</code>, <code>data.ts</code>, <code>dictionary.ts</code>, <code>structureUtils.ts</code>, and <code>viewerHelpers.ts</code> (with corresponding test files).</li>
+<li><code>public/</code>: Static assets for the PWA (e.g., icons, manifest, robots.txt).</li>
+<li><code>main.tsx</code>: Entry point for the React application. Renders the root App component and applies global styles.</li>
+<li><code>service-worker.ts</code>: The PWA service worker for offline support and caching.</li>
+<li><code>serviceWorkerRegistration.ts</code>: Registers or unregisters the service worker as needed.</li>
+</ul>
+</li>
+</ul>
+<p>Notes:</p>
+<ul>
+<li>Some UI components for loading dictionary/alignment data and for advanced visualization controls (e.g., fog, camera planes) exist but may be hidden or under development.</li>
+<li>All major logic is modularized for maintainability, with helpers, types, and constants extracted to their own files.</li>
+</ul>
+<h2 id="theme-system-architecture-important" class="tsd-anchor-link">Theme System Architecture (Important)<a href="#theme-system-architecture-important" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>This section defines expected behavior for loading, applying, saving, and testing themes.</p>
+<h3 id="dataset-role-ownership" class="tsd-anchor-link">Dataset-role ownership<a href="#dataset-role-ownership" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><code>AlignedTo</code> is loaded in Column <code>A</code> (<code>Load AlignedTo</code>).</li>
+<li><code>Aligned</code> is loaded in Column <code>B</code> (<code>Load Aligned</code>).</li>
+<li>Theme assets (loaded color maps) are shared globally and can be applied to either role.</li>
+<li>Representation theme callbacks must preserve the caller's role intent (<code>AlignedTo</code> vs <code>Aligned</code>).</li>
+</ul>
+<h3 id="where-behavior-is-implemented" class="tsd-anchor-link">Where behavior is implemented<a href="#where-behavior-is-implemented" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>High-level wiring and state orchestration: <code>src/App.tsx</code>.</li>
+<li>Representation UI controls: <code>src/components/Molecule.tsx</code>.</li>
+<li>Column composition and role wiring: <code>src/components/ViewerColumn.tsx</code>.</li>
+</ul>
+<h3 id="theme-controls-model" class="tsd-anchor-link">Theme controls model<a href="#theme-controls-model" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Global controls in <code>Representation Controls</code> (<code>Theme</code> section):
+<ul>
+<li>Select current chain/residue theme.</li>
+<li><code>Load</code>, <code>Save</code>, and remove (<code>x</code>) actions.</li>
+<li>These values drive defaults for new representations.</li>
+</ul>
+</li>
+<li>Per-representation controls in each representation row:
+<ul>
+<li><code>Theme Type</code> (<code>chain</code> or <code>residue-type</code>).</li>
+<li><code>Chain Theme</code> / <code>Residue Theme</code> selectors.</li>
+<li>These are authoritative for that representation.</li>
+</ul>
+</li>
+</ul>
+<h3 id="representation-theme-switching-contract" class="tsd-anchor-link">Representation theme switching contract<a href="#representation-theme-switching-contract" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Switching a representation between <code>chain</code> and <code>residue-type</code> must update the existing representation in place.</li>
+<li>Do not recreate/delete-add a representation just to apply a theme change.</li>
+<li>Representation identity (<code>repId</code>) should remain stable across Theme Type switches.</li>
+<li>Residue theme apply path should use the same in-place update model as chain theme applies.</li>
+</ul>
+<h3 id="residue-theme-selection-behavior" class="tsd-anchor-link">Residue theme selection behavior<a href="#residue-theme-selection-behavior" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>If a mode-selected residue theme is available, switching <code>Theme Type</code> to <code>residue-type</code> should prefer that selected residue theme.</li>
+<li>If no valid selected residue theme is available, fall back to the mode-specific default residue theme.</li>
+<li>Loading and selecting a new residue theme while already in <code>residue-type</code> mode must apply immediately without requiring a Theme Type toggle.</li>
+</ul>
+<h3 id="residue-default-mapping-contract" class="tsd-anchor-link">Residue default mapping contract<a href="#residue-default-mapping-contract" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>UI selection value <code>default</code> must resolve to role-specific registered theme names:
+<ul>
+<li><code>AlignedTo-default-residue-colors</code> for <code>AlignedTo</code>.</li>
+<li><code>Aligned-default-residue-colors</code> for <code>Aligned</code>.</li>
+</ul>
+</li>
+<li>Regressions usually appear when a callback resolves or applies the wrong role for a representation update.</li>
+</ul>
+<h3 id="residue-visual-refresh-note" class="tsd-anchor-link">Residue visual refresh note<a href="#residue-visual-refresh-note" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Some residue transitions can retain stale visuals if only a single in-place update is applied.</li>
+<li>Current expected behavior is an in-place two-step refresh for residue theme transitions:
+<ol>
+<li>apply an intermediate neutral theme (<code>chain-id</code>),</li>
+<li>then apply the target residue theme.</li>
+</ol>
+</li>
+<li>This preserves representation identity while ensuring the rendered colors refresh correctly.</li>
+</ul>
+<h3 id="sync-scope-note" class="tsd-anchor-link">Sync scope note<a href="#sync-scope-note" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><code>Sync</code> currently describes camera synchronization behavior.</li>
+<li>Theme application logic may still update corresponding representations across viewers, but this should not violate role ownership or mode intent.</li>
+</ul>
+<h3 id="testing-implications-for-theme-regressions" class="tsd-anchor-link">Testing implications for theme regressions<a href="#testing-implications-for-theme-regressions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Prefer representation identity assertions (<code>repId</code>) over positional/index assertions.</li>
+<li>In Playwright, avoid selectors that assume dataset role is encoded in representation row IDs unless that is explicitly true in code.</li>
+<li>For debugging, use <code>window.__ribocodeTestApi.getRepresentationThemeStates(mode, viewerKey?)</code> and assert by <code>repId</code> and viewer.</li>
+</ul>
+<h2 id="mol-advanced-controls-toggle" class="tsd-anchor-link">Mol* Advanced Controls Toggle<a href="#mol-advanced-controls-toggle" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>To reduce UI clutter for common workflows, each viewer column includes a dedicated advanced-controls toggle for the embedded Mol* interface.</p>
+<ul>
+<li>The button is rendered in <code>ViewerColumn</code> and defaults to collapsed:
+<ul>
+<li>Label when collapsed: <code>Show Advanced Mol* Controls</code></li>
+<li>Label when expanded: <code>Hide Advanced Mol* Controls</code></li>
+</ul>
+</li>
+<li>The toggle state is passed to <code>MolstarContainer</code> via <code>showAdvancedControls</code>.</li>
+<li>In collapsed mode, only the Mol* main viewport (<code>3D Canvas</code>) is shown.</li>
+<li>In expanded mode, additional Mol* regions (sequence/menu/control/log panels) are shown.</li>
+<li>The CSS behavior is implemented in <code>App.css</code> using:
+<ul>
+<li><code>.molstar-advanced-controls-hidden .msp-layout-region:not(.msp-layout-main)</code></li>
+</ul>
+</li>
+</ul>
+<p>This keeps default user workflows focused on Ribocode controls while preserving full Mol* UI access for advanced users.</p>
+<h2 id="re-alignment-implementation-notes" class="tsd-anchor-link">Re-alignment Implementation Notes<a href="#re-alignment-implementation-notes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Chain-based re-alignment now uses a staged approach in <code>src/App.tsx</code>.</p>
+<h3 id="two-layer-alignment-model-important" class="tsd-anchor-link">Two-Layer Alignment Model (Important)<a href="#two-layer-alignment-model-important" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Ribocode intentionally uses two related but distinct alignment layers:</p>
+<ul>
+<li>Geometry/frame alignment (coordinate-space):
+<ul>
+<li>Applied during load/parse to place structures into a comparable coordinate frame.</li>
+<li>This keeps structural operations (selection loci, clipping behavior, fit computations, and session transform restore) numerically consistent across both viewers.</li>
+</ul>
+</li>
+<li>View alignment (camera-space):
+<ul>
+<li>Applied after user-triggered realign actions so both viewers present the same viewpoint.</li>
+<li>This is a UI consistency rule and is independent of whether the fitted atom coordinates are already correct.</li>
+</ul>
+</li>
+</ul>
+<p>Why we keep both layers:</p>
+<ul>
+<li>Geometry-only alignment can still look &quot;wrong&quot; to users if viewer cameras drift apart after sequential actions.</li>
+<li>Camera-only alignment makes visual parity easy, but can leave structures in different coordinate frames and complicate downstream structural logic.</li>
+<li>The current design keeps coordinate normalization for robust structural behavior, then enforces camera parity after realign actions for perceptual consistency.</li>
+</ul>
+<p>Practical contract for contributors:</p>
+<ul>
+<li>
+<p>Any action that changes <code>Aligned</code> structure transforms (chain/subunit/residue realign; in-place or reload fallback) should explicitly restore viewer camera parity.</p>
+</li>
+<li>
+<p>In current implementation this is done by copying camera A -&gt; B after successful realign apply.</p>
+</li>
+<li>
+<p>If this contract is changed in future, update both this guide and regression tests together.</p>
+</li>
+<li>
+<p>Preferred path (in-place):</p>
+<ul>
+<li>Fit is computed using <code>alignDatasetUsingChains</code> from the customized Mol* ribocode geometry utilities.</li>
+<li>A rigid transform matrix is built from the fitted rotation and derived translation.</li>
+<li>The transform is applied to existing aligned structures using <code>StateTransforms.Model.TransformStructureConformation</code>.</li>
+<li>Applied in-place chain pairs are tracked and deduplicated so the same <code>(from, to)</code> pair is not transformed repeatedly.</li>
+</ul>
+</li>
+<li>
+<p>Fallback path (reload-based):</p>
+<ul>
+<li>If in-place transform cannot be applied, the app falls back to the existing <code>ReAligned</code> loading flow using alignment data.</li>
+</ul>
+</li>
+<li>
+<p>Post-realign camera behavior:</p>
+<ul>
+<li>After chain re-alignment is applied, the <code>Aligned</code> viewer camera is matched to the <code>AlignedTo</code> viewer camera (zoom, pan target, and orientation) to keep both viewers in the same viewpoint.</li>
+</ul>
+</li>
+<li>
+<p>Alignment-data transform behavior:</p>
+<ul>
+<li>Mol* trajectory alignment application now uses full <code>rotation + translation</code> when <code>rotMat</code>, <code>centroid</code>, and <code>centroidReference</code> are available.</li>
+<li>Equal-count fit mapping is normalized so <code>centroid</code> is the moving-set centroid and <code>centroidReference</code> is the reference-set centroid, matching the transform convention <code>R * (p - centroid) + centroidReference</code>.</li>
+</ul>
+</li>
+<li>
+<p>Diagnostics:</p>
+<ul>
+<li>Re-alignment logs include chain atom summaries, atom selector mode, selected atom counts, pair count, and RMSD.</li>
+</ul>
+</li>
+<li>
+<p>Feature flag:</p>
+<ul>
+<li>In-place path can be controlled via <code>ENABLE_IN_PLACE_CHAIN_REALIGN</code> in <code>src/App.tsx</code>.</li>
+</ul>
+</li>
+<li>
+<p>Sync behavior note:</p>
+<ul>
+<li>Camera sync propagation is source-directed from the current <code>activeViewer</code> only.</li>
+<li>Sync applies source camera deltas (pan/rotation/zoom) to the target viewer, preserving the target viewer's local frame instead of replacing it with the source camera frame.</li>
+<li>Zoom propagation combines radius scaling and source camera-distance scaling (<code>|position-target|</code>) so wheel/dolly zoom is propagated even when radius does not change.</li>
+<li><code>activeViewer</code> switches based on pointer presence/interactions in a viewer (<code>pointerenter</code>, <code>pointermove</code>, <code>wheel</code>, <code>pointerdown</code>), so a click is not required to change sync source.</li>
+<li>Viewer activation listeners are attached natively on the Mol* container in capture mode (<code>MolstarContainer</code>) for reliable detection across nested Mol* UI roots.</li>
+<li>Unchanged source snapshots are ignored to avoid no-op camera churn.</li>
+<li>A lightweight animation-frame poll loop keeps sync responsive during pan/zoom/rotation interactions where camera events may be sparse.</li>
+<li>Poll frequency is configurable via <code>VITE_SYNC_POLL_INTERVAL_MS</code> (default <code>20</code>, clamped to <code>5..100</code>) in <code>.env</code>/<code>.env.production</code>.</li>
+</ul>
+</li>
+<li>
+<p>Utility helpers:</p>
+<ul>
+<li>Re-align pair-key and dedupe helpers are implemented in <code>src/utils/realignment.ts</code> (<code>makeRealignPairKey</code>, <code>hasRealignPair</code>, <code>addRealignPair</code>).</li>
+</ul>
+</li>
+</ul>
+<h3 id="cache-and-state-hygiene" class="tsd-anchor-link">Cache and State Hygiene<a href="#cache-and-state-hygiene" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Alignment regressions can be obscured by stale state from prior loads if either browser caches or in-memory transform caches are reused between scenarios.</p>
+<p>Current policy:</p>
+<ul>
+<li>Do not force a full browser cache flush on every normal app initialization.</li>
+<li>Do clear internal alignment caches when loading a new dataset pair (AlignedTo or Aligned) so each load starts from a fresh transform baseline.</li>
+<li>Do provide explicit diagnostics/test hooks for manual and automated cache resets.</li>
+<li>Provide a user-facing troubleshooting reset (<code>Session &gt; Reset Local Caches</code>) so reporters can quickly verify whether issues persist after a clean local state reset.</li>
+</ul>
+<p>Why we do not hard-flush all browser caches at startup:</p>
+<ul>
+<li>It can degrade performance by defeating normal browser and service-worker caching.</li>
+<li>It can interfere with offline/PWA behavior.</li>
+<li>It can unexpectedly remove persisted local state users may rely on.</li>
+<li>It does not target the main source of alignment confusion (in-memory transform carryover), so it is broader than necessary.</li>
+</ul>
+<p>Recommended practice for debugging and regression tests:</p>
+<ul>
+<li>In E2E setup, perform a hard browser-state reset when validating initial-load parity scenarios:
+<ul>
+<li>clear <code>localStorage</code> and <code>sessionStorage</code></li>
+<li>clear IndexedDB databases</li>
+<li>unregister service workers</li>
+<li>clear Cache Storage</li>
+</ul>
+</li>
+<li>Also clear app-internal alignment caches before taking diagnostics snapshots.</li>
+</ul>
+<p>Reference regression test:</p>
+<ul>
+<li><code>e2e/initial-load-transform-stability.e2e.spec.ts</code> validates that a hard cache flush + fresh load yields stable initial aligned transforms across repeated runs.</li>
+</ul>
+<h2 id="ui-element-ids-and-conventions" class="tsd-anchor-link">UI Element IDs and <code>data-testid</code> Conventions<a href="#ui-element-ids-and-conventions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>To ensure robust, maintainable, and testable UI code, Ribocode uses the following conventions for element IDs and <code>data-testid</code> attributes:</p>
+<h3 id="general-rules" class="tsd-anchor-link">General Rules<a href="#general-rules" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>IDs</strong> should be unique, predictable, and use kebab-case (e.g., <code>viewer-column-a-load-btn</code>).</li>
+<li><strong>data-testid</strong> attributes should be added to all modal fields, file inputs, and dynamic elements that are targeted in E2E/component tests.</li>
+<li>Use <code>data-testid</code> for elements that may have dynamic content, multiple instances, or where IDs are not unique.</li>
+<li>Prefer <code>data-testid</code> in Playwright and Testing Library selectors for E2E and integration tests.</li>
+</ul>
+<h3 id="examples" class="tsd-anchor-link">Examples<a href="#examples" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<h4 id="modal-components" class="tsd-anchor-link">Modal Components<a href="#modal-components" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<pre><code class="jsx"><input type="file" id="session-modal-alignedto-input" data-testid="session-modal-alignedto-input" />
+<button id="session-modal-load-btn" data-testid="session-modal-load-btn">Load Session</button>
+</code><button type="button">Copy</button></pre>
+
+<h4 id="viewer-column-buttons" class="tsd-anchor-link">Viewer Column Buttons<a href="#viewer-column-buttons" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<pre><code class="jsx"><button id="viewer-column-a-load-btn" data-testid="viewer-column-a-load-btn">Load AlignedTo</button>
+<input id="viewer-column-a-file-input" data-testid="viewer-column-a-file-input" type="file" />
+<button id="viewer-column-a-advanced-molstar-controls-toggle-btn" data-testid="viewer-column-a-advanced-molstar-controls-toggle-btn">Show Advanced Mol* Controls</button>
+</code><button type="button">Copy</button></pre>
+
+<h4 id="general-guidelines" class="tsd-anchor-link">General Guidelines<a href="#general-guidelines" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li>Always use the same value for <code>id</code> and <code>data-testid</code> when possible for clarity.</li>
+<li>Document any new IDs or <code>data-testid</code> attributes added to components.</li>
+<li>Update tests to use these selectors instead of brittle text or class selectors.</li>
+</ul>
+<h3 id="updating-existing-components" class="tsd-anchor-link">Updating Existing Components<a href="#updating-existing-components" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>If you add a new modal, file input, or dynamic UI element, ensure it has a <code>data-testid</code> attribute following the conventions above. Update the relevant tests to use these selectors.</p>
+<h2 id="mol" class="tsd-anchor-link">Mol*<a href="#mol" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Ribocode depends upon a customised version of <a href="https://github.com/molstar/molstar">Mol*</a> - <a href="https://github.com/ribocode-slola/molstar">Ribocode Mol*</a>. This is currently Mol* Version 5.4.2 with some files added for Ribocode that might be generally useful for Mol*. These are being contributed via <a href="https://github.com/molstar/molstar/pull/1726">Mol* Pull Request #1726</a>, but if this does not happen, they will be folded back into Ribocode to make it easier to build on later versions of Mol*.</p>
+<p>Important local wiring details:</p>
+<ul>
+<li>Ribocode resolves <code>molstar</code> imports to <code>packages/molstar</code> via <code>vite.config.js</code> aliasing.</li>
+<li>Ribocode imports from <code>molstar/lib/...</code>, so the local <code>packages/molstar/lib</code> tree must exist.</li>
+<li>The Mol* repository keeps <code>lib/</code> out of Git; generate it locally with <code>npm run build:lib</code> in <code>packages/molstar</code>.</li>
+<li>If you edit files under <code>packages/molstar/src</code>, rebuild Mol* (<code>npm run build:lib</code>) before re-testing Ribocode.</li>
+</ul>
+<h2 id="highlighting-and-selection-colouring" class="tsd-anchor-link">Highlighting and Selection Colouring<a href="#highlighting-and-selection-colouring" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Ribocode currently supports two distinct visual mechanisms for selected features:</p>
+<ul>
+<li>Halo-style marker highlighting (Mol* marker channels). This is the bright visual emphasis users typically interpret as &quot;highlight&quot;.</li>
+<li>Surface recolouring (overpaint). This changes rendered colours of selected regions and is useful for categorical/layered selection colouring.</li>
+</ul>
+<p>Current implementation intent:</p>
+<ul>
+<li>Keep deterministic selection ordering (subunit, then chain, then residues) for predictable overlap behavior.</li>
+<li>Preserve halo-style highlighting for immediate focus cues.</li>
+<li>Support per-level colour overlays where useful for structural context.</li>
+</ul>
+<p>Important Mol* constraint:</p>
+<ul>
+<li>Marker highlight/select colours and strengths are renderer-global per viewer (<code>highlightColor</code>, <code>selectColor</code>, <code>highlightStrength</code>, <code>selectStrength</code>).</li>
+<li>This means multiple simultaneous marker halo colours per level are not available through default marker channels alone.</li>
+</ul>
+<p>Practical strategy:</p>
+<ul>
+<li>Use halo markers as the primary &quot;highlight&quot; cue.</li>
+<li>Use overpaint to encode level-specific colouring when needed.</li>
+<li>Optionally dim unselected regions to a common neutral colour to increase contrast for selected features.</li>
+</ul>
+<p>Potential &quot;dim unselected&quot; directions:</p>
+<ul>
+<li>Renderer-level dimming (<code>dimColor</code>, <code>dimStrength</code>) when compatible with interaction state.</li>
+<li>State-level overpaint for selected regions plus a neutral base style for non-selected regions.</li>
+</ul>
+<p>When modifying highlight/colour behavior:</p>
+<ul>
+<li>Prefer robust IDs and <code>data-testid</code> selectors for new controls.</li>
+<li>Add both integration and E2E coverage, because highlight behavior can differ under mocked vs real browser rendering.</li>
+<li>Keep generated <code>docs/</code> output out of code-focused commits unless the change is explicitly documentation publication/refresh.</li>
+</ul>
+<h2 id="documentation" class="tsd-anchor-link">Documentation<a href="#documentation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>This project uses <a href="https://typedoc.org/">TypeDoc</a> to generate API documentation from TypeScript source code and comments. There is a <a href="UserGuide.html">User Guide</a> to help users to use Ribocode.</p>
+<p>There is a <a href="CHANGELOG.html">CHANGELOG</a> which summarises changes, particularly changes to the UI or key underlying functionality.</p>
+<h3 id="how-to-generate-documentation" class="tsd-anchor-link">How to Generate Documentation<a href="#how-to-generate-documentation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Documentation is generated into the <code>docs/</code> directory.</li>
+<li>To generate or update the documentation, run:<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">docs</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+<li>The documentation will be available as static HTML files in the <code>docs/</code> folder.</li>
+<li><code>npm run docs</code> generates docs locally only; it does not deploy them.</li>
+<li>The <code>docs/</code> directory is generated output. For normal feature/bugfix commits, do not include <code>docs/</code> changes unless the pull request is explicitly about documentation publication or docs content refresh.</li>
+<li>If <code>npm run build</code> or <code>npm run docs</code> updates generated files during development, leave those changes unstaged for code-focused commits.</li>
+</ul>
+<h3 id="configuration" class="tsd-anchor-link">Configuration<a href="#configuration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>The TypeDoc configuration is in <code>typedoc.json</code> at the project root.</li>
+<li>TypeDoc uses <code>tsconfig.typedoc.json</code> (via <code>typedoc.json</code>) so docs generation excludes test files and focuses on production API surface.</li>
+<li>The entry point is the <code>src/</code> directory.</li>
+<li>You can customize the output and included files by editing <code>typedoc.json</code>.</li>
+</ul>
+<h3 id="deployment-recommendation" class="tsd-anchor-link">Deployment Recommendation<a href="#deployment-recommendation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>GitHub Pages deployment (<code>npm run deploy</code>) publishes docs together with the app because the build step copies <code>docs/</code> into <code>dist/docs</code> (<code>postbuild</code>) before publishing <code>dist</code>.</li>
+<li>For this repository, deployed docs are available at <code>https://ribocode-slola.github.io/ribocode1/docs/index.html</code>.</li>
+<li>For forks, use <code>https://&lt;username&gt;.github.io/ribocode1/docs/index.html</code>.</li>
+</ul>
+<h3 id="docs-only-deployment" class="tsd-anchor-link">Docs-only Deployment<a href="#docs-only-deployment" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Use <code>npm run docs:deploy</code> to publish only API docs to the <code>gh-pages</code> branch under the <code>docs/</code> folder.</li>
+<li>Use <code>npm run docs:deploy:dryrun</code> to validate the same process without pushing.</li>
+<li>These scripts run TypeDoc first (<code>npm run docs</code>) and then publish the generated <code>docs/</code> output using <code>gh-pages</code>.</li>
+<li>Use <code>npm run docs:deploy:target</code> to publish docs to an explicit repository URL from env config.</li>
+<li>Use <code>npm run docs:deploy:target:dryrun</code> to validate targeted publishing without pushing.</li>
+</ul>
+<p>Targeted deployment configuration:</p>
+<ul>
+<li>Set <code>DOCS_GH_PAGES_REPO</code> in <code>.env</code> or <code>.env.production</code> (production values override <code>.env</code>).</li>
+<li>Example value: <code>DOCS_GH_PAGES_REPO=https://github.com/&lt;your-github-username&gt;/ribocode1.git</code></li>
+<li>This keeps shared scripts stable while allowing each developer to publish docs to their own fork.</li>
+</ul>
+<p>Destination URL rules:</p>
+<ul>
+<li>The final URL is determined by the repository that receives the <code>gh-pages</code> push.</li>
+<li>If push target is your fork (typical <code>origin</code>), docs will be at <code>https://&lt;your-github-username&gt;.github.io/ribocode1/docs/index.html</code>.</li>
+<li>If push target is the upstream repository, docs will be at <code>https://ribocode-slola.github.io/ribocode1/docs/index.html</code>.</li>
+</ul>
+<p>How to confirm where deployment will go:</p>
+<ul>
+<li>Run <code>git remote -v</code> and verify which repository URL is configured for <code>origin</code>.</li>
+<li><code>npm run docs:deploy</code> uses your configured git remote unless you override it with gh-pages options.</li>
+</ul>
+<p>Optional explicit target example:</p>
+<pre><code class="sh"><span class="hl-0">gh-pages</span><span class="hl-1"> </span><span class="hl-5">-d</span><span class="hl-1"> </span><span class="hl-2">docs</span><span class="hl-1"> </span><span class="hl-5">-e</span><span class="hl-1"> </span><span class="hl-2">docs</span><span class="hl-1"> </span><span class="hl-5">-a</span><span class="hl-1"> </span><span class="hl-5">-m</span><span class="hl-1"> </span><span class="hl-2">&quot;Docs: update API documentation&quot;</span><span class="hl-1"> </span><span class="hl-8">\</span><br/><span class="hl-1">  </span><span class="hl-5">--repo</span><span class="hl-1"> </span><span class="hl-2">https://github.com/</span><span class="hl-1">&lt;</span><span class="hl-2">your-github-usernam</span><span class="hl-1">e&gt;</span><span class="hl-2">/ribocode1.git</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="useful-links" class="tsd-anchor-link">Useful Links<a href="#useful-links" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><a href="https://typedoc.org/guides/doccomments/">TypeDoc documentation</a></li>
+</ul>
+<h2 id="deployment-1" class="tsd-anchor-link">Deployment<a href="#deployment-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>To serve out the <code>gh-pages</code> branch for your fork on <code>GitHub Pages</code> to create a PWA deployment use the following command:</p>
+<ul>
+<li><code>npm run deploy</code></li>
+</ul>
+<h2 id="versioning" class="tsd-anchor-link">Versioning<a href="#versioning" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Ribocode versioning is driven by <code>package.json</code> and <code>package-lock.json</code>.</p>
+<h3 id="recommended-bump-commands" class="tsd-anchor-link">Recommended bump commands<a href="#recommended-bump-commands" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>From the project root, use one of the npm scripts:</p>
+<ul>
+<li><code>npm run version:patch</code></li>
+<li><code>npm run version:minor</code></li>
+<li><code>npm run version:major</code></li>
+</ul>
+<p>These run <code>npm version &lt;level&gt; --no-git-tag-version</code> and update both <code>package.json</code> and <code>package-lock.json</code>.</p>
+<h3 id="ui-version-display" class="tsd-anchor-link">UI version display<a href="#ui-version-display" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The app header version text is read directly from <code>package.json</code> in <code>src/components/AppHeader.tsx</code>, so no manual edit is required there when bumping versions.</p>
+<h3 id="release-checklist" class="tsd-anchor-link">Release checklist<a href="#release-checklist" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ol>
+<li>Bump version using one of the commands above.</li>
+<li>Add/update the release entry in <code>CHANGELOG.md</code>.</li>
+<li>Run tests (for example <code>npm test</code> and any targeted E2E tests as needed).</li>
+<li>Commit version/doc/code changes together and push to <code>main</code>.</li>
+<li>Deploy the PWA build with <code>npm run deploy</code>.</li>
+<li>Create and push a release tag (e.g., <code>vX.Y.Z</code>).</li>
+<li>Publish the GitHub release notes for the tag.</li>
+</ol>
+<h2 id="roadmap" class="tsd-anchor-link">Roadmap<a href="#roadmap" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Planned future work is tracked in <a href="ROADMAP.html">ROADMAP.md</a>.</p>
+<p>Developers looking for contributions should consult both:</p>
+<ul>
+<li><a href="ROADMAP.html">ROADMAP.md</a> for planned direction and upcoming themes.</li>
+<li><a href="https://github.com/ribocode-slola/ribocode1/issues">GitHub Issues</a> for concrete tasks, bugs, feature requests, and places to respond with fixes.</li>
+</ul>
+<h2 id="session-fidelity-inventory-v017x" class="tsd-anchor-link">Session Fidelity Inventory (v0.17.x)<a href="#session-fidelity-inventory-v017x" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>This section tracks session save/load parity for the roadmap workstream &quot;v0.17.x (Session Fidelity and Collaboration)&quot;.</p>
+<h3 id="parity-matrix" class="tsd-anchor-link">Parity Matrix<a href="#parity-matrix" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Persisted + restored</td>
+<td>Dataset visibility per viewer/mode (<code>AlignedTo</code>/<code>Aligned</code>), representation list (<code>type</code>, <code>colorTheme</code>, <code>visible</code>), highlights (subunit/chain/residue), inspect toggles (subunit/chain/residue per viewer/mode), selected subunit/chain/residue(s), selection display mode + dim settings (per mode), zoom controls (global + per viewer), clipping controls (per viewer), fog settings (per viewer), camera snapshots (per viewer), sync enabled + active viewer, chain-finder queries, UniProt label toggle (legacy + per viewer), color-theme library + selected theme per mode, resolved UniProt gene-name cache.</td>
+</tr>
+<tr>
+<td>Persisted but restore has caveats</td>
+<td>Camera/clipping/fog only restore when corresponding dataset/plugin state is available. If required files are missing or loaded later, those values may restore partially. Legacy <code>selectionDisplay</code> payloads (single mode) are restored to both modes as a compatibility fallback. Inspect/highlight restoration depends on chain/residue IDs being present in the loaded structures.</td>
+</tr>
+<tr>
+<td>Not persisted (known gaps)</td>
+<td>Per-representation style parameters beyond <code>type</code>/<code>colorTheme</code>/<code>visible</code> (for example opacity sliders and other representation params), transient panel open/closed UI state, temporary diagnostics (realignment debug/status history), and ephemeral in-progress interaction state.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="round-trip-guarantees" class="tsd-anchor-link">Round-Trip Guarantees<a href="#round-trip-guarantees" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Save -&gt; load restores practical analysis context for the common paired-viewer workflow:
+<ul>
+<li>what datasets are shown/hidden;</li>
+<li>which representations are visible;</li>
+<li>what selections/highlights/inspect toggles are active;</li>
+<li>display mode and dim settings;</li>
+<li>camera + clipping + fog controls.</li>
+</ul>
+</li>
+<li>Round-trip guarantees are validated by deterministic integration tests in <code>src/App.integration.test.tsx</code>, including a sync-on camera-restore regression check for preserving distinct viewer snapshots.</li>
+<li>End-to-end parity coverage also includes <code>e2e/session-load-sync-camera-order.e2e.spec.ts</code>, which guards against Viewer B camera drift immediately after session load when sync is restored.</li>
+</ul>
+<h3 id="known-limitations-and-fallbacks" class="tsd-anchor-link">Known Limitations and Fallbacks<a href="#known-limitations-and-fallbacks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><code>Load</code> requires external files and opens a required-file picker when session references cannot be resolved automatically.</li>
+<li><code>Load All</code> can restore from embedded files in the session payload (<code>schemaVersion: 2</code>) and is the preferred collaboration/share path.</li>
+<li>When datasets cannot be reloaded, session UI state may still apply partially and the app surfaces a non-blocking alert.</li>
+<li>Non-persisted state listed above is intentionally out-of-scope for current v0.17.x parity.</li>
+</ul>
+<h2 id="tests" class="tsd-anchor-link">Tests<a href="#tests" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>This project uses <a href="https://vitest.dev/">Vitest</a> and <a href="https://testing-library.com/docs/react-testing-library/intro/">@testing-library/react</a> for unit and component testing. Vitest is a modern, fast test runner with native ESM support, ideal for Vite-based projects.</p>
+<h3 id="test-file-structure" class="tsd-anchor-link">Test File Structure<a href="#test-file-structure" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Unit/component tests</strong>: Use <code>.test.ts</code> or <code>.test.tsx</code> files placed alongside the code they test (e.g., <code>App.test.tsx</code>, <code>components/ComponentName.test.tsx</code>).</li>
+<li><strong>Integration tests</strong>: For flows involving multiple components or user workflows, use dedicated integration test files. For example:
+<ul>
+<li><code>App.integration.test.tsx</code>: General integration tests for the main app UI and multi-component flows.</li>
+<li><code>session.integration.test.tsx</code>: Integration tests focused on session management (session save/load, file input, modal prompts, etc.).</li>
+</ul>
+</li>
+</ul>
+<p>This separation keeps tests organized and maintainable as the codebase grows.</p>
+<h3 id="creating-tests" class="tsd-anchor-link">Creating Tests<a href="#creating-tests" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Test files should be placed alongside the code they test, using the <code>.test.ts</code> or <code>.test.tsx</code> extension.</li>
+<li>Use descriptive test names and group related tests with <code>describe</code> blocks.</li>
+<li>Example test file:</li>
+</ul>
+<pre><code class="tsx"><span class="hl-9">import</span><span class="hl-1"> { </span><span class="hl-3">render</span><span class="hl-1">, </span><span class="hl-3">screen</span><span class="hl-1"> } </span><span class="hl-9">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@testing-library/react&#39;</span><span class="hl-1">;</span><br/><span class="hl-9">import</span><span class="hl-1"> </span><span class="hl-3">MyComponent</span><span class="hl-1"> </span><span class="hl-9">from</span><span class="hl-1"> </span><span class="hl-2">&#39;./MyComponent&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-0">test</span><span class="hl-1">(</span><span class="hl-2">&#39;renders the component&#39;</span><span class="hl-1">, () </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">	</span><span class="hl-0">render</span><span class="hl-1">(</span><span class="hl-10">&lt;</span><span class="hl-11">MyComponent</span><span class="hl-1"> </span><span class="hl-10">/&gt;</span><span class="hl-1">);</span><br/><span class="hl-1">	</span><span class="hl-0">expect</span><span class="hl-1">(</span><span class="hl-3">screen</span><span class="hl-1">.</span><span class="hl-0">getByText</span><span class="hl-1">(</span><span class="hl-2">&#39;Hello&#39;</span><span class="hl-1">)).</span><span class="hl-0">toBeInTheDocument</span><span class="hl-1">();</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="running-tests" class="tsd-anchor-link">Running Tests<a href="#running-tests" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-5">--watch</span>
+</code><button type="button">Copy</button></pre>
+
+<ul>
+<li>To run the interactive UI test runner:<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test:ui</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+<li>To run a specific test file:<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-2">src/components/MyComponent.test.tsx</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+</ul>
+<h3 id="alignment-regression-testing" class="tsd-anchor-link">Alignment Regression Testing<a href="#alignment-regression-testing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Alignment changes should be validated with both automated and manual checks before release.</p>
+<p>Reference decision record: <a href="decisions_ADR-0001-alignment-quality-gates.html">ADR-0001 Alignment Quality Gates</a>.</p>
+<p>Recent findings from benchmark datasets:</p>
+<ul>
+<li>6XU6.cif -&gt; 6XU8.cif, chain CU -&gt; CU is currently stable with strong improvement.</li>
+<li>7WTT.cif -&gt; 7WTZ.cif, chain e -&gt; e currently improves only modestly and remains a known weak case.</li>
+<li>The current fit already includes both rotation and translation, so adding a second translation pass is not expected to fix weak fits by itself.</li>
+<li>A robust outlier-trim re-fit experiment was evaluated and did not improve the 7WTT/7WTZ e-case.</li>
+</ul>
+<p>Recommended focused automated checks:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-2">src/utils/alignmentGeometry.test.ts</span><span class="hl-1"> </span><span class="hl-2">src/utils/realignment.test.ts</span><span class="hl-1"> </span><span class="hl-2">src/App.test.tsx</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-2">src/utils/alignmentPerformance.test.ts</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">playwright</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-2">e2e/sync-and-realign-camera.e2e.spec.ts</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">playwright</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-2">e2e/alignment-performance-cu-6xu6-6xu8.e2e.spec.ts</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">playwright</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-2">e2e/alignment-diagnostic-e-7wtt-7wtz.e2e.spec.ts</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Recommended manual benchmark workflow:</p>
+<ol>
+<li>Load <code>AlignedTo</code> using <code>6XU6.cif</code>.</li>
+<li>Load <code>Aligned</code> using <code>6XU8.cif</code>.</li>
+<li>Select known chain pairs used in day-to-day analysis and run <code>Align Chains</code>.</li>
+<li>Repeat alignment for the same pair and for several different pairs.</li>
+<li>Confirm alignment quality does not degrade and that camera/viewpoint behavior remains consistent.</li>
+</ol>
+<p>When alignment internals are changed:</p>
+<ul>
+<li>If the change is in <code>packages/molstar</code>, treat it as package-level geometry behavior and validate against the benchmark workflow above.</li>
+<li>If the change is in <code>src/App.tsx</code>, verify both in-place transform behavior and reload-based fallback behavior.</li>
+<li>Verify camera/viewpoint parity after sequential realign actions (for example chain -&gt; residue and residue -&gt; chain), not just fit metrics.</li>
+<li>Record any expected behavior changes in <code>CHANGELOG.md</code> so regressions are easier to trace.</li>
+</ul>
+<p>Next alignment investigation focus:</p>
+<ul>
+<li>Improve correspondence quality for difficult chain pairs (for example, long-chain e -&gt; e cases) rather than adding extra translation-only corrections.</li>
+<li>Investigate residue-correspondence-aware pairing coverage in chain alignment tests, including gaps in automated checks for residue-key alignment behavior.</li>
+<li>Keep both benchmark families active during changes:
+<ul>
+<li>Strong-case guardrail: 6XU6/6XU8 CU -&gt; CU should remain stable.</li>
+<li>Weak-case guardrail: 7WTT/7WTZ e -&gt; e should materially improve without regressions elsewhere.</li>
+</ul>
+</li>
+</ul>
+<h3 id="additional-resources" class="tsd-anchor-link">Additional Resources<a href="#additional-resources" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><a href="https://vitest.dev/guide/">Vitest documentation</a></li>
+<li><a href="https://testing-library.com/docs/">Testing Library docs</a></li>
+<li><a href="decisions_ADR-0001-alignment-quality-gates.html">ADR-0001 Alignment Quality Gates</a></li>
+</ul>
+<h2 id="end-to-end-e2e-testing-with-playwright" class="tsd-anchor-link">End-to-End (E2E) Testing with Playwright<a href="#end-to-end-e2e-testing-with-playwright" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>This project uses <a href="https://playwright.dev/">Playwright</a> for end-to-end (E2E) browser testing. Playwright enables automated UI testing in real browsers, ensuring that real-world user workflows (including session save/load and dataset handling) work as expected.</p>
+<h3 id="e2e-test-structure" class="tsd-anchor-link">E2E Test Structure<a href="#e2e-test-structure" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>E2E tests are located in the <code>e2e/</code> directory at the project root.</li>
+<li>Real-world test datasets (e.g., <code>4UG0.cif</code>, <code>6XU8.cif</code>) are stored in <code>data/input/</code>.</li>
+<li>Example E2E tests:
+<ul>
+<li><code>e2e/example-session.spec.ts</code>: Demonstrates loading a dataset, interacting with the UI, and verifying session logic.</li>
+<li><code>e2e/session-load.e2e.spec.ts</code>: Covers the full session load workflow, including file selection modal and session restoration.</li>
+</ul>
+</li>
+</ul>
+<h3 id="system-dependencies-for-playwright-linux" class="tsd-anchor-link">System Dependencies for Playwright (Linux)<a href="#system-dependencies-for-playwright-linux" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Playwright's browsers (especially Chromium) require certain system libraries to be installed on Linux. If you see errors like:</p>
+<p>error while loading shared libraries: <a href="http://libnspr4.so">libnspr4.so</a>: cannot open shared object file: No such file or directory</p>
+<p>You need to install the missing libraries. On Ubuntu/Debian, run:</p>
+<pre><code class="sh"><span class="hl-0">sudo</span><span class="hl-1"> </span><span class="hl-2">apt-get</span><span class="hl-1"> </span><span class="hl-2">update</span><br/><span class="hl-0">sudo</span><span class="hl-1"> </span><span class="hl-2">apt-get</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-2">libnspr4</span><span class="hl-1"> </span><span class="hl-2">libnss3</span><span class="hl-1"> </span><span class="hl-2">libatk1.0-0</span><span class="hl-1"> </span><span class="hl-2">libatk-bridge2.0-0</span><span class="hl-1"> </span><span class="hl-2">libcups2</span><span class="hl-1"> </span><span class="hl-2">libdrm2</span><span class="hl-1"> </span><span class="hl-2">libxkbcommon0</span><span class="hl-1"> </span><span class="hl-2">libxcomposite1</span><span class="hl-1"> </span><span class="hl-2">libxdamage1</span><span class="hl-1"> </span><span class="hl-2">libxrandr2</span><span class="hl-1"> </span><span class="hl-2">libgbm1</span><span class="hl-1"> </span><span class="hl-2">libasound2</span><span class="hl-1"> </span><span class="hl-2">libpangocairo-1.0-0</span><span class="hl-1"> </span><span class="hl-2">libpango-1.0-0</span><span class="hl-1"> </span><span class="hl-2">libgtk-3-0</span><span class="hl-1"> </span><span class="hl-2">libxss1</span><span class="hl-1"> </span><span class="hl-2">libxshmfence1</span><span class="hl-1"> </span><span class="hl-2">libxfixes3</span><span class="hl-1"> </span><span class="hl-2">libxext6</span><span class="hl-1"> </span><span class="hl-2">libx11-xcb1</span>
+</code><button type="button">Copy</button></pre>
+
+<blockquote>
+<p><strong>Note:</strong> On some newer Ubuntu/Debian systems, <code>libasound2</code> may be provided as <code>libasound2t64</code>. If you see a message like:</p>
+<pre><code>Package libasound2 is a virtual package provided by: ... libasound2t64 ...
+</code></pre>
+<p>then install it with:</p>
+<pre><code class="sh"><span class="hl-0">sudo</span><span class="hl-1"> </span><span class="hl-2">apt-get</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-2">libasound2t64</span>
+</code><button type="button">Copy</button></pre>
+
+</blockquote>
+<p>On Fedora/RHEL/CentOS, use:</p>
+<pre><code class="sh"><span class="hl-0">sudo</span><span class="hl-1"> </span><span class="hl-2">dnf</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-2">nspr</span><span class="hl-1"> </span><span class="hl-2">nss</span><span class="hl-1"> </span><span class="hl-2">atk</span><span class="hl-1"> </span><span class="hl-2">at-spi2-atk</span><span class="hl-1"> </span><span class="hl-2">cups-libs</span><span class="hl-1"> </span><span class="hl-2">libdrm</span><span class="hl-1"> </span><span class="hl-2">libxkbcommon</span><span class="hl-1"> </span><span class="hl-2">libXcomposite</span><span class="hl-1"> </span><span class="hl-2">libXdamage</span><span class="hl-1"> </span><span class="hl-2">libXrandr</span><span class="hl-1"> </span><span class="hl-2">mesa-libgbm</span><span class="hl-1"> </span><span class="hl-2">alsa-lib</span><span class="hl-1"> </span><span class="hl-2">pango</span><span class="hl-1"> </span><span class="hl-2">gtk3</span><span class="hl-1"> </span><span class="hl-2">libXScrnSaver</span><span class="hl-1"> </span><span class="hl-2">libxshmfence</span><span class="hl-1"> </span><span class="hl-2">libXfixes</span><span class="hl-1"> </span><span class="hl-2">libXext</span><span class="hl-1"> </span><span class="hl-2">libX11-xcb</span>
+</code><button type="button">Copy</button></pre>
+
+<p>See the <a href="https://playwright.dev/docs/installation#system-dependencies">Playwright system requirements</a> for more details.</p>
+<h3 id="installing-playwright" class="tsd-anchor-link">Installing Playwright<a href="#installing-playwright" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>If not already installed, add Playwright and its test runner:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-5">--save-dev</span><span class="hl-1"> </span><span class="hl-2">playwright</span><span class="hl-1"> </span><span class="hl-2">@playwright/test</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">playwright</span><span class="hl-1"> </span><span class="hl-2">install</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="running-e2e-tests" class="tsd-anchor-link">Running E2E Tests<a href="#running-e2e-tests" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><strong>Note:</strong> Playwright E2E tests and unit/integration tests (run with Vitest) should be run separately. E2E tests require a real browser and dev server, are slower, and have different dependencies and environments than fast, isolated unit/integration tests. Keeping them separate ensures clarity, speed, and easier debugging.</p>
+<p><strong>Summary:</strong></p>
+<ul>
+<li>Run all unit/integration tests with <code>npm test</code>.</li>
+<li>Run all E2E tests in strict mode with <code>npm run test:e2e</code>.</li>
+<li>Run all E2E tests while reusing an already-running dev server with <code>npm run test:e2e:reuse</code>.</li>
+</ul>
+<p>Playwright is configured with a <code>webServer</code> entry and starts <code>npm run dev</code> on port <code>5173</code>.</p>
+<ul>
+<li>
+<p><code>npm run test:e2e</code> uses strict mode (<code>reuseExistingServer: false</code>) and fails if <code>5173</code> is already in use.</p>
+</li>
+<li>
+<p><code>npm run test:e2e:reuse</code> sets <code>PW_E2E_REUSE_SERVER=1</code> and reuses an existing dev server on <code>5173</code>.</p>
+</li>
+<li>
+<p>To run all E2E tests:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test:e2e</span><br/><span class="hl-7"># reuse a running dev server (useful during local development)</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test:e2e:reuse</span><br/><span class="hl-7"># or</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">playwright</span><span class="hl-1"> </span><span class="hl-2">test</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+<li>
+<p>To run a specific E2E test file:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test:e2e</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-2">e2e/session-load.e2e.spec.ts</span><br/><span class="hl-7"># or (reuse mode)</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test:e2e:reuse</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-2">e2e/session-load.e2e.spec.ts</span><br/><span class="hl-7"># or</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">playwright</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-2">e2e/session-load.e2e.spec.ts</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+<li>
+<p>To open the interactive Playwright Test UI:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test:e2e:ui</span><br/><span class="hl-7"># or</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">playwright</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-5">--ui</span>
+</code><button type="button">Copy</button></pre>
+
+</li>
+</ul>
+<h4 id="available-npm-scripts" class="tsd-anchor-link">Available npm scripts<a href="#available-npm-scripts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>The following scripts are available in <code>package.json</code>:</p>
+<ul>
+<li><code>test:e2e</code> – Run all Playwright E2E tests (strict server mode)</li>
+<li><code>test:e2e:reuse</code> – Run all Playwright E2E tests while reusing an existing dev server on port <code>5173</code></li>
+<li><code>test:e2e:session</code> – Run the session-load E2E spec (<code>e2e/session-load.e2e.spec.ts</code>)</li>
+<li><code>test:e2e:ui</code> – Open the Playwright Test UI</li>
+</ul>
+<h3 id="using-real-datasets-in-e2e-tests" class="tsd-anchor-link">Using Real Datasets in E2E Tests<a href="#using-real-datasets-in-e2e-tests" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Place CIF or other input files in <code>data/input/</code>.</li>
+<li>Reference these files in your Playwright tests for realistic workflows.</li>
+<li>See <code>e2e/example-session.spec.ts</code> and <code>e2e/session-load.e2e.spec.ts</code> for usage patterns.</li>
+</ul>
+<h3 id="e2e-test-best-practices" class="tsd-anchor-link">E2E Test Best Practices<a href="#e2e-test-best-practices" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Use <code>data-testid</code> or accessible selectors for robust element targeting.</li>
+<li>Clean up test state between tests to avoid cross-test interference.</li>
+<li>Document any new E2E tests and datasets added.</li>
+<li>Prefer realistic user flows: test file selection dialogs, downloads, and UI prompts as a user would experience them.</li>
+</ul>
+<h4 id="session-round-trip-regression-patterns" class="tsd-anchor-link">Session Round-Trip Regression Patterns<a href="#session-round-trip-regression-patterns" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li>Keep <code>Save</code> and <code>Save All</code> selection payloads in parity for session fidelity. If selection schema is extended (for example <code>chainId2</code>, <code>residueId2</code>, <code>residueIds2</code>), update both save paths and both restore paths together.</li>
+<li>Add integration coverage for session schema changes in <code>src/App.integration.test.tsx</code> before or alongside app changes. This catches regressions in serialized UI state quickly.</li>
+<li>For Playwright session-load assertions, gate on readiness state before asserting UI labels. For sync-related flows, prefer polling the test API (<code>window.__ribocodeTestApi.getSyncState()</code>) and then asserting button enabled/text state.</li>
+<li>Reuse shared session helpers in <code>e2e/helpers/session-load.ts</code> for loading fixture sessions and required files instead of re-implementing modal/file-input flows in each spec.</li>
+<li>When a session E2E fails under a run that was manually interrupted (<code>^C</code>/SIGINT), re-run cleanly before triage; interrupted runs can report false failures across unrelated specs.</li>
+</ul>
+<h4 id="session-and-selector-stability-notes" class="tsd-anchor-link">Session and Selector Stability Notes<a href="#session-and-selector-stability-notes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li>Prefer stable ID/testid selectors for repeated controls (<code>Zoom</code>, <code>Highlight</code>, <code>Inspect</code>) because label text is intentionally duplicated across Subunit, Chain, and Residue sections.</li>
+<li>For session load/save/reload flows, wait for key controls (for example <code>#session-menu-btn</code>) before interacting after navigation or reload.</li>
+<li>Long session workflows can exceed the default 30s test timeout under parallel workers; set a per-test timeout (for example <code>test.setTimeout(60000)</code>) for save/reload/load scenarios.</li>
+<li>For load completion assertions, prefer checking filename labels (for example <code>#viewer-column-B-aligned-filename-label</code>) rather than assuming the absence/presence of a specific load button.</li>
+</ul>
+<h4 id="retrospective-0162-test-stabilization" class="tsd-anchor-link">Retrospective: 0.16.2 Test Stabilization<a href="#retrospective-0162-test-stabilization" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li>Preserve product contracts before hardening tests. In particular, keep <code>Load Aligned</code> disabled until <code>AlignedTo</code> is loaded; changing this contract can make integration tests fail while masking the real regression.</li>
+<li>Prefer structural selectors over label text for repeated controls. Column-scoped IDs and <code>data-testid</code> selectors are more reliable than role/name selectors when <code>Show/Hide</code> controls appear in both viewers.</li>
+<li>Treat timeout increases as a last step, not the first step. Flaky tests were primarily caused by async UI transitions and selector ambiguity, not by timeout settings alone.</li>
+</ul>
+<h3 id="resources" class="tsd-anchor-link">Resources<a href="#resources" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><a href="https://playwright.dev/docs/intro">Playwright documentation</a></li>
+</ul>
+<hr>
+<h2 id="test-types-overview" class="tsd-anchor-link">Test Types Overview<a href="#test-types-overview" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Ribocode uses three main types of tests to ensure code quality and robust user experience:</p>
+<table>
+<thead>
+<tr>
+<th>Test Type</th>
+<th>Location/Pattern</th>
+<th>Tooling</th>
+<th>Purpose &amp; Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit Test</td>
+<td><code>*.test.ts(x)</code> (next to code)</td>
+<td>Vitest, Testing Library</td>
+<td>Test individual functions, hooks, or components in isolation.</td>
+</tr>
+<tr>
+<td>Integration Test</td>
+<td><code>*.integration.test.ts(x)</code></td>
+<td>Vitest, Testing Library</td>
+<td>Test workflows involving multiple components or hooks together in jsdom.</td>
+</tr>
+<tr>
+<td>End-to-End (E2E)</td>
+<td><code>e2e/*.spec.ts</code></td>
+<td>Playwright</td>
+<td>Test real user workflows in a real browser, including file downloads, datasets.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="unit-tests" class="tsd-anchor-link">Unit Tests<a href="#unit-tests" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Located next to the code they test (e.g., <code>src/components/Foo.test.tsx</code>).</li>
+<li>Use Vitest and @testing-library/react for fast, isolated checks.</li>
+<li>Example: Testing a single button renders and fires an event.</li>
+</ul>
+<h3 id="integration-tests" class="tsd-anchor-link">Integration Tests<a href="#integration-tests" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Used for multi-component or workflow tests (e.g., <code>src/App.integration.test.tsx</code>).</li>
+<li>Still run in jsdom, but cover more of the app's logic and UI.</li>
+<li>Example: Testing session save/load logic across several components.</li>
+</ul>
+<h3 id="end-to-end-e2e-tests" class="tsd-anchor-link">End-to-End (E2E) Tests<a href="#end-to-end-e2e-tests" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Located in the <code>e2e/</code> directory (e.g., <code>e2e/example-session.spec.ts</code>, <code>e2e/session-load.e2e.spec.ts</code>).</li>
+<li>Use Playwright to automate real browsers.</li>
+<li>Test real user flows: loading datasets, saving sessions, verifying downloads, file selection modals, and session restoration.</li>
+<li>Can assert on file downloads, network requests, and full UI behavior.</li>
+</ul>
+<h3 id="best-practices" class="tsd-anchor-link">Best Practices<a href="#best-practices" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Use clear, descriptive test names and group related tests with <code>describe</code> blocks.</li>
+<li>Use <code>data-testid</code> or accessible selectors for robust element targeting.</li>
+<li>Clean up test state between tests to avoid cross-test interference.</li>
+<li>Document any new tests and datasets added.</li>
+</ul>
+<p>See the sections above for how to run each type of test and for more detailed examples, including Playwright E2E workflows and npm scripts.</p>
+<hr>
+<h2 id="ui-element-ids-and-conventions-1" class="tsd-anchor-link">UI Element IDs and <code>data-testid</code> Conventions<a href="#ui-element-ids-and-conventions-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>To ensure robust, maintainable, and testable UI code, Ribocode uses the following conventions for element IDs and <code>data-testid</code> attributes:</p>
+<h3 id="general-rules-1" class="tsd-anchor-link">General Rules<a href="#general-rules-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>IDs</strong> should be unique, predictable, and use kebab-case (e.g., <code>viewer-column-a-load-btn</code>).</li>
+<li><strong>data-testid</strong> attributes should be added to all modal fields, file inputs, and dynamic elements that are targeted in E2E/component tests.</li>
+<li>Use <code>data-testid</code> for elements that may have dynamic content, multiple instances, or where IDs are not unique.</li>
+<li>Prefer <code>data-testid</code> in Playwright and Testing Library selectors for E2E and integration tests.</li>
+</ul>
+<h3 id="examples-1" class="tsd-anchor-link">Examples<a href="#examples-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<h4 id="modal-components-1" class="tsd-anchor-link">Modal Components<a href="#modal-components-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<pre><code class="jsx"><input type="file" id="session-modal-alignedto-input" data-testid="session-modal-alignedto-input" />
+<button id="session-modal-load-btn" data-testid="session-modal-load-btn">Load Session</button>
+</code><button type="button">Copy</button></pre>
+
+<h4 id="viewer-column-buttons-1" class="tsd-anchor-link">Viewer Column Buttons<a href="#viewer-column-buttons-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<pre><code class="jsx"><button id="viewer-column-a-load-btn" data-testid="viewer-column-a-load-btn">Load AlignedTo</button>
+<input id="viewer-column-a-file-input" data-testid="viewer-column-a-file-input" type="file" />
+</code><button type="button">Copy</button></pre>
+
+<h4 id="general-guidelines-1" class="tsd-anchor-link">General Guidelines<a href="#general-guidelines-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li>Always use the same value for <code>id</code> and <code>data-testid</code> when possible for clarity.</li>
+<li>Document any new IDs or <code>data-testid</code> attributes added to components.</li>
+<li>Update tests to use these selectors instead of brittle text or class selectors.</li>
+</ul>
+<h3 id="updating-existing-components-1" class="tsd-anchor-link">Updating Existing Components<a href="#updating-existing-components-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>If you add a new modal, file input, or dynamic UI element, ensure it has a <code>data-testid</code> attribute following the conventions above. Update the relevant tests to use these selectors.</p>
+<hr>
+<h2 id="contributing" class="tsd-anchor-link">Contributing<a href="#contributing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>If you contribute changes, please submit a Pull Request that includes documentation updates and, if appropriate, includes tests.</p>
+<p><strong>Please add your name to the CONTRIBUTORS file in the repository when you make a first contribution.</strong>
+Also, add your details to the list of authors in the header of any source files you modify.</p>
+<p>For contribution ideas, bug reports, or feature requests, please visit the <a href="https://github.com/ribocode-slola/ribocode1/issues">GitHub Issues page</a>.</p>
+<p>When triaging bug reports for unexpected UI/alignment behavior, ask reporters to run <code>Session &gt; Reset Local Caches</code> and retry the same steps before filing (or updating) the issue. This helps quickly separate stale local state problems from reproducible product defects.</p>
+<p>For planned future direction and potential contribution areas, also review <a href="ROADMAP.html">ROADMAP.md</a>.</p>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#developer-guide"><span>Developer <wbr/>Guide</span></a><ul><li><a href="#table-of-contents"><span>Table of <wbr/>Contents</span></a></li><li><a href="#quick-test"><span>Quick <wbr/>Test</span></a></li><li><a href="#setup"><span>Setup</span></a></li><li><ul><li><a href="#recommended-set-up"><span>Recommended set up</span></a></li></ul></li><li><a href="#mol-submodule-workflow"><span>Mol* <wbr/>Submodule <wbr/>Workflow</span></a></li><li><ul><li><a href="#build-and-run-locally"><span>Build and run locally</span></a></li><li><ul><li><a href="#local-development"><span>Local <wbr/>Development</span></a></li><li><a href="#production-build-preview"><span>Production <wbr/>Build &amp; <wbr/>Preview</span></a></li><li><a href="#notes-on-environment-files"><span>Notes on <wbr/>Environment <wbr/>Files</span></a></li><li><a href="#deployment"><span>Deployment</span></a></li></ul></li></ul></li><li><a href="#source-code-overview"><span>Source <wbr/>Code <wbr/>Overview</span></a></li><li><a href="#theme-system-architecture-important"><span>Theme <wbr/>System <wbr/>Architecture (<wbr/>Important)</span></a></li><li><ul><li><a href="#dataset-role-ownership"><span>Dataset-<wbr/>role ownership</span></a></li><li><a href="#where-behavior-is-implemented"><span>Where behavior is implemented</span></a></li><li><a href="#theme-controls-model"><span>Theme controls model</span></a></li><li><a href="#representation-theme-switching-contract"><span>Representation theme switching contract</span></a></li><li><a href="#residue-theme-selection-behavior"><span>Residue theme selection behavior</span></a></li><li><a href="#residue-default-mapping-contract"><span>Residue default mapping contract</span></a></li><li><a href="#residue-visual-refresh-note"><span>Residue visual refresh note</span></a></li><li><a href="#sync-scope-note"><span>Sync scope note</span></a></li><li><a href="#testing-implications-for-theme-regressions"><span>Testing implications for theme regressions</span></a></li></ul></li><li><a href="#mol-advanced-controls-toggle"><span>Mol* <wbr/>Advanced <wbr/>Controls <wbr/>Toggle</span></a></li><li><a href="#re-alignment-implementation-notes"><span>Re-<wbr/>alignment <wbr/>Implementation <wbr/>Notes</span></a></li><li><ul><li><a href="#two-layer-alignment-model-important"><span>Two-<wbr/>Layer <wbr/>Alignment <wbr/>Model (<wbr/>Important)</span></a></li><li><a href="#cache-and-state-hygiene"><span>Cache and <wbr/>State <wbr/>Hygiene</span></a></li></ul></li><li><a href="#ui-element-ids-and-conventions"><span>UI <wbr/>Element <wbr/>I<wbr/>Ds and  <wbr/>Conventions</span></a></li><li><ul><li><a href="#general-rules"><span>General <wbr/>Rules</span></a></li><li><a href="#examples"><span>Examples</span></a></li><li><ul><li><a href="#modal-components"><span>Modal <wbr/>Components</span></a></li><li><a href="#viewer-column-buttons"><span>Viewer <wbr/>Column <wbr/>Buttons</span></a></li><li><a href="#general-guidelines"><span>General <wbr/>Guidelines</span></a></li></ul></li><li><a href="#updating-existing-components"><span>Updating <wbr/>Existing <wbr/>Components</span></a></li></ul></li><li><a href="#mol"><span>Mol*</span></a></li><li><a href="#highlighting-and-selection-colouring"><span>Highlighting and <wbr/>Selection <wbr/>Colouring</span></a></li><li><a href="#documentation"><span>Documentation</span></a></li><li><ul><li><a href="#how-to-generate-documentation"><span>How to <wbr/>Generate <wbr/>Documentation</span></a></li><li><a href="#configuration"><span>Configuration</span></a></li><li><a href="#deployment-recommendation"><span>Deployment <wbr/>Recommendation</span></a></li><li><a href="#docs-only-deployment"><span>Docs-<wbr/>only <wbr/>Deployment</span></a></li><li><a href="#useful-links"><span>Useful <wbr/>Links</span></a></li></ul></li><li><a href="#deployment-1"><span>Deployment</span></a></li><li><a href="#versioning"><span>Versioning</span></a></li><li><ul><li><a href="#recommended-bump-commands"><span>Recommended bump commands</span></a></li><li><a href="#ui-version-display"><span>UI version display</span></a></li><li><a href="#release-checklist"><span>Release checklist</span></a></li></ul></li><li><a href="#roadmap"><span>Roadmap</span></a></li><li><a href="#session-fidelity-inventory-v017x"><span>Session <wbr/>Fidelity <wbr/>Inventory (v0.17.x)</span></a></li><li><ul><li><a href="#parity-matrix"><span>Parity <wbr/>Matrix</span></a></li><li><a href="#round-trip-guarantees"><span>Round-<wbr/>Trip <wbr/>Guarantees</span></a></li><li><a href="#known-limitations-and-fallbacks"><span>Known <wbr/>Limitations and <wbr/>Fallbacks</span></a></li></ul></li><li><a href="#tests"><span>Tests</span></a></li><li><ul><li><a href="#test-file-structure"><span>Test <wbr/>File <wbr/>Structure</span></a></li><li><a href="#creating-tests"><span>Creating <wbr/>Tests</span></a></li><li><a href="#running-tests"><span>Running <wbr/>Tests</span></a></li><li><a href="#alignment-regression-testing"><span>Alignment <wbr/>Regression <wbr/>Testing</span></a></li><li><a href="#additional-resources"><span>Additional <wbr/>Resources</span></a></li></ul></li><li><a href="#end-to-end-e2e-testing-with-playwright"><span>End-<wbr/>to-<wbr/>End (<wbr/>E2<wbr/>E) <wbr/>Testing with <wbr/>Playwright</span></a></li><li><ul><li><a href="#e2e-test-structure"><span>E2<wbr/>E <wbr/>Test <wbr/>Structure</span></a></li><li><a href="#system-dependencies-for-playwright-linux"><span>System <wbr/>Dependencies for <wbr/>Playwright (<wbr/>Linux)</span></a></li><li><a href="#installing-playwright"><span>Installing <wbr/>Playwright</span></a></li><li><a href="#running-e2e-tests"><span>Running <wbr/>E2<wbr/>E <wbr/>Tests</span></a></li><li><ul><li><a href="#available-npm-scripts"><span>Available npm scripts</span></a></li></ul></li><li><a href="#using-real-datasets-in-e2e-tests"><span>Using <wbr/>Real <wbr/>Datasets in <wbr/>E2<wbr/>E <wbr/>Tests</span></a></li><li><a href="#e2e-test-best-practices"><span>E2<wbr/>E <wbr/>Test <wbr/>Best <wbr/>Practices</span></a></li><li><ul><li><a href="#session-round-trip-regression-patterns"><span>Session <wbr/>Round-<wbr/>Trip <wbr/>Regression <wbr/>Patterns</span></a></li><li><a href="#session-and-selector-stability-notes"><span>Session and <wbr/>Selector <wbr/>Stability <wbr/>Notes</span></a></li><li><a href="#retrospective-0162-test-stabilization"><span>Retrospective: 0.16.2 <wbr/>Test <wbr/>Stabilization</span></a></li></ul></li><li><a href="#resources"><span>Resources</span></a></li></ul></li><li><a href="#test-types-overview"><span>Test <wbr/>Types <wbr/>Overview</span></a></li><li><ul><li><a href="#unit-tests"><span>Unit <wbr/>Tests</span></a></li><li><a href="#integration-tests"><span>Integration <wbr/>Tests</span></a></li><li><a href="#end-to-end-e2e-tests"><span>End-<wbr/>to-<wbr/>End (<wbr/>E2<wbr/>E) <wbr/>Tests</span></a></li><li><a href="#best-practices"><span>Best <wbr/>Practices</span></a></li></ul></li><li><a href="#ui-element-ids-and-conventions-1"><span>UI <wbr/>Element <wbr/>I<wbr/>Ds and  <wbr/>Conventions</span></a></li><li><ul><li><a href="#general-rules-1"><span>General <wbr/>Rules</span></a></li><li><a href="#examples-1"><span>Examples</span></a></li><li><ul><li><a href="#modal-components-1"><span>Modal <wbr/>Components</span></a></li><li><a href="#viewer-column-buttons-1"><span>Viewer <wbr/>Column <wbr/>Buttons</span></a></li><li><a href="#general-guidelines-1"><span>General <wbr/>Guidelines</span></a></li></ul></li><li><a href="#updating-existing-components-1"><span>Updating <wbr/>Existing <wbr/>Components</span></a></li></ul></li><li><a href="#contributing"><span>Contributing</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules.html">ribocode1 - v0.21.0</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>

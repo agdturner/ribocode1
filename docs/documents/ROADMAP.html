@@ -1,0 +1,68 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>ROADMAP | ribocode1 - v0.21.0</title><meta name="description" content="Documentation for ribocode1"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">ribocode1 - v0.21.0</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">ROADMAP</a></li></ul></div><div class="tsd-panel tsd-typography"><h1 id="roadmap" class="tsd-anchor-link">ROADMAP<a href="#roadmap" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>This document outlines planned work for upcoming Ribocode versions. It is directional, not a strict guarantee.</p>
+<h2 id="principles" class="tsd-anchor-link">Principles<a href="#principles" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li>Prefer deterministic behavior and strong regression coverage.</li>
+<li>Address bug reports from Ribocode project as the main priority.</li>
+<li>Consider feature requests from Ribocode project as a second priority.</li>
+<li>Refer to issues made via GitHub.</li>
+</ul>
+<h2 id="planned-versions" class="tsd-anchor-link">Planned Versions<a href="#planned-versions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="v020x-bug-fixes" class="tsd-anchor-link">v0.20.x Bug Fixes.<a href="#v020x-bug-fixes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>...</li>
+</ul>
+<h3 id="v021x-additional-controls-for-camera" class="tsd-anchor-link">v0.21.x Additional controls for camera.<a href="#v021x-additional-controls-for-camera" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Goal: Allow users to load/save camera position and viewer settings. Support users to navigate using an alpha-numeric control to move to a coordinate, rotate to a vector and choose a camera angle.</p>
+<h3 id="v022x-improve-alignment-quality" class="tsd-anchor-link">v0.22.x Improve alignment quality.<a href="#v022x-improve-alignment-quality" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Maintain objective benchmark tracking for:
+<ul>
+<li>6XU6/6XU8 chain CU -&gt; CU (stable reference case)</li>
+<li>7WTT/7WTZ chain e -&gt; e (known weak case)</li>
+</ul>
+</li>
+<li>Prioritize correspondence and pairing quality improvements over translation-only post-adjustments.</li>
+<li>Investigate and expand automated coverage for residue-correspondence-based chain alignment behavior.</li>
+<li>Accept changes only when weak-case metrics improve without regressing stable-case metrics.</li>
+</ul>
+<h4 id="investigation-note-2026-10-17-initial-load-orientation-mismatch" class="tsd-anchor-link">Investigation note (2026-10-17): initial load orientation mismatch<a href="#investigation-note-2026-10-17-initial-load-orientation-mismatch" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<ul>
+<li>Symptom reported: for 6XU6/6XU8, initial Aligned display in viewer B can appear ~180-degree rotated relative to viewer A before any manual selection/re-align.</li>
+<li>Important constraint: do not rely on pre-selected chains for initial auto-alignment because shared chain identity is not generally known in advance.</li>
+<li>Work attempted:
+<ul>
+<li>Re-tested historical Molstar alignment boundaries (centroid mapping and shared-atom fallback commits).</li>
+<li>Tried broader initial atom selector policy (<code>P</code> + <code>C</code>) for first-load alignment.</li>
+<li>Tried first-load camera orientation synchronization/re-application between viewers.</li>
+<li>Tried chain-aware initial alignment payload/correspondence in Molstar.</li>
+</ul>
+</li>
+<li>Outcome so far:
+<ul>
+<li>Chain realign metrics remained stable and good for CU-&gt;CU.</li>
+<li>User-observed initial 180-degree presentation issue for 6XU6/6XU8 persisted.</li>
+<li>No candidate fix produced a clear manual improvement without introducing extra complexity/risk.</li>
+</ul>
+</li>
+<li>Current decision:
+<ul>
+<li>Pause this line of investigation and keep runtime behavior unchanged until a clearer reproduction strategy and acceptance criteria are defined.</li>
+</ul>
+</li>
+<li>Recommended next revisit steps:
+<ul>
+<li>Add a deterministic first-load orientation diagnostic (separate from chain realign metrics) that compares viewer A/B camera forward/up vectors and projected principal axes immediately after load.</li>
+<li>Evaluate whether orientation parity should be defined by camera state, structure transform, or a canonical molecular frame.</li>
+<li>Re-run targeted experiments only after those diagnostics are in place.</li>
+</ul>
+</li>
+</ul>
+<h2 id="tracking-and-release-notes" class="tsd-anchor-link">Tracking and Release Notes<a href="#tracking-and-release-notes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li>Released functionality is recorded in <a href="CHANGELOG.html">CHANGELOG.md</a>.</li>
+<li>Alignment validation guidance is documented in <a href="DeveloperGuide.html#alignment-regression-testing">DeveloperGuide.md</a>.</li>
+<li>Alignment quality gates and ownership split are documented in <a href="decisions_ADR-0001-alignment-quality-gates.html">ADR-0001</a>.</li>
+<li>This roadmap should be updated when priorities change or major work lands.</li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#roadmap"><span>ROADMAP</span></a><ul><li><a href="#principles"><span>Principles</span></a></li><li><a href="#planned-versions"><span>Planned <wbr/>Versions</span></a></li><li><ul><li><a href="#v020x-bug-fixes"><span>v0.20.x <wbr/>Bug <wbr/>Fixes.</span></a></li><li><a href="#v021x-additional-controls-for-camera"><span>v0.21.x <wbr/>Additional controls for camera.</span></a></li><li><a href="#v022x-improve-alignment-quality"><span>v0.22.x <wbr/>Improve alignment quality.</span></a></li><li><ul><li><a href="#investigation-note-2026-10-17-initial-load-orientation-mismatch"><span>Investigation note (2026-<wbr/>10-<wbr/>17): initial load orientation mismatch</span></a></li></ul></li></ul></li><li><a href="#tracking-and-release-notes"><span>Tracking and <wbr/>Release <wbr/>Notes</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules.html">ribocode1 - v0.21.0</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
