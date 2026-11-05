@@ -6,6 +6,7 @@ Release summary: this minor release improves file-load validation/error feedback
 - Fixed deployed docs routing in `vite.config.js` by excluding `/docs/` paths from Workbox SPA navigation fallback, so `https://.../ribocode1/docs/index.html` serves TypeDoc instead of the app shell.
 - Added release note guidance for existing installs: after deployment, users with a previously cached service worker may need a hard refresh or `Session > Reset Local Caches` to pick up the docs-route fix immediately.
 - Updated `UserGuide.md` with a dedicated `Supported File Formats` section clarifying accepted formats for `Load AlignedTo`, `Load Aligned`, theme file loading, and session file loading.
+- Updated `typedoc.json` to include additional Markdown guides (`UserGuide.md`, `DeveloperGuide.md`, `CHANGELOG.md`, `ROADMAP.md`, and decision records) as TypeDoc project documents so they render as integrated docs pages rather than raw Markdown files.
 
 ## [v0.20.1] - 2026-11-03
 Release summary: this patch release fixes residue-theme customization so editing one residue from a default residue theme preserves all other residue colours from the source theme.

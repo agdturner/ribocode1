@@ -18,5 +18,21 @@
   "validation": {
     "notExported": false
   },
-  "readme": "README.md"
+  "readme": "README.md",
+  "highlightLanguages": [
+    "ts",
+    "tsx",
+    "js",
+    "jsx",
+    "json",
+    "bash",
+    "csv"
+  ],
+  "projectDocuments": [
+    "UserGuide.md",
+    "DeveloperGuide.md",
+    "CHANGELOG.md",
+    "ROADMAP.md",
+    "decisions/*.md"
+  ]
 }
