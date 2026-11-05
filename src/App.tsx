@@ -7369,6 +7369,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                 <button
                                     className="session-menu-btn"
                                     id="session-menu-btn"
+                                    title="Open session actions (Save, Save All, Load, Load All, Reset Local Caches, Restart)."
                                     onClick={e => {
                                         const menu = document.getElementById('session-menu-dropdown');
                                         if (menu) {
@@ -7402,6 +7403,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                             handleSaveSession();
                                             document.getElementById('session-menu-dropdown')!.style.display = 'none';
                                         }}
+                                        title="Save session as JSON. Browser may allow choosing filename/location; otherwise the file is downloaded."
                                         tabIndex={0}
                                         onKeyDown={e => { if (e.key === 'Enter') handleSaveSession(); }}
                                         style={{ padding: '8px 16px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
@@ -7414,6 +7416,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                             void handleSaveSessionAll();
                                             document.getElementById('session-menu-dropdown')!.style.display = 'none';
                                         }}
+                                        title="Save session + embedded input files as JSON. Browser may allow choosing filename/location; otherwise the file is downloaded."
                                         tabIndex={0}
                                         onKeyDown={e => { if (e.key === 'Enter') void handleSaveSessionAll(); }}
                                         style={{ padding: '8px 16px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
@@ -7433,6 +7436,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                                 if (dropdown) dropdown.style.display = 'none';
                                             }, 0);
                                         }}
+                                        title="Load a session JSON file. Current loaded data/state are replaced after confirmation."
                                         tabIndex={0}
                                         onKeyDown={e => {
                                             if (e.key === 'Enter') {
@@ -7464,6 +7468,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                                 if (dropdown) dropdown.style.display = 'none';
                                             }, 0);
                                         }}
+                                        title="Load a session JSON file with embedded input files. Current loaded data/state are replaced after confirmation."
                                         tabIndex={0}
                                         onKeyDown={e => {
                                             if (e.key === 'Enter') {
@@ -7492,6 +7497,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                                 if (dropdown) dropdown.style.display = 'none';
                                             }
                                         }}
+                                        title="Clear local Ribocode browser caches/storage and reload the app. Recommended troubleshooting step before filing issues."
                                         tabIndex={0}
                                         onKeyDown={e => {
                                             if (e.key === 'Enter') {
@@ -7521,6 +7527,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                                 if (dropdown) dropdown.style.display = 'none';
                                             }
                                         }}
+                                        title="Restart the app page and clear current in-memory session state after confirmation."
                                         tabIndex={0}
                                         onKeyDown={e => {
                                             if (e.key === 'Enter') {

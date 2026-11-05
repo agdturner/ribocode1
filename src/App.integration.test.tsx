@@ -391,6 +391,10 @@ describe('App integration: AlignedTo and Aligned loading', () => {
 
     expect(alignedLoadBtn).toBeInTheDocument();
     expect(alignedLoadBtn).toBeDisabled();
+    expect(alignedLoadBtn).toHaveAttribute(
+      'title',
+      'Disabled until AlignedTo is loaded. Load AlignedTo first, then this button will be enabled.'
+    );
     expect(alignedToInput).toBeInTheDocument();
 
     fireEvent.change(alignedToInput!, { target: { files: [loadTestFile('4ug0.cif')] } });

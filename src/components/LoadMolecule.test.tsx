@@ -96,11 +96,28 @@ describe('LoadDataRow', () => {
         const root = container.querySelector(`#${baseProps.idPrefix}-${loadMoleculeIdSuffix}`);
         expect(root).toBeInTheDocument();
         expect(screen.getByText('Viewer A')).toBeInTheDocument();
-        expect(screen.getByText('Load AlignedTo')).toBeInTheDocument();
+        const loadAlignedToButton = screen.getByRole('button', { name: 'Load AlignedTo' });
+        expect(loadAlignedToButton).toBeInTheDocument();
+        expect(loadAlignedToButton).toHaveAttribute('title', 'Load the AlignedTo reference structure file (.cif or .mmcif).');
         const representationToggle = document.getElementById('test-viewer-a-representation-controls-toggle-btn');
         expect(representationToggle).toBeInTheDocument();
         expect(representationToggle).toHaveClass('molstar-file-btn');
         expect(representationToggle).toHaveClass('molstar-advanced-controls-toggle');
+    });
+
+    it('renders a Load Aligned button tooltip when configured for Aligned viewer', () => {
+        render(<LoadDataRow {...baseProps} fileInputLabel="Load Aligned" />);
+        const loadAlignedButton = screen.getByRole('button', { name: 'Load Aligned' });
+        expect(loadAlignedButton).toHaveAttribute('title', 'Load the Aligned structure file (.cif or .mmcif).');
+    });
+
+    it('shows an enablement tooltip when Load Aligned is disabled', () => {
+        render(<LoadDataRow {...baseProps} fileInputLabel="Load Aligned" fileInputDisabled={true} />);
+        const loadAlignedButton = screen.getByRole('button', { name: 'Load Aligned' });
+        expect(loadAlignedButton).toHaveAttribute(
+            'title',
+            'Disabled until AlignedTo is loaded. Load AlignedTo first, then this button will be enabled.'
+        );
     });
 
     it('calls onFileInputClick when file input button is clicked', () => {
@@ -351,6 +368,115 @@ describe('LoadDataRow', () => {
         expect(baseProps.onAddRepresentationClick).toHaveBeenCalled();
     });
 
+    it('adds tooltips for representation controls in chain theme mode', () => {
+        render(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                colorMode="chain"
+                colorThemeOptions={[
+                    { value: 'default', label: 'Default' },
+                    { value: 'aligned-custom-1', label: 'Custom 1' },
+                ]}
+                selectedColorThemeName="aligned-custom-1"
+                onSelectedColorThemeNameChange={vi.fn()}
+                onSaveColorTheme={vi.fn()}
+                saveColorThemeDisabled={false}
+                onRemoveColorTheme={vi.fn()}
+                removeColorThemeDisabled={false}
+                chainColorsById={new Map([['A', '#3366FF']])}
+                onChainColorChange={vi.fn()}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Show Representation Controls'));
+
+        expect(document.getElementById('test-viewer-a-representation-type')).toHaveAttribute(
+            'title',
+            'Choose the representation type to add, currently set to cartoon'
+        );
+        expect(screen.getByLabelText('Add Representation')).toHaveAttribute(
+            'title',
+            'Add a new representation using the selected representation type using the theme as below.'
+        );
+        expect(document.getElementById('test-viewer-a-color-mode-select')).toHaveAttribute(
+            'title',
+            'Choose whether representation themes are based on chain or residue type.'
+        );
+        expect(document.getElementById('test-viewer-a-chain-colour-theme-select')).toHaveAttribute(
+            'title',
+            'Select the active chain colour theme.'
+        );
+        expect(document.getElementById('test-viewer-a-remove-chain-theme-btn')).toHaveAttribute(
+            'title',
+            'Remove the selected chain colour theme.'
+        );
+        expect(document.getElementById('test-viewer-a-load-chain-colours-btn')).toHaveAttribute(
+            'title',
+            'Load a chain colour theme from .json, .csv, .tsv, or .txt with chain IDs mapped to colour values.'
+        );
+        expect(document.getElementById('test-viewer-a-save-chain-theme-btn')).toHaveAttribute(
+            'title',
+            'Save the current chain colour theme to a file.'
+        );
+        expect(document.getElementById('test-viewer-a-chain-color-table-search')).toHaveAttribute(
+            'title',
+            'Filter chain rows before editing chain colours.'
+        );
+        expect(document.getElementById('test-viewer-a-chain-color-A')).toHaveAttribute(
+            'title',
+            'Choose a new colour for chain A.'
+        );
+        expect(document.getElementById('test-viewer-a-chain-color-A-apply-btn')).toHaveAttribute(
+            'title',
+            'Disabled until chain A has an unsaved colour change.'
+        );
+    });
+
+    it('adds tooltips for representation controls in residue theme mode', () => {
+        render(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                colorMode="residue-type"
+                colorThemeOptions={[
+                    { value: 'default', label: 'Default' },
+                    { value: 'aligned-residue-1', label: 'Residue 1' },
+                ]}
+                selectedColorThemeName="aligned-residue-1"
+                onSelectedColorThemeNameChange={vi.fn()}
+                onSaveColorTheme={vi.fn()}
+                saveColorThemeDisabled={false}
+                onRemoveColorTheme={vi.fn()}
+                removeColorThemeDisabled={false}
+                residueInfo={{
+                    residueLabels: new Map([
+                        ['1', { id: '1', name: 'ALA 1', compId: 'ALA', seqNumber: 1, insCode: '' }],
+                    ]),
+                    residueToAtomIds: { '1': ['a1'] }
+                }}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Show Representation Controls'));
+        expect(document.getElementById('test-viewer-a-residue-colour-theme-select')).toHaveAttribute(
+            'title',
+            'Select the active residue colour theme.'
+        );
+        expect(document.getElementById('test-viewer-a-remove-residue-theme-btn')).toHaveAttribute(
+            'title',
+            'Remove the selected residue colour theme.'
+        );
+        expect(document.getElementById('test-viewer-a-load-residue-colours-btn')).toHaveAttribute(
+            'title',
+            'Load a residue colour theme from .json, .csv, .tsv, or .txt with residue types mapped to colour values.'
+        );
+        expect(document.getElementById('test-viewer-a-save-residue-theme-btn')).toHaveAttribute(
+            'title',
+            'Save the current residue colour theme to a file.'
+        );
+    });
+
     it('renders grouped select and zoom toggles and keeps residue disabled without chain', () => {
         const { container, unmount } = render(<LoadDataRow {...baseProps} isLoaded={true} />);
         const controls = container.querySelector('.load-data-controls');
@@ -386,6 +512,43 @@ describe('LoadDataRow', () => {
         fireEvent.click(getByText('Show Chain Controls'));
         fireEvent.click(getByText('Show Select 1'));
         expect((getByText('Show Residue Controls') as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('adds tooltips to Show/Hide control toggle buttons', () => {
+        render(<LoadDataRow {...baseProps} isLoaded={true} />);
+
+        const representationToggle = document.getElementById('test-viewer-a-representation-controls-toggle-btn');
+        expect(representationToggle).toHaveAttribute('title', 'Show representation controls.');
+        fireEvent.click(representationToggle as HTMLElement);
+        expect(document.getElementById('test-viewer-a-representation-controls-toggle-btn'))
+            .toHaveAttribute('title', 'Hide representation controls.');
+
+        expect(document.getElementById('test-viewer-a-visibility-controls-toggle-btn'))
+            .toHaveAttribute('title', 'Show visibility controls.');
+        expect(document.getElementById('test-viewer-a-subunit-controls-toggle-btn'))
+            .toHaveAttribute('title', 'Show subunit controls.');
+        expect(document.getElementById('test-viewer-a-chain-controls-toggle-btn'))
+            .toHaveAttribute('title', 'Show chain controls.');
+
+        fireEvent.click(screen.getByText('Show Chain Controls'));
+        expect(document.getElementById('test-viewer-a-select-chain-controls-toggle-btn'))
+            .toHaveAttribute('title', 'Show Select 1 controls.');
+
+        fireEvent.click(screen.getByText('Show Select 2'));
+        expect(document.getElementById('test-viewer-a-residue2-controls-toggle-btn'))
+            .toHaveAttribute('title', 'Disabled. Select a chain in Select 2 to enable residue controls.');
+    });
+
+    it('explains why Select 2 and residue controls are disabled', () => {
+        render(<LoadDataRow {...baseProps} isLoaded={true} selectedChainId="" />);
+
+        fireEvent.click(screen.getByText('Show Chain Controls'));
+        expect(document.getElementById('test-viewer-a-select-chain2-controls-toggle-btn'))
+            .toHaveAttribute('title', 'Disabled. Select a chain in Select 1 first.');
+
+        fireEvent.click(screen.getByText('Show Select 1'));
+        expect(document.getElementById('test-viewer-a-residue-controls-toggle-btn'))
+            .toHaveAttribute('title', 'Disabled. Select a chain in Select 1 to enable residue controls.');
     });
 
     it('hides select and zoom controls when showSelectZoomControls is false', () => {

@@ -1,6 +1,27 @@
 # Change Log
 A chronological version based list of changes.
 
+## [Unreleased]
+Release summary: upcoming patch improves session export file-save UX and default naming.
+- Improved session export UX in `src/hooks/useSessionSave.ts` and `src/hooks/useSessionSaveAll.ts` by using `showSaveFilePicker` when available so users can choose filename/location, with versioned date-time default names and automatic fallback to browser download behavior when the picker is unavailable.
+- Added explicit session export metadata (`schemaVersion` and `sessionMetadata` including `appVersion`, `exportedAt`, and `exportMode`) to saved session payloads for forward/backward compatibility workflows.
+- Added Save/Save All menu hover guidance in `src/App.tsx` clarifying browser-dependent file-picker behavior and download fallback.
+- Added full tooltip coverage for Session menu controls in `src/App.tsx` (`Session`, `Save`, `Save All`, `Load`, `Load All`, `Reset Local Caches`, `Restart`) plus integration coverage in `src/session.integration.test.tsx`.
+- Added tooltip coverage for General Controls in `src/components/GeneralControls.tsx` (`Sync`, `Align Subunits`, `Align Chains`, `Align Residues`) with focused assertions in `src/components/GeneralControls.test.tsx`.
+- Improved General Controls disabled-state tooltip guidance in `src/components/GeneralControls.tsx` so `Sync`/alignment buttons explain the exact enablement conditions, with focused assertions in `src/components/GeneralControls.test.tsx`.
+- Added tooltip guidance for the primary load actions in `src/components/LoadMolecule.tsx` (`Load AlignedTo`, `Load Aligned`) with focused assertions in `src/components/LoadMolecule.test.tsx`.
+- Improved disabled-state tooltip guidance for load actions so `Load Aligned` now explains it is enabled after loading `AlignedTo`, with additional unit and integration assertions.
+- Added tooltip guidance to Show/Hide control toggles in `src/components/LoadMolecule.tsx` (representation, visibility, subunit, chain, Select 1/2, residue) including disabled-state explanations for when selection-dependent sections become enabled.
+- Added tooltip guidance for `ViewerColumn` section toggles in `src/components/ViewerColumn.tsx` (`Clipping Controls`, `Select and Zoom Controls`, `Advanced Mol* Controls`) with focused assertions in `src/components/ViewerColumn.test.tsx`.
+- Added context-aware tooltips for `AlignedTo` and `Aligned` representation visibility buttons in `src/components/Molecule.tsx`, including disabled-state guidance when a dataset is not yet loaded.
+- Added context-aware tooltips for per-representation controls in `src/components/Molecule.tsx` (representation visibility toggle, opacity slider, remove `×`, Theme Type selector, and chain/residue theme selectors) with disabled-state guidance and focused assertions in `src/components/Molecule.test.tsx`.
+- Added tooltip guidance across Representation Controls in `src/components/LoadMolecule.tsx`, covering add-representation selection and `+`, chain/residue Theme Type and theme selectors, remove `X`, load/save theme actions, and Chain Colours search/apply workflow.
+- Refined Representation Controls tooltip wording to include representation-type examples and explicit theme-file format expectations for Load actions (`.json`, `.csv`, `.tsv`, `.txt` with mapping requirements).
+- Improved selector tooltip reliability in `src/components/LoadMolecule.tsx` by attaching tooltip text to selector wrappers/labels (including disabled-state cases) and fixing the Representation label `htmlFor` target.
+- Fixed Add Representation selector tooltip propagation for the default `spacefill` dropdown path by threading `title` through `RepresentationSelectButton`/`GenericSelectButton` and wiring tooltip text from `ViewerColumn`.
+- Updated Add Representation selector tooltip wording to include the active selection, e.g. `Choose the representation type to add, currently set to spacefill`.
+- Added focused hook test coverage in `src/hooks/useSessionSave.test.tsx` and `src/hooks/useSessionSaveAll.test.tsx` for picker flow, fallback flow, and default filename conventions.
+
 ## [v0.21.0] - 2026-11-04
 Release summary: this minor release improves file-load validation/error feedback, fixes deployed docs routing behavior, and clarifies supported load-file formats in the user guide.
 - Added explicit CIF/mmCIF validation and user-facing load failure alerts in `src/App.tsx` for manual dataset loading, so selecting non-`.cif`/`.mmcif` files no longer fails silently.

@@ -65,4 +65,19 @@ describe('RepresentationSelectButton', () => {
         );
         expect(getByLabelText('Add Representation')).toBeDisabled();
     });
+
+    it('forwards tooltip text to the representation selector', () => {
+        const { getByLabelText } = render(
+            <RepresentationSelectButton
+                options={['spacefill', 'cartoon'] as AllowedRepresentationType[]}
+                selected={'spacefill' as AllowedRepresentationType}
+                onSelect={() => {}}
+                title="Choose the representation type to add."
+            />
+        );
+        expect(getByLabelText('Add Representation')).toHaveAttribute(
+            'title',
+            'Choose the representation type to add.'
+        );
+    });
 });

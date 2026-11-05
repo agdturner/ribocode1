@@ -1,61 +1,83 @@
-
-/**
- * Test for useSessionSave hook, to verify that it correctly includes filenames in the saved session data.
- * 
- * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
- *
- * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-04-24
- * @see https://github.com/ribocode-slola/ribocode1
- */
 import React from 'react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useSessionSave } from './useSessionSave';
+import packageJson from '../../package.json';
 
-it('renders a button with data-testid', () => {
-  render(<button data-testid="test-btn">Test</button>);
-  expect(screen.getByTestId('test-btn')).toBeInTheDocument();
-});
+describe('useSessionSave', () => {
+  const expectedVersion = `v${packageJson.version}`;
 
-it('should include filenames in saved session', () => {
-  const realCreateElement = document.createElement;
-  document.createElement = function(tagName: string) {
-    if (tagName === 'a') {
-      return {
-        click: vi.fn(),
-        set href(val: string) {},
-        set download(val: string) {}
-      } as any;
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete (window as any).showSaveFilePicker;
+  });
+
+  it('uses showSaveFilePicker with suggested filename containing version and timestamp when available', async () => {
+    const getSessionState = vi.fn(() => ({
+      viewerA: { moleculeAlignedTo: { filename: 'alignedToA.cif' } },
+    }));
+    const write = vi.fn().mockResolvedValue(undefined);
+    const close = vi.fn().mockResolvedValue(undefined);
+    const createWritable = vi.fn().mockResolvedValue({ write, close });
+    const showSaveFilePicker = vi.fn().mockResolvedValue({ createWritable });
+    (window as any).showSaveFilePicker = showSaveFilePicker;
+
+    function TestComponent() {
+      const save = useSessionSave(getSessionState);
+      return <button data-testid="save-btn" onClick={() => void save()}>Save</button>;
     }
-    return realCreateElement.call(document, tagName);
-  };
 
-  const getSessionState = vi.fn(() => ({
-    viewerA: {
-      moleculeAlignedTo: { filename: 'alignedToA.cif', alignmentData: { foo: 1 } },
-      moleculeAligned: { filename: 'alignedA.cif', alignmentData: { bar: 2 } },
-    },
-    viewerB: {
-      moleculeAlignedTo: { filename: 'alignedToB.cif', alignmentData: { baz: 3 } },
-      moleculeAligned: { filename: 'alignedB.cif', alignmentData: { qux: 4 } },
-    },
-  }));
+    render(<TestComponent />);
+    fireEvent.click(screen.getByTestId('save-btn'));
 
-  function TestComponent() {
-    const save = useSessionSave(getSessionState);
-    return <button data-testid="save-btn" onClick={save}>Save</button>;
-  }
-  render(<TestComponent />);
-  fireEvent.click(screen.getByTestId('save-btn'));
-  expect(getSessionState).toHaveBeenCalled();
-  // Check that the session JSON includes filenames
-  const session = getSessionState.mock.results[0].value;
-  expect(session.viewerA.moleculeAlignedTo.filename).toBe('alignedToA.cif');
-  expect(session.viewerA.moleculeAligned.filename).toBe('alignedA.cif');
-  expect(session.viewerB.moleculeAlignedTo.filename).toBe('alignedToB.cif');
-  expect(session.viewerB.moleculeAligned.filename).toBe('alignedB.cif');
-  // Restore after test
-  document.createElement = realCreateElement;
+    await waitFor(() => {
+      expect(showSaveFilePicker).toHaveBeenCalled();
+      expect(createWritable).toHaveBeenCalled();
+      expect(write).toHaveBeenCalled();
+      expect(close).toHaveBeenCalled();
+    });
+
+    const pickerArg = showSaveFilePicker.mock.calls[0]?.[0];
+    expect(pickerArg?.suggestedName).toMatch(new RegExp(`^ribocode-${expectedVersion}-session-\\d{4}-\\d{2}-\\d{2}-\\d{6}\\.json$`));
+    const savedJson = write.mock.calls[0][0];
+    const payload = JSON.parse(savedJson);
+    expect(payload.schemaVersion).toBe(1);
+    expect(payload.sessionMetadata).toEqual(expect.objectContaining({
+      appVersion: packageJson.version,
+      exportMode: 'save',
+      exportedAt: expect.any(String),
+    }));
+    expect(payload).toEqual(expect.objectContaining({
+      viewerA: expect.objectContaining({
+        moleculeAlignedTo: expect.objectContaining({ filename: 'alignedToA.cif' }),
+      }),
+    }));
+  });
+
+  it('falls back to anchor download with versioned timestamp filename when showSaveFilePicker is unavailable', async () => {
+    const getSessionState = vi.fn(() => ({ viewerA: { moleculeAlignedTo: { filename: 'alignedToA.cif' } } }));
+    const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const appendChildSpy = vi.spyOn(document.body, 'appendChild');
+    const removeChildSpy = vi.spyOn(document.body, 'removeChild');
+    const anchorClickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    function TestComponent() {
+      const save = useSessionSave(getSessionState);
+      return <button data-testid="save-btn" onClick={() => void save()}>Save</button>;
+    }
+
+    render(<TestComponent />);
+    fireEvent.click(screen.getByTestId('save-btn'));
+
+    await waitFor(() => {
+      expect(createObjectUrlSpy).toHaveBeenCalled();
+      expect(anchorClickSpy).toHaveBeenCalled();
+    });
+    const appendedAnchor = appendChildSpy.mock.calls.find(([node]) => node instanceof HTMLAnchorElement)?.[0] as HTMLAnchorElement | undefined;
+    expect(appendedAnchor).toBeDefined();
+    expect(appendedAnchor?.download).toMatch(new RegExp(`^ribocode-${expectedVersion}-session-\\d{4}-\\d{2}-\\d{2}-\\d{6}\\.json$`));
+    expect(appendChildSpy).toHaveBeenCalled();
+    await waitFor(() => expect(removeChildSpy).toHaveBeenCalled());
+  });
 });

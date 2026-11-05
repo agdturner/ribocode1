@@ -23,6 +23,9 @@ import type { ViewerKey } from '../types/ribocode';
  */
 export const idSuffix = 'viewer-column';
 
+const getSectionToggleTitle = (label: string, showing: boolean): string =>
+	showing ? `Hide ${label}.` : `Show ${label}.`;
+
 // Props for the ViewerColumn component
 export interface LoadDataRowPropsInput {
 	viewer: any;
@@ -390,6 +393,7 @@ export function getLoadDataRowProps({
 				selected={representationType}
 				onSelect={option => setRepresentationType(option as AllowedRepresentationType)}
 				disabled={Aligned === 'AlignedTo' ? !isMoleculeAlignedToLoaded : !isMoleculeAlignedLoaded}
+				title={`Choose the representation type to add, currently set to ${String(representationType).replace(/-/g, ' ')}`}
 			/>
 		),
 		onAddColorsClick: colorsFile?.handleButtonClick,
@@ -1076,6 +1080,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 			   data-testid={`${viewerIdPrefix}-clipping-controls-toggle-btn`}
 			   className="molstar-file-btn molstar-advanced-controls-toggle"
 			   type="button"
+			   title={getSectionToggleTitle('Clipping Controls', showClippingControls)}
 			   onClick={() => setShowClippingControls((current) => !current)}
 		       >
 			   {showClippingControls ? 'Hide Clipping Controls' : 'Show Clipping Controls'}
@@ -1149,6 +1154,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 			   data-testid={`${viewerIdPrefix}-select-zoom-controls-toggle-btn`}
 			   className="molstar-file-btn molstar-advanced-controls-toggle"
 			   type="button"
+			   title={getSectionToggleTitle('Select and Zoom Controls', showSelectZoomControls)}
 			   onClick={() => setShowSelectZoomControls((current) => !current)}
 		       >
 			   {showSelectZoomControls ? 'Hide Select and Zoom Controls' : 'Show Select and Zoom Controls'}
@@ -1259,6 +1265,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 				   data-testid={`${viewerIdPrefix}-advanced-molstar-controls-toggle-btn`}
 				   className="molstar-file-btn molstar-advanced-controls-toggle"
 				   type="button"
+				   title={getSectionToggleTitle('Advanced Mol* Controls', showAdvancedMolstarControls)}
 				   onClick={() => setShowAdvancedMolstarControls((current) => !current)}
 			   >
 				   {showAdvancedMolstarControls ? 'Hide Advanced Mol* Controls' : 'Show Advanced Mol* Controls'}

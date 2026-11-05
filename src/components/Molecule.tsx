@@ -21,6 +21,66 @@ const INTERNAL_RESIDUE_DEFAULT_THEMES = new Set([
     'Aligned-default-residue-colors',
 ]);
 
+const getDatasetNameFromLabel = (label: string): string => {
+    const normalized = label.trim().toLowerCase();
+    if (normalized === 'alignedto') return 'AlignedTo';
+    if (normalized === 'aligned') return 'Aligned';
+    return label || 'dataset';
+};
+
+const getMoleculeVisibilityTooltip = (
+    label: string,
+    isVisible: boolean,
+    isLoaded: boolean,
+    hasPlugin: boolean
+): string => {
+    const datasetName = getDatasetNameFromLabel(label);
+
+    if (!hasPlugin || !isLoaded) {
+        return `Disabled until the ${datasetName} dataset is loaded.`;
+    }
+    return isVisible
+        ? `Hide the ${datasetName} dataset and its representations.`
+        : `Show the ${datasetName} dataset and its representations.`;
+};
+
+const getRepresentationVisibilityTooltip = (
+    datasetName: string,
+    typeName: string,
+    repVisible: boolean,
+    isLoaded: boolean
+): string => {
+    if (!isLoaded) return `Disabled until the ${datasetName} dataset is loaded.`;
+    return repVisible
+        ? `Hide this ${typeName} representation in ${datasetName}.`
+        : `Show this ${typeName} representation in ${datasetName}.`;
+};
+
+const getRepresentationOpacityTooltip = (datasetName: string, typeName: string, isLoaded: boolean): string =>
+    isLoaded
+        ? `Adjust opacity for the ${typeName} representation in ${datasetName}.`
+        : `Disabled until the ${datasetName} dataset is loaded.`;
+
+const getRepresentationDeleteTooltip = (datasetName: string, typeName: string, isLoaded: boolean): string =>
+    isLoaded
+        ? `Remove this ${typeName} representation from ${datasetName}.`
+        : `Disabled until the ${datasetName} dataset is loaded.`;
+
+const getRepresentationThemeTypeTooltip = (datasetName: string, typeName: string, isLoaded: boolean): string =>
+    isLoaded
+        ? `Choose whether the ${typeName} representation in ${datasetName} uses chain or residue themes.`
+        : `Disabled until the ${datasetName} dataset is loaded.`;
+
+const getRepresentationChainThemeTooltip = (datasetName: string, typeName: string, isLoaded: boolean): string =>
+    isLoaded
+        ? `Select the chain theme for the ${typeName} representation in ${datasetName}.`
+        : `Disabled until the ${datasetName} dataset is loaded.`;
+
+const getRepresentationResidueThemeTooltip = (datasetName: string, typeName: string, isLoaded: boolean): string =>
+    isLoaded
+        ? `Select the residue theme for the ${typeName} representation in ${datasetName}.`
+        : `Disabled until the ${datasetName} dataset is loaded.`;
+
 /**
  * Suffix for the MoleculeUI root id, used for consistent id construction in code and tests.
  */
@@ -226,6 +286,7 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
     // Render the component.
     // Defensive: ensure label is a string
     const safeLabel = typeof label === 'string' ? label : '';
+    const datasetName = getDatasetNameFromLabel(safeLabel);
     const hasRepresentationControls = representationRefs.length > 0;
     const effectiveVisible = isVisible;
 
@@ -237,6 +298,7 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
                     disabled={!plugin || !isLoaded}
                     className="msp-btn msp-form-control molecule-visibility-btn"
                     aria-label={effectiveVisible ? `Hide ${label}` : `Show ${label}`}
+                    title={getMoleculeVisibilityTooltip(label, effectiveVisible, isLoaded, !!plugin)}
                     id={idPrefix ? `${idPrefix}-toggle-visibility-btn` : undefined}
                 >
                     {effectiveVisible ? <VisibilityOutlinedSvg /> : <VisibilityOffOutlinedSvg />}
@@ -331,6 +393,7 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
                                         className="msp-btn msp-form-control"
                                         disabled={!isLoaded}
                                         aria-label={`Toggle visibility for ${typeName} representation`}
+                                        title={getRepresentationVisibilityTooltip(datasetName, typeName, repVisible, isLoaded)}
                                         id={idPrefix ? `${idPrefix}-${toggleVisibilityRepIdSuffix}-${repId}` : undefined}
                                     >
                                         {repVisible ? <VisibilityOutlinedSvg /> : <VisibilityOffOutlinedSvg />}
@@ -349,6 +412,7 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
                                             step={0.05}
                                             value={opacity}
                                             disabled={!isLoaded}
+                                            title={getRepresentationOpacityTooltip(datasetName, typeName, isLoaded)}
                                             onChange={e => {
                                                 void setRepOpacity(ref, Number(e.target.value));
                                             }}
@@ -361,6 +425,7 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
                                         className="msp-btn msp-btn-danger msp-form-control"
                                         disabled={!isLoaded}
                                         aria-label={`Delete ${typeName} representation`}
+                                        title={getRepresentationDeleteTooltip(datasetName, typeName, isLoaded)}
                                         id={idPrefix ? `${idPrefix}-delete-rep-${repId}` : undefined}
                                     >
                                         &#x2716;
@@ -377,6 +442,7 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
                                                 id={idPrefix ? `${idPrefix}-rep-theme-kind-${repId}` : undefined}
                                                 className="msp-form-control"
                                                 disabled={!isLoaded}
+                                                title={getRepresentationThemeTypeTooltip(datasetName, typeName, isLoaded)}
                                                 value={activeThemeKind}
                                                 onChange={e => {
                                                     const nextKind = e.target.value === 'residue-type' ? 'residue-type' : 'chain';
@@ -402,6 +468,7 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
                                                     id={idPrefix ? `${idPrefix}-rep-chain-theme-${repId}` : undefined}
                                                     className="msp-form-control"
                                                     disabled={!isLoaded}
+                                                    title={getRepresentationChainThemeTooltip(datasetName, typeName, isLoaded)}
                                                     value={selectedChainTheme}
                                                     onChange={e => {
                                                         onRepresentationChainThemeChange?.(ref, e.target.value);
@@ -423,6 +490,7 @@ const MoleculeUI: React.FC<MoleculeUIProps> = ({
                                                     id={idPrefix ? `${idPrefix}-rep-residue-theme-${repId}` : undefined}
                                                     className="msp-form-control"
                                                     disabled={!isLoaded}
+                                                    title={getRepresentationResidueThemeTooltip(datasetName, typeName, isLoaded)}
                                                     value={displayResidueTheme}
                                                     onChange={e => {
                                                         onRepresentationResidueThemeChange?.(ref, e.target.value);

@@ -57,6 +57,45 @@ interface GeneralControlsProps {
   idPrefix?: string;
 }
 
+const getSyncTitle = (disabled: boolean): string =>
+  disabled
+    ? 'Disabled until both AlignedTo and Aligned datasets are loaded.'
+    : 'Toggle synchronized camera movement between viewers.';
+
+const getSubunitAlignTitle = (canRealignToSubunits: boolean, subunitRealignmentExists: boolean): string => {
+  if (subunitRealignmentExists) {
+    return 'Disabled because these subunits are already aligned.';
+  }
+  if (!canRealignToSubunits) {
+    return 'Disabled until compatible subunits are selected in both viewers.';
+  }
+  return 'Align the Aligned dataset to the AlignedTo dataset using selected subunits.';
+};
+
+const getChainAlignTitle = (
+  selectedChainIdAlignedTo: string,
+  selectedChainIdAligned: string,
+  realignmentExists: boolean
+): string => {
+  if (realignmentExists) {
+    return 'Disabled because these chains are already aligned.';
+  }
+  if (!selectedChainIdAlignedTo || !selectedChainIdAligned) {
+    return 'Disabled until one chain is selected in both AlignedTo and Aligned viewers.';
+  }
+  return 'Align the Aligned dataset to the AlignedTo dataset using selected chains.';
+};
+
+const getResidueAlignTitle = (canRealignToResidues: boolean, residueRealignmentExists: boolean): string => {
+  if (residueRealignmentExists) {
+    return 'Disabled because these residues are already aligned.';
+  }
+  if (!canRealignToResidues) {
+    return 'Disabled until compatible residues are selected in both viewers.';
+  }
+  return 'Align the Aligned dataset to the AlignedTo dataset using selected residues.';
+};
+
 /**
  * GeneralControls component that provides synchronization and realignment controls.
  * @param {GeneralControlsProps} props - The props for the GeneralControls component.
@@ -98,11 +137,13 @@ const GeneralControls: React.FC<GeneralControlsProps> = ({
       suspendSync={syncSuspend}
       setSyncEnabled={setSyncEnabled}
       id={idPrefix ? `${idPrefix}-${syncSelectIdSuffix}` : syncSelectIdSuffix}
+      title={getSyncTitle(syncDisabled)}
     />
     <button
       disabled={!canRealignToSubunits || subunitRealignmentExists}
       onClick={handleRealignToSubunits}
       id={`${idPrefix}-realign-subunit-btn`}
+      title={getSubunitAlignTitle(canRealignToSubunits, subunitRealignmentExists)}
     >
       {canRealignToSubunits
         ? subunitRealignmentExists
@@ -114,6 +155,7 @@ const GeneralControls: React.FC<GeneralControlsProps> = ({
       disabled={!selectedChainIdAlignedTo || !selectedChainIdAligned || realignmentExists}
       onClick={handleRealignToChains}
       id={`${idPrefix}-realign-btn`}
+      title={getChainAlignTitle(selectedChainIdAlignedTo, selectedChainIdAligned, realignmentExists)}
     >
       {selectedChainIdAlignedTo && selectedChainIdAligned
         ? realignmentExists
@@ -125,6 +167,7 @@ const GeneralControls: React.FC<GeneralControlsProps> = ({
       disabled={!canRealignToResidues || residueRealignmentExists}
       onClick={handleRealignToResidues}
       id={`${idPrefix}-realign-residue-btn`}
+      title={getResidueAlignTitle(canRealignToResidues, residueRealignmentExists)}
     >
       {canRealignToResidues
         ? residueRealignmentExists

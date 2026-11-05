@@ -48,6 +48,52 @@ describe('MoleculeUI', () => {
         expect(baseProps.onToggleVisibility).toHaveBeenCalled();
     });
 
+    it('adds context-aware tooltips for AlignedTo and Aligned visibility buttons', () => {
+        const { rerender } = render(
+            <MoleculeUI
+                {...baseProps}
+                label="AlignedTo"
+                isVisible={true}
+                isLoaded={true}
+                plugin={mockPlugin}
+            />
+        );
+        expect(screen.getByLabelText('Hide AlignedTo')).toHaveAttribute(
+            'title',
+            'Hide the AlignedTo dataset and its representations.'
+        );
+
+        rerender(
+            <MoleculeUI
+                {...baseProps}
+                label="Aligned"
+                isVisible={false}
+                isLoaded={true}
+                plugin={mockPlugin}
+            />
+        );
+        expect(screen.getByLabelText('Show Aligned')).toHaveAttribute(
+            'title',
+            'Show the Aligned dataset and its representations.'
+        );
+    });
+
+    it('explains disabled state in Aligned/AlignedTo visibility tooltips', () => {
+        render(
+            <MoleculeUI
+                {...baseProps}
+                label="Aligned"
+                isVisible={true}
+                isLoaded={false}
+                plugin={mockPlugin}
+            />
+        );
+        expect(screen.getByLabelText('Hide Aligned')).toHaveAttribute(
+            'title',
+            'Disabled until the Aligned dataset is loaded.'
+        );
+    });
+
     it('does not render zoom controls in MoleculeUI', () => {
         render(<MoleculeUI {...baseProps} />);
         expect(screen.queryByText(/Zoom to Subunit:/i)).not.toBeInTheDocument();
@@ -89,6 +135,150 @@ describe('MoleculeUI', () => {
 
         fireEvent.click(screen.getByLabelText('Toggle visibility for spacefill representation'));
         expect(onToggleRepVisibility).toHaveBeenCalledWith(repRef);
+    });
+
+    it('adds context-aware tooltips for representation controls in chain theme mode', () => {
+        const repRef = 'rep-ref-tooltip-chain';
+        const pluginWithRep = {
+            state: {
+                data: {
+                    cells: new Map([
+                        [repRef, {
+                            params: {
+                                values: {
+                                    type: { name: 'cartoon', params: { alpha: 0.75 } },
+                                    _ribocodeId: 'custom-id-tooltip-chain',
+                                    _ribocodeActiveThemeKind: 'chain',
+                                    colorTheme: { name: 'default', params: {} },
+                                }
+                            },
+                            state: { isHidden: false }
+                        }]
+                    ])
+                }
+            }
+        } as any;
+
+        render(
+            <MoleculeUI
+                {...baseProps}
+                label="AlignedTo"
+                plugin={pluginWithRep}
+                representationRefs={[repRef]}
+                idPrefix="viewer-column-A-alignedto"
+                chainThemeOptions={[{ value: 'default', label: 'Default' }]}
+                residueThemeOptions={[{ value: 'default', label: 'Default' }]}
+            />
+        );
+
+        expect(screen.getByLabelText('Toggle visibility for cartoon representation')).toHaveAttribute(
+            'title',
+            'Hide this cartoon representation in AlignedTo.'
+        );
+        expect(document.getElementById('viewer-column-A-alignedto-rep-opacity-custom-id-tooltip-chain')).toHaveAttribute(
+            'title',
+            'Adjust opacity for the cartoon representation in AlignedTo.'
+        );
+        expect(screen.getByLabelText('Delete cartoon representation')).toHaveAttribute(
+            'title',
+            'Remove this cartoon representation from AlignedTo.'
+        );
+        expect(document.getElementById('viewer-column-A-alignedto-rep-theme-kind-custom-id-tooltip-chain')).toHaveAttribute(
+            'title',
+            'Choose whether the cartoon representation in AlignedTo uses chain or residue themes.'
+        );
+        expect(document.getElementById('viewer-column-A-alignedto-rep-chain-theme-custom-id-tooltip-chain')).toHaveAttribute(
+            'title',
+            'Select the chain theme for the cartoon representation in AlignedTo.'
+        );
+    });
+
+    it('adds context-aware tooltip for residue theme selector when residue mode is active', () => {
+        const repRef = 'rep-ref-tooltip-residue';
+        const pluginWithRep = {
+            state: {
+                data: {
+                    cells: new Map([
+                        [repRef, {
+                            params: {
+                                values: {
+                                    type: { name: 'cartoon', params: { alpha: 0.6 } },
+                                    _ribocodeId: 'custom-id-tooltip-residue',
+                                    _ribocodeActiveThemeKind: 'residue-type',
+                                    colorTheme: { name: 'aligned-res-theme', params: {} },
+                                }
+                            },
+                            state: { isHidden: false }
+                        }]
+                    ])
+                }
+            }
+        } as any;
+
+        render(
+            <MoleculeUI
+                {...baseProps}
+                label="Aligned"
+                plugin={pluginWithRep}
+                representationRefs={[repRef]}
+                idPrefix="viewer-column-B-aligned"
+                chainThemeOptions={[{ value: 'default', label: 'Default' }]}
+                residueThemeOptions={[
+                    { value: 'default', label: 'Default' },
+                    { value: 'aligned-res-theme', label: 'Aligned residue theme' },
+                ]}
+            />
+        );
+
+        expect(document.getElementById('viewer-column-B-aligned-rep-residue-theme-custom-id-tooltip-residue')).toHaveAttribute(
+            'title',
+            'Select the residue theme for the cartoon representation in Aligned.'
+        );
+    });
+
+    it('explains disabled state in representation control tooltips', () => {
+        const repRef = 'rep-ref-tooltip-disabled';
+        const pluginWithRep = {
+            state: {
+                data: {
+                    cells: new Map([
+                        [repRef, {
+                            params: {
+                                values: {
+                                    type: { name: 'cartoon', params: { alpha: 1 } },
+                                    _ribocodeId: 'custom-id-tooltip-disabled',
+                                    _ribocodeActiveThemeKind: 'chain',
+                                    colorTheme: { name: 'default', params: {} },
+                                }
+                            },
+                            state: { isHidden: false }
+                        }]
+                    ])
+                }
+            }
+        } as any;
+
+        render(
+            <MoleculeUI
+                {...baseProps}
+                label="Aligned"
+                plugin={pluginWithRep}
+                isLoaded={false}
+                representationRefs={[repRef]}
+                idPrefix="viewer-column-B-aligned"
+                chainThemeOptions={[{ value: 'default', label: 'Default' }]}
+                residueThemeOptions={[{ value: 'default', label: 'Default' }]}
+            />
+        );
+
+        expect(screen.getByLabelText('Toggle visibility for cartoon representation')).toHaveAttribute(
+            'title',
+            'Disabled until the Aligned dataset is loaded.'
+        );
+        expect(document.getElementById('viewer-column-B-aligned-rep-theme-kind-custom-id-tooltip-disabled')).toHaveAttribute(
+            'title',
+            'Disabled until the Aligned dataset is loaded.'
+        );
     });
 
     it('renders representation controls in an indented row below the main visibility control', () => {

@@ -148,6 +148,7 @@ interface SyncButtonProps {
     suspendSync?: boolean;
     setSyncEnabled: (enabled: boolean) => void;
     id?: string;
+    title?: string;
 }
 
 /**
@@ -168,7 +169,8 @@ const SyncButton: React.FC<SyncButtonProps> = ({
     syncEnabled,
     suspendSync = false,
     setSyncEnabled,
-    id
+    id,
+    title
 }) => {
     const isApplyingSync = useRef(false);
     const animationFrameRef = useRef<number | null>(null);
@@ -310,6 +312,7 @@ const SyncButton: React.FC<SyncButtonProps> = ({
             aria-pressed={syncEnabled}
             disabled={disabled}
             id={id}
+            title={title}
             onClick={() => setSyncEnabled(!syncEnabled)}
         >
             Sync: {syncEnabled ? 'On' : 'Off'}

@@ -103,4 +103,77 @@ describe('GeneralControls', () => {
     const { getByLabelText } = render(<GeneralControls {...props} />);
     expect(getByLabelText(/Sync/i)).toBeDisabled();
   });
+
+  it('adds descriptive tooltips for general controls buttons', () => {
+    const props = {
+      viewerA: {},
+      viewerB: {},
+      activeViewer: 'A' as ViewerKey,
+      syncEnabled: false,
+      setSyncEnabled: vi.fn(),
+      syncDisabled: false,
+      selectedChainIdAlignedTo: A,
+      selectedChainIdAligned: B,
+      chainRealignSummary: 'A -> B',
+      realignmentExists: false,
+      handleRealignToChains: vi.fn(),
+      canRealignToResidues: true,
+      residueRealignmentExists: false,
+      residueRealignSummary: '1 to 1',
+      handleRealignToResidues: vi.fn(),
+      selectedSubunitAlignedTo: 'Large',
+      selectedSubunitAligned: 'Small',
+      subunitRealignmentExists: false,
+      canRealignToSubunits: true,
+      handleRealignToSubunits: vi.fn(),
+    };
+
+    const { getByLabelText, getByRole } = render(<GeneralControls {...props} />);
+    expect(getByLabelText(/Sync/i)).toHaveAttribute('title', expect.stringMatching(/synchronized camera/i));
+    expect(getByRole('button', { name: /Align Subunits:/i })).toHaveAttribute('title', expect.stringMatching(/selected subunits/i));
+    expect(getByRole('button', { name: /Align Chains:/i })).toHaveAttribute('title', expect.stringMatching(/selected chains/i));
+    expect(getByRole('button', { name: /Align Residues:/i })).toHaveAttribute('title', expect.stringMatching(/selected residues/i));
+  });
+
+  it('explains disabled conditions in tooltips for general controls', () => {
+    const props = {
+      viewerA: {},
+      viewerB: {},
+      activeViewer: 'A' as ViewerKey,
+      syncEnabled: false,
+      setSyncEnabled: vi.fn(),
+      syncDisabled: true,
+      selectedChainIdAlignedTo: '',
+      selectedChainIdAligned: '',
+      realignmentExists: false,
+      handleRealignToChains: vi.fn(),
+      canRealignToResidues: false,
+      residueRealignmentExists: false,
+      residueRealignSummary: '0 to 0',
+      handleRealignToResidues: vi.fn(),
+      selectedSubunitAlignedTo: 'Large',
+      selectedSubunitAligned: 'Small',
+      subunitRealignmentExists: false,
+      canRealignToSubunits: false,
+      handleRealignToSubunits: vi.fn(),
+    };
+
+    const { getByLabelText, getByRole } = render(<GeneralControls {...props} />);
+    expect(getByLabelText(/Sync/i)).toHaveAttribute(
+      'title',
+      'Disabled until both AlignedTo and Aligned datasets are loaded.'
+    );
+    expect(getByRole('button', { name: 'Align Subunits' })).toHaveAttribute(
+      'title',
+      'Disabled until compatible subunits are selected in both viewers.'
+    );
+    expect(getByRole('button', { name: 'Align Chains' })).toHaveAttribute(
+      'title',
+      'Disabled until one chain is selected in both AlignedTo and Aligned viewers.'
+    );
+    expect(getByRole('button', { name: 'Align Residues' })).toHaveAttribute(
+      'title',
+      'Disabled until compatible residues are selected in both viewers.'
+    );
+  });
 });

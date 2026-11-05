@@ -33,6 +33,7 @@ interface GenericSelectButtonProps {
 	disabled?: boolean;
 	placeholder?: string;
 	id?: string;
+	title?: string;
 }
 
 /**
@@ -53,9 +54,10 @@ const GenericSelectButton: React.FC<GenericSelectButtonProps> = ({
 	onSelect,
 	disabled = false,
 	placeholder = '...',
-	id
+	id,
+	title
 }) => (
-	<label>
+	<label title={title}>
 		{label}
 		<select
 			className="msp-select msp-form-control"
@@ -63,6 +65,7 @@ const GenericSelectButton: React.FC<GenericSelectButtonProps> = ({
 			onChange={e => onSelect(e.target.value)}
 			disabled={disabled}
 			id={id}
+			title={title}
 		>
 			<option value="" disabled>{placeholder}</option>
 			{options.map(opt => (

@@ -65,4 +65,18 @@ describe('Session integration: load confirmation and modal', () => {
     expect(screen.getByText('Save All')).toBeInTheDocument();
     expect(screen.getByText('Load All')).toBeInTheDocument();
   });
+
+  it('exposes tooltips for all Session menu controls', async () => {
+    render(<App />);
+    const sessionBtn = screen.getByRole('button', { name: /session/i });
+    expect(sessionBtn).toHaveAttribute('title', expect.stringMatching(/open session actions/i));
+
+    fireEvent.click(sessionBtn);
+    expect(screen.getByText('Save')).toHaveAttribute('title', expect.stringMatching(/save session as json/i));
+    expect(screen.getByText('Save All')).toHaveAttribute('title', expect.stringMatching(/embedded input files/i));
+    expect(screen.getByText('Load')).toHaveAttribute('title', expect.stringMatching(/load a session json file/i));
+    expect(screen.getByText('Load All')).toHaveAttribute('title', expect.stringMatching(/embedded input files/i));
+    expect(screen.getByText('Reset Local Caches')).toHaveAttribute('title', expect.stringMatching(/troubleshooting/i));
+    expect(screen.getByText('Restart')).toHaveAttribute('title', expect.stringMatching(/restart the app page/i));
+  });
 });
