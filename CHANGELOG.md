@@ -1,3 +1,6 @@
+# Change Log
+A chronological version based list of changes.
+
 ## [v0.21.0] - 2026-11-04
 Release summary: this minor release improves file-load validation/error feedback, fixes deployed docs routing behavior, and clarifies supported load-file formats in the user guide.
 - Added explicit CIF/mmCIF validation and user-facing load failure alerts in `src/App.tsx` for manual dataset loading, so selecting non-`.cif`/`.mmcif` files no longer fails silently.
@@ -7,6 +10,8 @@ Release summary: this minor release improves file-load validation/error feedback
 - Added release note guidance for existing installs: after deployment, users with a previously cached service worker may need a hard refresh or `Session > Reset Local Caches` to pick up the docs-route fix immediately.
 - Updated `UserGuide.md` with a dedicated `Supported File Formats` section clarifying accepted formats for `Load AlignedTo`, `Load Aligned`, theme file loading, and session file loading.
 - Updated `typedoc.json` to include additional Markdown guides (`UserGuide.md`, `DeveloperGuide.md`, `CHANGELOG.md`, `ROADMAP.md`, and decision records) as TypeDoc project documents so they render as integrated docs pages rather than raw Markdown files.
+- Updated header links in `src/components/AppHeader.tsx` to prefer base-path-relative TypeDoc pages (`docs/index.html` and `docs/documents/UserGuide.html`) instead of hardcoded canonical GitHub links.
+- Added graceful fallback behavior in `src/components/AppHeader.tsx`: when local docs are unavailable, users see an explanatory message and are redirected to canonical GitHub documentation links.
 
 ## [v0.20.1] - 2026-11-03
 Release summary: this patch release fixes residue-theme customization so editing one residue from a default residue theme preserves all other residue colours from the source theme.
