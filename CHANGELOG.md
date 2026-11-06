@@ -5,13 +5,11 @@ A chronological version based list of changes.
 Release summary: upcoming changes.
 
 ## [v0.23.0] - 2026-11-06
-Release summary: this minor release introduces progressive multi-chain selection expansion with recursive slots, stronger session round-tripping, and expanded automated coverage.
-
-- Added a third independent selection slot (`Select 3`) for chain/residue workflows in `src/App.tsx`, `src/components/LoadMolecule.tsx`, and `src/components/ViewerColumn.tsx`, with progressive enablement (available after selecting `Select 2`) and full zoom/highlight/inspect controls.
+Release summary: this minor release introduces progressive multi-chain selection expansion with recursive slots, improved residue selection, stronger session round-tripping, and expanded automated coverage.
 - Refined progressive selection disclosure in `src/components/LoadMolecule.tsx` so `Select 2` controls/selection info appear only after a `Select 1` chain is chosen, and `Select 3` controls/selection info appear only after a `Select 2` chain is chosen.
-- Started dynamic multi-chain selection rollout (step 1) by adding recursive chain-selection slots (`Select 4+`) that appear progressively as prior selections are made, plus session persistence for extra chain slots via `chainIdsExtra` in `src/App.tsx` and dynamic slot UI in `src/components/LoadMolecule.tsx`.
-- Added regression coverage for recursive dynamic chain slots and persistence filtering in `src/components/LoadMolecule.test.tsx` and `src/App.integration.test.tsx`, plus end-to-end Save All/Load All round-trip tests in `e2e/session-load-all-dynamic-chain-slots.e2e.spec.ts` for both dynamic `Select 4` persistence and clear-cascade behavior (`Select 5` hidden after clearing `Select 4`).
-- Extended session save/load persistence to round-trip `chainId3`, `residueIds3`, and `residueId3` for both AlignedTo and Aligned selections in `src/App.tsx`, with integration coverage in `src/App.integration.test.tsx` and UI control coverage in `src/components/LoadMolecule.test.tsx`.
+- Added regression coverage for recursive dynamic chain slots and persistence filtering in `src/components/LoadMolecule.test.tsx` and `src/App.integration.test.tsx`, plus end-to-end Save All/Load All round-trip tests in `e2e/session-load-all-dynamic-chain-slots.e2e.spec.ts`
+- Improved residue selection UX in `src/components/LoadMolecule.tsx` by adding per-residue-type `Show list`/`Hide list` controls in Select 1/2/3 residue panels, enabling compact on-demand per-residue checkbox selection while keeping the existing quick `Add/Remove` actions.
+- Added focused regression assertions in `src/components/LoadMolecule.test.tsx` covering the new per-type residue details toggle, expanded panel rendering, and individual residue checkbox selection behavior.
 
 ## [v0.22.1] - 2026-11-06
 Release summary: this patch release fixes and clarifies `Dim unselected` behavior so dimming scope follows active selection/theme context.

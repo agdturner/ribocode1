@@ -251,6 +251,18 @@ const getResidueTypeToggleTooltip = (
         ? `Disabled until residue type selection is available for ${slot}.`
         : `${actionLabel} all ${type} residues in ${slot}.`;
 
+const getResidueTypeDetailsTooltip = (
+    slot: 'Select 1' | 'Select 2' | 'Select 3',
+    type: string,
+    expanded: boolean,
+    disabled: boolean,
+): string =>
+    disabled
+        ? `Disabled until ${type} residue details are available for ${slot}.`
+        : expanded
+            ? `Hide ${type} residue details for ${slot}.`
+            : `Show ${type} residue details for ${slot}.`;
+
 const getResidueZoomTooltip = (slot: 'Select 1' | 'Select 2' | 'Select 3', disabled: boolean, label: string): string =>
     disabled
         ? `Disabled until ${slot} has a zoomable residue selection.`
@@ -792,6 +804,7 @@ interface LoadDataRowProps {
         const [showResidueControls, setShowResidueControls] = React.useState(false);
         const [showResidue2Controls, setShowResidue2Controls] = React.useState(false);
         const [showResidue3Controls, setShowResidue3Controls] = React.useState(false);
+        const [expandedResidueTypeDetails, setExpandedResidueTypeDetails] = React.useState<Record<string, boolean>>({});
         const filteredChainLabels = getFilteredChainLabels(selectedSubunit, chainInfo.chainLabels, subunitToChainIds);
         const effectiveChainLabels = chainFinderChainLabels ?? filteredChainLabels;
         const residueSectionDisabled = !selectedChainId;
@@ -1001,6 +1014,11 @@ interface LoadDataRowProps {
             }
             return ordered;
         }, [orderedResidueIds3]);
+        const orderSelectionForSlot = React.useCallback((slot: '' | '2' | '3', set: Set<string>): string[] => {
+            if (slot === '2') return orderedSelectionFromSet2(set);
+            if (slot === '3') return orderedSelectionFromSet3(set);
+            return orderedSelectionFromSet(set);
+        }, [orderedSelectionFromSet, orderedSelectionFromSet2, orderedSelectionFromSet3]);
 
         const renderResidueControls = ({
             slot,
@@ -1114,6 +1132,8 @@ interface LoadDataRowProps {
                             const allSelected = residueIds.length > 0 && residueIds.every(id => selectedSet.has(id));
                             const actionLabel = allSelected ? 'Remove' : 'Add';
                             const btnIdSafeType = type.replace(/[^A-Za-z0-9_-]/g, '_');
+                            const detailsKey = `${slot || '1'}:${type}`;
+                            const detailsExpanded = Boolean(expandedResidueTypeDetails[detailsKey]);
                             return (
                                 <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                     <span>{`${type} (${count})`}</span>
@@ -1130,17 +1150,57 @@ interface LoadDataRowProps {
                                             } else {
                                                 residueIds.forEach(id => nextSet.add(id));
                                             }
-                                            onSelectResidueIdsSlot(
-                                                slot === '2'
-                                                    ? orderedSelectionFromSet2(nextSet)
-                                                    : slot === '3'
-                                                        ? orderedSelectionFromSet3(nextSet)
-                                                        : orderedSelectionFromSet(nextSet)
-                                            );
+                                            onSelectResidueIdsSlot(orderSelectionForSlot(slot, nextSet));
                                         }}
                                     >
                                         {actionLabel}
                                     </button>
+                                    <button
+                                        type="button"
+                                        className="msp-btn msp-form-control"
+                                        id={`${idPrefix}-residue${slot}-type-details-${btnIdSafeType}-btn`}
+                                        disabled={residueSelectDisabled || residueIds.length === 0}
+                                        title={getResidueTypeDetailsTooltip(slotLabel, type, detailsExpanded, residueSelectDisabled || residueIds.length === 0)}
+                                        aria-expanded={detailsExpanded}
+                                        onClick={() => setExpandedResidueTypeDetails(prev => ({ ...prev, [detailsKey]: !prev[detailsKey] }))}
+                                    >
+                                        {detailsExpanded ? 'Hide list' : 'Show list'}
+                                    </button>
+                                    {detailsExpanded && (
+                                        <div
+                                            id={`${idPrefix}-residue${slot}-type-details-${btnIdSafeType}-panel`}
+                                            style={{ display: 'flex', flexDirection: 'column', gap: 4, marginLeft: 8 }}
+                                        >
+                                            {residueIds.map((residueId) => {
+                                                const residueInfo = residueInfoSlot.residueLabels.get(residueId);
+                                                const residueLabel = residueInfo?.name ?? residueId;
+                                                const residueIdSafe = residueId.replace(/[^A-Za-z0-9_-]/g, '_');
+                                                return (
+                                                    <label
+                                                        key={residueId}
+                                                        htmlFor={`${idPrefix}-residue${slot}-type-${btnIdSafeType}-residue-${residueIdSafe}-chk`}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                                    >
+                                                        <input
+                                                            id={`${idPrefix}-residue${slot}-type-${btnIdSafeType}-residue-${residueIdSafe}-chk`}
+                                                            type="checkbox"
+                                                            checked={selectedSet.has(residueId)}
+                                                            onChange={() => {
+                                                                const nextSet = new Set(selectedResidueIdsSlot);
+                                                                if (nextSet.has(residueId)) {
+                                                                    nextSet.delete(residueId);
+                                                                } else {
+                                                                    nextSet.add(residueId);
+                                                                }
+                                                                onSelectResidueIdsSlot(orderSelectionForSlot(slot, nextSet));
+                                                            }}
+                                                        />
+                                                        <span>{residueLabel}</span>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}

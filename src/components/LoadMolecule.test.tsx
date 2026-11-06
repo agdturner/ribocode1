@@ -793,6 +793,10 @@ describe('LoadDataRow', () => {
             'title',
             'Add all ALA residues in Select 1.'
         );
+        expect(document.getElementById('test-viewer-a-residue-type-details-ALA-btn')).toHaveAttribute(
+            'title',
+            'Show ALA residue details for Select 1.'
+        );
         expect(document.getElementById('test-viewer-a-zoom-residue-btn')).toHaveAttribute(
             'title',
             'Zoom to the current Select 1 residue selection (Residue 1).'
@@ -818,6 +822,15 @@ describe('LoadDataRow', () => {
         expect(onSelectResidueIds).toHaveBeenLastCalledWith(['2', '3']);
 
         fireEvent.click(document.getElementById('test-viewer-a-residue-type-toggle-ALA-btn') as HTMLButtonElement);
+        expect(onSelectResidueIds).toHaveBeenLastCalledWith(['1', '2']);
+
+        fireEvent.click(document.getElementById('test-viewer-a-residue-type-details-ALA-btn') as HTMLButtonElement);
+        expect(document.getElementById('test-viewer-a-residue-type-details-ALA-panel')).toBeInTheDocument();
+        const alaResidue1Checkbox = document.getElementById('test-viewer-a-residue-type-ALA-residue-1-chk') as HTMLInputElement;
+        const alaResidue2Checkbox = document.getElementById('test-viewer-a-residue-type-ALA-residue-2-chk') as HTMLInputElement;
+        expect(alaResidue1Checkbox.checked).toBe(true);
+        expect(alaResidue2Checkbox.checked).toBe(false);
+        fireEvent.click(alaResidue2Checkbox);
         expect(onSelectResidueIds).toHaveBeenLastCalledWith(['1', '2']);
     });
 
