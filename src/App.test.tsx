@@ -11,7 +11,7 @@
  */
 import { vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import App, { buildAtomDataForResidueGroup, copyCameraZoomRadiusBetweenViewers, hasSelectionForDisplayDim, readClippingFromViewer, runWithTemporarySyncDisabled } from './App';
+import App, { buildAtomDataForResidueGroup, buildDimExclusionLoci, copyCameraZoomRadiusBetweenViewers, hasSelectionForDisplayDim, readClippingFromViewer, runWithTemporarySyncDisabled } from './App';
 
 const makeZoomHandlerMock = vi.fn((config: any) => ({ handleButtonClick: vi.fn(), config }));
 
@@ -112,6 +112,99 @@ describe('App dim-selection predicate', () => {
   it('returns false when no selection is present', () => {
     expect(hasSelectionForDisplayDim({ chainId: '', residueIds: [], subunitChainIds: [] })).toBe(false);
     expect(hasSelectionForDisplayDim({})).toBe(false);
+  });
+});
+
+describe('App dim overlay exclusion loci', () => {
+  it('uses residue loci as exclusion when Theme Type is residue', () => {
+    const plugin = {} as any;
+    const structureRef = 'structure-ref';
+    const residueLoci = { kind: 'element-loci', id: 'residue' };
+    const getChainLociFn = vi.fn(() => ({ kind: 'element-loci', id: 'chain' }));
+    const getResiduesLociFn = vi.fn(() => residueLoci);
+
+    const loci = buildDimExclusionLoci(
+      {
+        plugin,
+        structureRef,
+        colorMode: 'residue-type',
+        chainId: 'A',
+        residueIds: ['12', '12', '37'],
+        residueInsCodes: { '12': 'A', '37': '' },
+        subunitChainIds: ['A', 'B'],
+      },
+      {
+        getChainLociFn: getChainLociFn as any,
+        getResiduesLociFn: getResiduesLociFn as any,
+      }
+    );
+
+    expect(getResiduesLociFn).toHaveBeenCalledWith(plugin, structureRef, 'A', ['12', '37'], { '12': 'A', '37': '' });
+    expect(getChainLociFn).not.toHaveBeenCalled();
+    expect(loci).toBe(residueLoci);
+  });
+
+  it('uses chain loci as exclusion when Theme Type is chain', () => {
+    const plugin = {} as any;
+    const structureRef = 'structure-ref';
+    const chainLoci = { kind: 'element-loci', id: 'chain' };
+    const getChainLociFn = vi.fn(() => chainLoci);
+    const getResiduesLociFn = vi.fn(() => ({ kind: 'element-loci', id: 'residue' }));
+
+    const loci = buildDimExclusionLoci(
+      {
+        plugin,
+        structureRef,
+        colorMode: 'chain',
+        chainId: 'A',
+        residueIds: ['1', '2'],
+        subunitChainIds: ['A', 'B'],
+      },
+      {
+        getChainLociFn: getChainLociFn as any,
+        getResiduesLociFn: getResiduesLociFn as any,
+      }
+    );
+
+    expect(getChainLociFn).toHaveBeenCalledWith(plugin, structureRef, 'A');
+    expect(getResiduesLociFn).not.toHaveBeenCalled();
+    expect(loci).toBe(chainLoci);
+  });
+
+  it('returns null when Theme Type is residue but no residues are selected', () => {
+    const loci = buildDimExclusionLoci(
+      {
+        plugin: {} as any,
+        structureRef: 'structure-ref',
+        colorMode: 'residue-type',
+        chainId: 'A',
+        residueIds: [],
+        subunitChainIds: [],
+      },
+      {
+        getChainLociFn: vi.fn() as any,
+        getResiduesLociFn: vi.fn() as any,
+      }
+    );
+    expect(loci).toBeNull();
+  });
+
+  it('returns null when Theme Type is chain but no chain is selected', () => {
+    const loci = buildDimExclusionLoci(
+      {
+        plugin: {} as any,
+        structureRef: 'structure-ref',
+        colorMode: 'chain',
+        chainId: '',
+        residueIds: ['10'],
+        subunitChainIds: ['A'],
+      },
+      {
+        getChainLociFn: vi.fn() as any,
+        getResiduesLociFn: vi.fn() as any,
+      }
+    );
+    expect(loci).toBeNull();
   });
 });
 

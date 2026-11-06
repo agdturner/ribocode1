@@ -137,10 +137,12 @@ const getZoomMinRadiusTooltip = (): string =>
 const getHighlightDisplayTooltip = (selectionDisplayMode: 'halo' | 'overlay' | 'hybrid'): string =>
     `Choose how highlights are displayed, currently set to ${selectionDisplayMode}.`;
 
-const getDimUnselectedTooltip = (dimUnselected: boolean): string =>
-    dimUnselected
-        ? 'Dim unselected atoms/residues is currently On. Click to turn it Off.'
-        : 'Dim unselected atoms/residues is currently Off. Click to turn it On.';
+const getDimUnselectedTooltip = (dimUnselected: boolean, colorMode: 'chain' | 'residue-type'): string => {
+    const scopeLabel = colorMode === 'residue-type' ? 'selected residues' : 'selected chain';
+    return dimUnselected
+        ? `Dim unselected is currently On. Greys and de-emphasizes unselected atoms/residues while keeping ${scopeLabel} emphasized. Click to turn it Off.`
+        : `Dim unselected is currently Off. Turn it On to grey and de-emphasize unselected atoms/residues while keeping ${scopeLabel} emphasized.`;
+};
 
 const getDimOpacityTooltip = (dimUnselected: boolean): string =>
     dimUnselected
@@ -1042,7 +1044,7 @@ interface LoadDataRowProps {
                                 className="msp-btn msp-form-control"
                                 id={`${idPrefix}-dim-unselected-toggle-btn`}
                                 aria-pressed={dimUnselected}
-                                title={getDimUnselectedTooltip(dimUnselected)}
+                                title={getDimUnselectedTooltip(dimUnselected, colorMode)}
                                 onClick={() => onDimUnselectedChange(!dimUnselected)}
                             >
                                 Dim unselected: {dimUnselected ? 'On' : 'Off'}

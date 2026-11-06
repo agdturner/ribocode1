@@ -657,6 +657,7 @@ describe('LoadDataRow', () => {
             <LoadDataRow
                 {...baseProps}
                 isLoaded={true}
+                colorMode="chain"
                 selectionDisplayMode="overlay"
                 onSelectionDisplayModeChange={onSelectionDisplayModeChange}
                 dimUnselected={false}
@@ -687,7 +688,7 @@ describe('LoadDataRow', () => {
         expect(dimToggle).toBeInTheDocument();
         expect(dimToggle).toHaveAttribute(
             'title',
-            'Dim unselected atoms/residues is currently Off. Click to turn it On.'
+            'Dim unselected is currently Off. Turn it On to grey and de-emphasize unselected atoms/residues while keeping selected chain emphasized.'
         );
         expect(dimToggle).toHaveAttribute('aria-pressed', 'false');
         fireEvent.click(dimToggle);
@@ -708,6 +709,24 @@ describe('LoadDataRow', () => {
         expect(zoomMinRadius).toHaveAttribute(
             'title',
             'Adjust the minimum zoom radius used when zooming to selections.'
+        );
+    });
+
+    it('describes dimming scope using selected residues when Theme Type is residue', () => {
+        render(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                colorMode="residue-type"
+                dimUnselected={false}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Show Visibility Controls'));
+        const dimToggle = document.getElementById('test-viewer-a-dim-unselected-toggle-btn') as HTMLButtonElement;
+        expect(dimToggle).toHaveAttribute(
+            'title',
+            'Dim unselected is currently Off. Turn it On to grey and de-emphasize unselected atoms/residues while keeping selected residues emphasized.'
         );
     });
 

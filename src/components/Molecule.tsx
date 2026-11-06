@@ -21,11 +21,12 @@ const INTERNAL_RESIDUE_DEFAULT_THEMES = new Set([
     'Aligned-default-residue-colors',
 ]);
 
-const getDatasetNameFromLabel = (label: string): string => {
-    const normalized = label.trim().toLowerCase();
+const getDatasetNameFromLabel = (label?: string): string => {
+    const safeLabel = label ?? '';
+    const normalized = safeLabel.trim().toLowerCase();
     if (normalized === 'alignedto') return 'AlignedTo';
     if (normalized === 'aligned') return 'Aligned';
-    return label || 'dataset';
+    return safeLabel || 'dataset';
 };
 
 const getMoleculeVisibilityTooltip = (

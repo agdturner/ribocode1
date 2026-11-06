@@ -52,6 +52,8 @@ vi.mock('./utils/structure', () => ({
     const byRef = (globalThis as any).__mockStructureRepsByRef || {};
     return byRef[structureRef] || [];
   }),
+  getChainLoci: vi.fn(() => ({ kind: 'element-loci', structure: {}, elements: [] })),
+  getResiduesLoci: vi.fn(() => ({ kind: 'element-loci', structure: {}, elements: [] })),
   focusLociOnChain: vi.fn(),
   focusLociOnResidue: vi.fn(),
   focusLociOnResidues: vi.fn(),

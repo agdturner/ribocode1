@@ -62,6 +62,13 @@ async function saveAllAndGetSession(page: Page): Promise<{ path: string; json: a
   await expect(page.locator('#session-menu-btn')).toBeVisible({ timeout: 30000 });
   await page.click('#session-menu-btn');
   await page.waitForSelector('#session-menu-dropdown', { state: 'visible' });
+  await page.evaluate(() => {
+    try {
+      Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true });
+    } catch {
+      (window as any).showSaveFilePicker = undefined;
+    }
+  });
 
   const downloadPromise = page.waitForEvent('download');
   await page.click('#session-menu-dropdown .session-menu-item:text-is("Save All")');

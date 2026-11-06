@@ -4,6 +4,14 @@ A chronological version based list of changes.
 ## [Unreleased]
 Release summary: upcoming changes.
 
+## [v0.22.1] - 2026-11-06
+Release summary: this patch release fixes and clarifies `Dim unselected` behavior so dimming scope follows active selection/theme context.
+
+- Fixed selection dimming so `Dim unselected` excludes the active selected scope from the neutral overlay, keeping selected content emphasized while dimming/greying unselected content in `src/App.tsx` and `src/utils/structure.ts`.
+- Added regression tests in `src/App.test.tsx` covering theme-type-based dim exclusion behavior for chain and residue scopes.
+- Refined `Dim unselected` behavior to follow the active Theme Type: chain themes now dim relative to the selected chain, while residue themes dim relative to selected residues.
+- Updated `Dim unselected` tooltip guidance to explicitly state that emphasis scope follows the active Theme Type (selected chain for chain themes, selected residues for residue themes).
+
 ## [v0.22.0] - 2026-11-05
 Release summary: this release improves session export UX and rolls out comprehensive, state-aware tooltip guidance across key controls.
 - Improved session export UX in `src/hooks/useSessionSave.ts` and `src/hooks/useSessionSaveAll.ts` by using `showSaveFilePicker` when available so users can choose filename/location, with versioned date-time default names and automatic fallback to browser download behavior when the picker is unavailable.

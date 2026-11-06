@@ -97,7 +97,8 @@ export function clearStructureHighlightOverpaint(
 export function applyStructureDimOverlay(
     plugin: PluginUIContext,
     structureRef: string,
-    strength: number
+    strength: number,
+    excludeLoci?: any
 ) {
     const components = getStructureComponentsByRef(plugin, structureRef);
     if (!components || components.length === 0) return false;
@@ -108,8 +109,11 @@ export function applyStructureDimOverlay(
 
     const color = getNeutralDimColor(strength);
     const allLoci = Structure.toStructureElementLoci(structureObj as any);
+    const dimLoci = excludeLoci && allLoci?.kind === 'element-loci' && excludeLoci.kind === 'element-loci'
+        ? StructureElement.Loci.subtract(allLoci, excludeLoci)
+        : allLoci;
     enqueueOverpaintUpdate(plugin, structureRef, () =>
-        setStructureOverpaint(plugin as any, components as any, color, async () => allLoci as any)
+        setStructureOverpaint(plugin as any, components as any, color, async () => dimLoci as any)
     );
     return true;
 }
@@ -785,5 +789,4 @@ export function getStructureRepresentations(plugin: any, structureRef: string) {
     
     return reps;
 }
-
 

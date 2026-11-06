@@ -36,7 +36,7 @@ import { inferColorThemeKind, parseColorFileContent, registerThemeIfNeeded } fro
 import { useFileInput } from './hooks/useFileInput';
 import { useChainState } from './hooks/useChainState';
 import { getAtomDataFromStructureUnits, summarizeAtomCloud } from './utils/data';
-import { applyStructureDimOverlay, clearStructureHighlightOverpaint, getStructureRepresentations, highlightLociOnChain, highlightLociOnResidues, highlightLociOnSubunit, inspectLociOnChain, inspectLociOnResidues, inspectLociOnSubunit, type HighlightDisplayMode } from './utils/structure';
+import { applyStructureDimOverlay, clearStructureHighlightOverpaint, getChainLoci, getResiduesLoci, getStructureRepresentations, highlightLociOnChain, highlightLociOnResidues, highlightLociOnSubunit, inspectLociOnChain, inspectLociOnResidues, inspectLociOnSubunit, type HighlightDisplayMode } from './utils/structure';
 import { parseDictionaryFileContent } from './utils/dictionary';
 import { useResidueState } from './hooks/useResidueState';
 import { useSubunitState } from './hooks/useSubunitState';
@@ -970,6 +970,39 @@ export function hasSelectionForDisplayDim(config: {
     const hasChain = Boolean(config.chainId);
     const hasResidues = (config.residueIds ?? []).length > 0;
     return uniqueSubunitChainIds.length > 0 || hasChain || hasResidues;
+}
+
+export function buildDimExclusionLoci(config: {
+    plugin: PluginUIContext;
+    structureRef: string;
+    colorMode: RepresentationColorMode;
+    chainId?: string;
+    residueIds?: string[];
+    residueInsCodes?: Record<string, string | undefined>;
+    subunitChainIds?: string[];
+}, deps?: {
+    getChainLociFn?: typeof getChainLoci;
+    getResiduesLociFn?: typeof getResiduesLoci;
+}): any {
+    const uniqueResidueIds = Array.from(new Set((config.residueIds ?? []).filter(Boolean)));
+    const getChainLociFn = deps?.getChainLociFn ?? getChainLoci;
+    const getResiduesLociFn = deps?.getResiduesLociFn ?? getResiduesLoci;
+
+    if (config.colorMode === 'residue-type' && config.chainId && uniqueResidueIds.length > 0) {
+        const residueLoci = getResiduesLociFn(
+            config.plugin,
+            config.structureRef,
+            config.chainId,
+            uniqueResidueIds,
+            config.residueInsCodes
+        );
+        if (residueLoci) return residueLoci;
+    }
+    if (config.colorMode === 'chain' && config.chainId) {
+        const chainLoci = getChainLociFn(config.plugin, config.structureRef, config.chainId);
+        if (chainLoci) return chainLoci;
+    }
+    return null;
 }
 
 const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
@@ -4845,6 +4878,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         type HighlightDatasetConfig = {
             structureRef: string | null;
             modeKey: ColorThemeMode;
+            colorMode: RepresentationColorMode;
             chainId: string;
             residueIds: string[];
             residueInsCodes?: Record<string, string | undefined>;
@@ -4871,15 +4905,26 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 if (!config.structureRef) continue;
 
                 const uniqueSubunitChainIds = Array.from(new Set(config.subunitChainIds.filter(Boolean)));
-                const hasSelection = hasSelectionForDisplayDim({
-                    chainId: config.chainId,
-                    residueIds: config.residueIds,
-                    subunitChainIds: config.subunitChainIds,
-                });
 
                 // Dimming is tied to selected loci, not to whether highlight toggles are currently enabled.
-                if (config.displaySettings.dimUnselected && hasSelection) {
-                    applyStructureDimOverlay(plugin, config.structureRef, config.displaySettings.dimStrength);
+                if (config.displaySettings.dimUnselected) {
+                    const dimExclusionLoci = buildDimExclusionLoci({
+                        plugin,
+                        structureRef: config.structureRef,
+                        colorMode: config.colorMode,
+                        chainId: config.chainId,
+                        residueIds: config.residueIds,
+                        residueInsCodes: config.residueInsCodes,
+                        subunitChainIds: config.subunitChainIds,
+                    });
+                    if (dimExclusionLoci) {
+                        applyStructureDimOverlay(
+                            plugin,
+                            config.structureRef,
+                            config.displaySettings.dimStrength,
+                            dimExclusionLoci
+                        );
+                    }
                 }
 
                 if (config.subunitOn && uniqueSubunitChainIds.length > 0) {
@@ -4907,6 +4952,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             {
                 structureRef: structureRefAAlignedTo,
                 modeKey: 'AlignedTo',
+                colorMode: colorModeByMode.AlignedTo,
                 chainId: selectedChainIdAlignedTo,
                 residueIds: selectedResidueIdsAlignedTo,
                 residueInsCodes: selectedResidueInsCodesAlignedTo,
@@ -4919,6 +4965,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             {
                 structureRef: structureRefAAlignedTo,
                 modeKey: 'AlignedTo',
+                colorMode: colorModeByMode.AlignedTo,
                 chainId: selectedChainIdAlignedTo2,
                 residueIds: selectedResidueIdsAlignedTo2,
                 residueInsCodes: selectedResidueInsCodesAlignedTo2,
@@ -4931,6 +4978,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             {
                 structureRef: structureRefAAligned,
                 modeKey: 'Aligned',
+                colorMode: colorModeByMode.Aligned,
                 chainId: selectedChainIdAligned,
                 residueIds: selectedResidueIdsAligned,
                 residueInsCodes: selectedResidueInsCodesAligned,
@@ -4943,6 +4991,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             {
                 structureRef: structureRefAAligned,
                 modeKey: 'Aligned',
+                colorMode: colorModeByMode.Aligned,
                 chainId: selectedChainIdAligned2,
                 residueIds: selectedResidueIdsAligned2,
                 residueInsCodes: selectedResidueInsCodesAligned2,
@@ -4969,6 +5018,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         residueHighlightOnAligned,
         subunitHighlightOnAlignedTo,
         subunitHighlightOnAligned,
+        colorModeByMode,
         selectionDisplayByMode,
         selectedChainIdAlignedTo,
         selectedChainIdAlignedTo2,
