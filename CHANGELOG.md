@@ -4,6 +4,8 @@ A chronological version based list of changes.
 ## [Unreleased]
 Release summary: upcoming changes.
 
+- Added a subtle visual boundary around each viewer column in `src/App.css` (light border, rounded corners, and minimal shadow) to improve side-by-side panel separation and readability.
+
 ## [v0.22.1] - 2026-11-06
 Release summary: this patch release fixes and clarifies `Dim unselected` behavior so dimming scope follows active selection/theme context.
 
