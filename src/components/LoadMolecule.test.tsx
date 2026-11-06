@@ -539,12 +539,12 @@ describe('LoadDataRow', () => {
             .toHaveAttribute('title', 'Disabled. Select a chain in Select 2 to enable residue controls.');
     });
 
-    it('explains why Select 2 and residue controls are disabled', () => {
+    it('hides Select 2 until Select 1 has a chain, and keeps residue controls disabled without Select 1', () => {
         render(<LoadDataRow {...baseProps} isLoaded={true} selectedChainId="" />);
 
         fireEvent.click(screen.getByText('Show Chain Controls'));
-        expect(document.getElementById('test-viewer-a-select-chain2-controls-toggle-btn'))
-            .toHaveAttribute('title', 'Disabled. Select a chain in Select 1 first.');
+        expect(document.getElementById('test-viewer-a-select-chain2-controls-toggle-btn')).toBeNull();
+        expect(document.getElementById('test-viewer-a-selected-chain2-label')).toBeNull();
 
         fireEvent.click(screen.getByText('Show Select 1'));
         expect(document.getElementById('test-viewer-a-residue-controls-toggle-btn'))
@@ -905,6 +905,132 @@ describe('LoadDataRow', () => {
 
         fireEvent.click(document.getElementById('test-viewer-a-residue2-select-common-btn') as HTMLButtonElement);
         expect(onSelectResidueIds2).toHaveBeenCalled();
+    });
+
+    it('shows Select 3 controls only when Select 2 has a chain and supports Select 3 actions', () => {
+        const onSelectChainId3 = vi.fn();
+        const onChainZoom3 = vi.fn();
+        const onSelectResidueIds3 = vi.fn();
+        const onResidueZoom3 = vi.fn();
+        const onAdditionalSelectedChainIdsChange = vi.fn();
+
+        const { rerender } = render(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                selectedChainId2=""
+            />
+        );
+
+        fireEvent.click(screen.getByText('Show Chain Controls'));
+        expect(document.getElementById('test-viewer-a-select-chain3-controls-toggle-btn')).toBeNull();
+        expect(document.getElementById('test-viewer-a-selected-chain3-label')).toBeNull();
+
+        rerender(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                selectedChainId2="B"
+                chainInfo={{ chainLabels: new Map([['A', 'Chain A'], ['B', 'Chain B'], ['C', 'Chain C'], ['D', 'Chain D']]) }}
+                selectedChainId3="C"
+                onSelectChainId3={onSelectChainId3}
+                chainZoomLabel3="Chain C"
+                onChainZoom3={onChainZoom3}
+                chainZoomDisabled3={false}
+                onAdditionalSelectedChainIdsChange={onAdditionalSelectedChainIdsChange}
+                residueInfo3={{
+                    residueLabels: new Map([
+                        ['30', { id: '30', name: 'Residue 30', compId: 'ALA', seqNumber: 30, insCode: '' }],
+                    ]),
+                    residueToAtomIds: { '30': ['a30'] },
+                }}
+                selectedResidueIds3={['30']}
+                onSelectResidueIds3={onSelectResidueIds3}
+                residueCommonIds3={['30']}
+                residueZoomLabel3="Residue 30"
+                onResidueZoom3={onResidueZoom3}
+                residueZoomDisabled3={false}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Show Select 3'));
+        expect(document.getElementById('test-viewer-a-chain3-chain-table-search')).toHaveAttribute(
+            'title',
+            'Select a chain for Select 3.'
+        );
+        fireEvent.click(document.querySelector('[data-testid="test-viewer-a-chain3-chain-table-row-C"]') as HTMLTableRowElement);
+        expect(onSelectChainId3).toHaveBeenCalledWith('C');
+        fireEvent.click(document.getElementById('test-viewer-a-zoom-chain3-btn') as HTMLButtonElement);
+        expect(onChainZoom3).toHaveBeenCalled();
+
+        fireEvent.click(screen.getAllByText('Show Residue Controls')[0]);
+        fireEvent.click(document.getElementById('test-viewer-a-zoom-residue3-btn') as HTMLButtonElement);
+        expect(onResidueZoom3).toHaveBeenCalled();
+        fireEvent.click(document.getElementById('test-viewer-a-residue3-select-common-btn') as HTMLButtonElement);
+        expect(onSelectResidueIds3).toHaveBeenCalled();
+
+        expect(document.getElementById('test-viewer-a-select-chain4-controls-toggle-btn')).toHaveAttribute(
+            'title',
+            'Show Select 4 controls.'
+        );
+        fireEvent.click(document.getElementById('test-viewer-a-select-chain4-controls-toggle-btn') as HTMLButtonElement);
+        fireEvent.click(document.querySelector('[data-testid="test-viewer-a-chain4-chain-table-row-D"]') as HTMLTableRowElement);
+        expect(onAdditionalSelectedChainIdsChange).toHaveBeenCalledWith(['D']);
+    });
+
+    it('recursively shows Select 5 after Select 4 is populated', () => {
+        const onAdditionalSelectedChainIdsChange = vi.fn();
+        const { rerender } = render(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                selectedChainId="A"
+                selectedChainId2="B"
+                selectedChainId3="C"
+                chainInfo={{ chainLabels: new Map([['A', 'Chain A'], ['B', 'Chain B'], ['C', 'Chain C'], ['D', 'Chain D'], ['E', 'Chain E']]) }}
+                additionalSelectedChainIds={[]}
+                onAdditionalSelectedChainIdsChange={onAdditionalSelectedChainIdsChange}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Show Chain Controls'));
+        expect(document.getElementById('test-viewer-a-select-chain4-controls-toggle-btn')).toBeInTheDocument();
+        expect(document.getElementById('test-viewer-a-select-chain5-controls-toggle-btn')).toBeNull();
+
+        rerender(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                selectedChainId="A"
+                selectedChainId2="B"
+                selectedChainId3="C"
+                chainInfo={{ chainLabels: new Map([['A', 'Chain A'], ['B', 'Chain B'], ['C', 'Chain C'], ['D', 'Chain D'], ['E', 'Chain E']]) }}
+                additionalSelectedChainIds={['D']}
+                onAdditionalSelectedChainIdsChange={onAdditionalSelectedChainIdsChange}
+            />
+        );
+
+        expect(document.getElementById('test-viewer-a-select-chain5-controls-toggle-btn')).toBeInTheDocument();
+    });
+
+    it('clears downstream dynamic selections when an earlier dynamic slot is cleared', () => {
+        const onAdditionalSelectedChainIdsChange = vi.fn();
+        render(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                selectedChainId="A"
+                selectedChainId2="B"
+                selectedChainId3="C"
+                chainInfo={{ chainLabels: new Map([['A', 'Chain A'], ['B', 'Chain B'], ['C', 'Chain C'], ['D', 'Chain D'], ['E', 'Chain E']]) }}
+                additionalSelectedChainIds={['D', 'E']}
+                onAdditionalSelectedChainIdsChange={onAdditionalSelectedChainIdsChange}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Show Chain Controls'));
+        fireEvent.click(document.getElementById('test-viewer-a-clear-chain4-selection-btn') as HTMLButtonElement);
+        expect(onAdditionalSelectedChainIdsChange).toHaveBeenCalledWith([]);
     });
 
     it('explains disabled Select Shared tooltips for Select 1 and Select 2', () => {

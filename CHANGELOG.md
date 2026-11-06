@@ -4,7 +4,14 @@ A chronological version based list of changes.
 ## [Unreleased]
 Release summary: upcoming changes.
 
-- Added a subtle visual boundary around each viewer column in `src/App.css` (light border, rounded corners, and minimal shadow) to improve side-by-side panel separation and readability.
+## [v0.23.0] - 2026-11-06
+Release summary: this minor release introduces progressive multi-chain selection expansion with recursive slots, stronger session round-tripping, and expanded automated coverage.
+
+- Added a third independent selection slot (`Select 3`) for chain/residue workflows in `src/App.tsx`, `src/components/LoadMolecule.tsx`, and `src/components/ViewerColumn.tsx`, with progressive enablement (available after selecting `Select 2`) and full zoom/highlight/inspect controls.
+- Refined progressive selection disclosure in `src/components/LoadMolecule.tsx` so `Select 2` controls/selection info appear only after a `Select 1` chain is chosen, and `Select 3` controls/selection info appear only after a `Select 2` chain is chosen.
+- Started dynamic multi-chain selection rollout (step 1) by adding recursive chain-selection slots (`Select 4+`) that appear progressively as prior selections are made, plus session persistence for extra chain slots via `chainIdsExtra` in `src/App.tsx` and dynamic slot UI in `src/components/LoadMolecule.tsx`.
+- Added regression coverage for recursive dynamic chain slots and persistence filtering in `src/components/LoadMolecule.test.tsx` and `src/App.integration.test.tsx`, plus end-to-end Save All/Load All round-trip tests in `e2e/session-load-all-dynamic-chain-slots.e2e.spec.ts` for both dynamic `Select 4` persistence and clear-cascade behavior (`Select 5` hidden after clearing `Select 4`).
+- Extended session save/load persistence to round-trip `chainId3`, `residueIds3`, and `residueId3` for both AlignedTo and Aligned selections in `src/App.tsx`, with integration coverage in `src/App.integration.test.tsx` and UI control coverage in `src/components/LoadMolecule.test.tsx`.
 
 ## [v0.22.1] - 2026-11-06
 Release summary: this patch release fixes and clarifies `Dim unselected` behavior so dimming scope follows active selection/theme context.
@@ -13,6 +20,7 @@ Release summary: this patch release fixes and clarifies `Dim unselected` behavio
 - Added regression tests in `src/App.test.tsx` covering theme-type-based dim exclusion behavior for chain and residue scopes.
 - Refined `Dim unselected` behavior to follow the active Theme Type: chain themes now dim relative to the selected chain, while residue themes dim relative to selected residues.
 - Updated `Dim unselected` tooltip guidance to explicitly state that emphasis scope follows the active Theme Type (selected chain for chain themes, selected residues for residue themes).
+- Added a subtle visual boundary around each viewer column in `src/App.css` (light border, rounded corners, and minimal shadow) to improve side-by-side panel separation and readability.
 
 ## [v0.22.0] - 2026-11-05
 Release summary: this release improves session export UX and rolls out comprehensive, state-aware tooltip guidance across key controls.

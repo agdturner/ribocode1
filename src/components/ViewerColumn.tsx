@@ -101,8 +101,14 @@ export interface LoadDataRowPropsInput {
 	selectedChainId2?: any;
 	setSelectedChainId2?: (val: any) => void;
 	clearSelectedChainId2?: () => void;
+	selectedChainId3?: any;
+	setSelectedChainId3?: (val: any) => void;
+	clearSelectedChainId3?: () => void;
+	additionalSelectedChainIds?: string[];
+	setAdditionalSelectedChainIds?: (ids: string[]) => void;
 	chainZoomLabel: string;
 	chainZoomLabel2?: string;
+	chainZoomLabel3?: string;
 	onChainHighlight: () => void;
 	chainHighlightOn?: boolean;
 	chainHighlightDisabled: boolean;
@@ -115,10 +121,18 @@ export interface LoadDataRowPropsInput {
 	onChainInspect2?: () => void;
 	chainInspectOn2?: boolean;
 	chainInspectDisabled2?: boolean;
+	onChainHighlight3?: () => void;
+	chainHighlightOn3?: boolean;
+	chainHighlightDisabled3?: boolean;
+	onChainInspect3?: () => void;
+	chainInspectOn3?: boolean;
+	chainInspectDisabled3?: boolean;
 	onChainZoom: () => void;
 	onChainZoom2?: () => void;
+	onChainZoom3?: () => void;
 	chainZoomDisabled: boolean;
 	chainZoomDisabled2?: boolean;
+	chainZoomDisabled3?: boolean;
 	onCombinedSelectionZoom?: () => void;
 	combinedSelectionZoomDisabled?: boolean;
 	onCombinedSelectionHighlight?: () => void;
@@ -142,8 +156,13 @@ export interface LoadDataRowPropsInput {
 	residueCommonIds2?: string[];
 	selectedResidueIds2?: string[];
 	setSelectedResidueIds2?: (val: string[]) => void;
+	residueInfo3?: any;
+	residueCommonIds3?: string[];
+	selectedResidueIds3?: string[];
+	setSelectedResidueIds3?: (val: string[]) => void;
 	residueZoomLabel: string;
 	residueZoomLabel2?: string;
+	residueZoomLabel3?: string;
 	onResidueHighlight: () => void;
 	residueHighlightOn?: boolean;
 	residueHighlightDisabled: boolean;
@@ -156,10 +175,18 @@ export interface LoadDataRowPropsInput {
 	onResidueInspect2?: () => void;
 	residueInspectOn2?: boolean;
 	residueInspectDisabled2?: boolean;
+	onResidueHighlight3?: () => void;
+	residueHighlightOn3?: boolean;
+	residueHighlightDisabled3?: boolean;
+	onResidueInspect3?: () => void;
+	residueInspectOn3?: boolean;
+	residueInspectDisabled3?: boolean;
 	onResidueZoom: () => void;
 	onResidueZoom2?: () => void;
+	onResidueZoom3?: () => void;
 	residueZoomDisabled: boolean;
 	residueZoomDisabled2?: boolean;
+	residueZoomDisabled3?: boolean;
 	zoomExtraRadius: number;
 	setZoomExtraRadius: (val: number) => void;
 	zoomMinRadius: number;
@@ -266,8 +293,14 @@ export function getLoadDataRowProps({
 	selectedChainId2,
 	setSelectedChainId2,
 	clearSelectedChainId2,
+	selectedChainId3,
+	setSelectedChainId3,
+	clearSelectedChainId3,
+	additionalSelectedChainIds,
+	setAdditionalSelectedChainIds,
 	chainZoomLabel,
 	chainZoomLabel2,
+	chainZoomLabel3,
 	onChainHighlight,
 	chainHighlightOn,
 	chainHighlightDisabled,
@@ -280,10 +313,18 @@ export function getLoadDataRowProps({
 	onChainInspect2,
 	chainInspectOn2,
 	chainInspectDisabled2,
+	onChainHighlight3,
+	chainHighlightOn3,
+	chainHighlightDisabled3,
+	onChainInspect3,
+	chainInspectOn3,
+	chainInspectDisabled3,
 	onChainZoom,
 	onChainZoom2,
+	onChainZoom3,
 	chainZoomDisabled,
 	chainZoomDisabled2,
+	chainZoomDisabled3,
 	onCombinedSelectionZoom,
 	combinedSelectionZoomDisabled,
 	onCombinedSelectionHighlight,
@@ -303,8 +344,13 @@ export function getLoadDataRowProps({
 	residueCommonIds2,
 	selectedResidueIds2,
 	setSelectedResidueIds2,
+	residueInfo3,
+	residueCommonIds3,
+	selectedResidueIds3,
+	setSelectedResidueIds3,
 	residueZoomLabel,
 	residueZoomLabel2,
+	residueZoomLabel3,
 	onResidueHighlight,
 	residueHighlightOn,
 	residueHighlightDisabled,
@@ -317,10 +363,18 @@ export function getLoadDataRowProps({
 	onResidueInspect2,
 	residueInspectOn2,
 	residueInspectDisabled2,
+	onResidueHighlight3,
+	residueHighlightOn3,
+	residueHighlightDisabled3,
+	onResidueInspect3,
+	residueInspectOn3,
+	residueInspectDisabled3,
 	onResidueZoom,
 	onResidueZoom2,
+	onResidueZoom3,
 	residueZoomDisabled,
 	residueZoomDisabled2,
+	residueZoomDisabled3,
 	zoomExtraRadius,
 	setZoomExtraRadius,
 	zoomMinRadius,
@@ -545,8 +599,14 @@ export function getLoadDataRowProps({
 		selectedChainId2,
 		onSelectChainId2: setSelectedChainId2,
 		onClearChainId2: clearSelectedChainId2,
+		selectedChainId3,
+		onSelectChainId3: setSelectedChainId3,
+		onClearChainId3: clearSelectedChainId3,
+		additionalSelectedChainIds,
+		onAdditionalSelectedChainIdsChange: setAdditionalSelectedChainIds,
 		chainZoomLabel,
 		chainZoomLabel2,
+		chainZoomLabel3,
 		onChainHighlight,
 		chainHighlightOn,
 		chainHighlightDisabled,
@@ -559,10 +619,18 @@ export function getLoadDataRowProps({
 		onChainInspect2,
 		chainInspectOn2,
 		chainInspectDisabled2,
+		onChainHighlight3,
+		chainHighlightOn3,
+		chainHighlightDisabled3,
+		onChainInspect3,
+		chainInspectOn3,
+		chainInspectDisabled3,
 		onChainZoom,
 		onChainZoom2,
+		onChainZoom3,
 		chainZoomDisabled,
 		chainZoomDisabled2,
+		chainZoomDisabled3,
 		onCombinedSelectionZoom,
 		combinedSelectionZoomDisabled,
 		onCombinedSelectionHighlight,
@@ -583,8 +651,13 @@ export function getLoadDataRowProps({
 		residueCommonIds2,
 		selectedResidueIds2,
 		onSelectResidueIds2: setSelectedResidueIds2,
+		residueInfo3,
+		residueCommonIds3,
+		selectedResidueIds3,
+		onSelectResidueIds3: setSelectedResidueIds3,
 		residueZoomLabel,
 		residueZoomLabel2,
+		residueZoomLabel3,
 		onResidueHighlight,
 		residueHighlightOn,
 		residueHighlightDisabled,
@@ -597,10 +670,18 @@ export function getLoadDataRowProps({
 		onResidueInspect2,
 		residueInspectOn2,
 		residueInspectDisabled2,
+		onResidueHighlight3,
+		residueHighlightOn3,
+		residueHighlightDisabled3,
+		onResidueInspect3,
+		residueInspectOn3,
+		residueInspectDisabled3,
 		onResidueZoom,
 		onResidueZoom2,
+		onResidueZoom3,
 		residueZoomDisabled,
 		residueZoomDisabled2,
+		residueZoomDisabled3,
 		zoomExtraRadius,
 		onZoomExtraRadiusChange: setZoomExtraRadius,
 		zoomMinRadius,
@@ -1197,9 +1278,15 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   selectedChainId2={activeLoadProps.selectedChainId2}
 						   onSelectChainId2={activeLoadProps.onSelectChainId2}
 						   onClearChainId2={activeLoadProps.onClearChainId2}
+						   selectedChainId3={activeLoadProps.selectedChainId3}
+						   onSelectChainId3={activeLoadProps.onSelectChainId3}
+						   onClearChainId3={activeLoadProps.onClearChainId3}
+						   additionalSelectedChainIds={activeLoadProps.additionalSelectedChainIds}
+						   onAdditionalSelectedChainIdsChange={activeLoadProps.onAdditionalSelectedChainIdsChange}
 						   chainSelectDisabled={activeLoadProps.chainSelectDisabled}
 						   chainZoomLabel={activeLoadProps.chainZoomLabel}
 						   chainZoomLabel2={activeLoadProps.chainZoomLabel2}
+						   chainZoomLabel3={activeLoadProps.chainZoomLabel3}
 						   onChainHighlight={activeLoadProps.onChainHighlight}
 						   chainHighlightOn={activeLoadProps.chainHighlightOn}
 						   chainHighlightDisabled={activeLoadProps.chainHighlightDisabled}
@@ -1212,10 +1299,18 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   onChainInspect2={activeLoadProps.onChainInspect2}
 						   chainInspectOn2={activeLoadProps.chainInspectOn2}
 						   chainInspectDisabled2={activeLoadProps.chainInspectDisabled2}
+						   onChainHighlight3={activeLoadProps.onChainHighlight3}
+						   chainHighlightOn3={activeLoadProps.chainHighlightOn3}
+						   chainHighlightDisabled3={activeLoadProps.chainHighlightDisabled3}
+						   onChainInspect3={activeLoadProps.onChainInspect3}
+						   chainInspectOn3={activeLoadProps.chainInspectOn3}
+						   chainInspectDisabled3={activeLoadProps.chainInspectDisabled3}
 						   onChainZoom={activeLoadProps.onChainZoom}
 						   onChainZoom2={activeLoadProps.onChainZoom2}
+						   onChainZoom3={activeLoadProps.onChainZoom3}
 						   chainZoomDisabled={activeLoadProps.chainZoomDisabled}
 						   chainZoomDisabled2={activeLoadProps.chainZoomDisabled2}
+						   chainZoomDisabled3={activeLoadProps.chainZoomDisabled3}
 						   onCombinedSelectionZoom={activeLoadProps.onCombinedSelectionZoom}
 						   combinedSelectionZoomDisabled={activeLoadProps.combinedSelectionZoomDisabled}
 						   onCombinedSelectionHighlight={activeLoadProps.onCombinedSelectionHighlight}
@@ -1235,9 +1330,14 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   residueCommonIds2={activeLoadProps.residueCommonIds2}
 						   selectedResidueIds2={activeLoadProps.selectedResidueIds2}
 						   onSelectResidueIds2={activeLoadProps.onSelectResidueIds2}
+						   residueInfo3={activeLoadProps.residueInfo3}
+						   residueCommonIds3={activeLoadProps.residueCommonIds3}
+						   selectedResidueIds3={activeLoadProps.selectedResidueIds3}
+						   onSelectResidueIds3={activeLoadProps.onSelectResidueIds3}
 						   residueSelectDisabled={activeLoadProps.residueSelectDisabled}
 						   residueZoomLabel={activeLoadProps.residueZoomLabel}
 						   residueZoomLabel2={activeLoadProps.residueZoomLabel2}
+						   residueZoomLabel3={activeLoadProps.residueZoomLabel3}
 						   onResidueHighlight={activeLoadProps.onResidueHighlight}
 						   residueHighlightOn={activeLoadProps.residueHighlightOn}
 						   residueHighlightDisabled={activeLoadProps.residueHighlightDisabled}
@@ -1250,10 +1350,18 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   onResidueInspect2={activeLoadProps.onResidueInspect2}
 						   residueInspectOn2={activeLoadProps.residueInspectOn2}
 						   residueInspectDisabled2={activeLoadProps.residueInspectDisabled2}
+						   onResidueHighlight3={activeLoadProps.onResidueHighlight3}
+						   residueHighlightOn3={activeLoadProps.residueHighlightOn3}
+						   residueHighlightDisabled3={activeLoadProps.residueHighlightDisabled3}
+						   onResidueInspect3={activeLoadProps.onResidueInspect3}
+						   residueInspectOn3={activeLoadProps.residueInspectOn3}
+						   residueInspectDisabled3={activeLoadProps.residueInspectDisabled3}
 						   onResidueZoom={activeLoadProps.onResidueZoom}
 						   onResidueZoom2={activeLoadProps.onResidueZoom2}
+						   onResidueZoom3={activeLoadProps.onResidueZoom3}
 						   residueZoomDisabled={activeLoadProps.residueZoomDisabled}
 						   residueZoomDisabled2={activeLoadProps.residueZoomDisabled2}
+						   residueZoomDisabled3={activeLoadProps.residueZoomDisabled3}
 						   zoomExtraRadius={activeLoadProps.zoomExtraRadius}
 						   onZoomExtraRadiusChange={activeLoadProps.onZoomExtraRadiusChange}
 						   zoomMinRadius={activeLoadProps.zoomMinRadius}

@@ -197,36 +197,36 @@ const getUniprotLabelToggleTooltip = (enabled: boolean): string =>
         ? 'UniProt accessions in chain labels are On. Click to turn them Off.'
         : 'UniProt accessions in chain labels are Off. Click to turn them On.';
 
-const getChainSelectTooltip = (slot: 'Select 1' | 'Select 2'): string =>
+const getChainSelectTooltip = (slot: string): string =>
     `Select a chain for ${slot}.`;
 
-const getChainZoomTooltip = (slot: 'Select 1' | 'Select 2', disabled: boolean, label: string): string =>
+const getChainZoomTooltip = (slot: 'Select 1' | 'Select 2' | 'Select 3', disabled: boolean, label: string): string =>
     disabled
         ? `Disabled until ${slot} has a zoomable chain selection.`
         : `Zoom to the current ${slot} chain selection (${label}).`;
 
-const getChainHighlightTooltip = (slot: 'Select 1' | 'Select 2', disabled: boolean, on: boolean): string =>
+const getChainHighlightTooltip = (slot: 'Select 1' | 'Select 2' | 'Select 3', disabled: boolean, on: boolean): string =>
     disabled
         ? `Disabled until ${slot} chain highlighting is available.`
         : on
             ? `${slot} chain highlight is On. Click to turn it Off.`
             : `${slot} chain highlight is Off. Click to turn it On.`;
 
-const getChainInspectTooltip = (slot: 'Select 1' | 'Select 2', disabled: boolean, on: boolean): string =>
+const getChainInspectTooltip = (slot: 'Select 1' | 'Select 2' | 'Select 3', disabled: boolean, on: boolean): string =>
     disabled
         ? `Disabled until ${slot} chain inspection is available.`
         : on
             ? `${slot} chain inspect is On. Click to turn it Off.`
             : `${slot} chain inspect is Off. Click to turn it On.`;
 
-const getResidueSelectTooltip = (slot: 'Select 1' | 'Select 2', disabled: boolean): string =>
+const getResidueSelectTooltip = (slot: 'Select 1' | 'Select 2' | 'Select 3', disabled: boolean): string =>
     disabled
         ? `Disabled until a chain is selected for ${slot}.`
         : `Select one or more residues for ${slot}.`;
 
 const getResidueBulkSelectTooltip = (
     action: 'all' | 'clear' | 'invert' | 'shared',
-    slot: 'Select 1' | 'Select 2',
+    slot: 'Select 1' | 'Select 2' | 'Select 3',
     disabled: boolean
 ): string => {
     if (disabled) {
@@ -244,26 +244,26 @@ const getResidueBulkSelectTooltip = (
 const getResidueTypeToggleTooltip = (
     actionLabel: 'Add' | 'Remove',
     type: string,
-    slot: 'Select 1' | 'Select 2',
+    slot: 'Select 1' | 'Select 2' | 'Select 3',
     disabled: boolean
 ): string =>
     disabled
         ? `Disabled until residue type selection is available for ${slot}.`
         : `${actionLabel} all ${type} residues in ${slot}.`;
 
-const getResidueZoomTooltip = (slot: 'Select 1' | 'Select 2', disabled: boolean, label: string): string =>
+const getResidueZoomTooltip = (slot: 'Select 1' | 'Select 2' | 'Select 3', disabled: boolean, label: string): string =>
     disabled
         ? `Disabled until ${slot} has a zoomable residue selection.`
         : `Zoom to the current ${slot} residue selection (${label}).`;
 
-const getResidueHighlightTooltip = (slot: 'Select 1' | 'Select 2', disabled: boolean, on: boolean): string =>
+const getResidueHighlightTooltip = (slot: 'Select 1' | 'Select 2' | 'Select 3', disabled: boolean, on: boolean): string =>
     disabled
         ? `Disabled until ${slot} residue highlighting is available.`
         : on
             ? `${slot} residue highlight is On. Click to turn it Off.`
             : `${slot} residue highlight is Off. Click to turn it On.`;
 
-const getResidueInspectTooltip = (slot: 'Select 1' | 'Select 2', disabled: boolean, on: boolean): string =>
+const getResidueInspectTooltip = (slot: 'Select 1' | 'Select 2' | 'Select 3', disabled: boolean, on: boolean): string =>
     disabled
         ? `Disabled until ${slot} residue inspection is available.`
         : on
@@ -386,6 +386,10 @@ interface LoadDataRowProps {
     onSelectChainId: (id: string) => void;
     selectedChainId2?: string;
     onSelectChainId2?: (id: string) => void;
+    selectedChainId3?: string;
+    onSelectChainId3?: (id: string) => void;
+    additionalSelectedChainIds?: string[];
+    onAdditionalSelectedChainIdsChange?: (ids: string[]) => void;
     chainSelectDisabled: boolean;
     chainZoomLabel: string;
     chainZoomLabel2?: string;
@@ -401,10 +405,19 @@ interface LoadDataRowProps {
     onChainInspect2?: () => void;
     chainInspectOn2?: boolean;
     chainInspectDisabled2?: boolean;
+    onChainHighlight3?: () => void;
+    chainHighlightOn3?: boolean;
+    chainHighlightDisabled3?: boolean;
+    onChainInspect3?: () => void;
+    chainInspectOn3?: boolean;
+    chainInspectDisabled3?: boolean;
     onChainZoom: () => void;
     onChainZoom2?: () => void;
+    onChainZoom3?: () => void;
     chainZoomDisabled: boolean;
     chainZoomDisabled2?: boolean;
+    chainZoomLabel3?: string;
+    chainZoomDisabled3?: boolean;
     onCombinedSelectionZoom?: () => void;
     combinedSelectionZoomDisabled?: boolean;
     onCombinedSelectionHighlight?: () => void;
@@ -435,9 +448,17 @@ interface LoadDataRowProps {
     residueCommonIds2?: string[];
     selectedResidueIds2?: string[];
     onSelectResidueIds2?: (ids: string[]) => void;
+    residueInfo3?: {
+        residueLabels: Map<string, ResidueLabelInfo>;
+        residueToAtomIds: Record<string, string[]>;
+    };
+    residueCommonIds3?: string[];
+    selectedResidueIds3?: string[];
+    onSelectResidueIds3?: (ids: string[]) => void;
     residueSelectDisabled: boolean;
     residueZoomLabel: string;
     residueZoomLabel2?: string;
+    residueZoomLabel3?: string;
     onResidueHighlight: () => void;
     residueHighlightOn?: boolean;
     residueHighlightDisabled: boolean;
@@ -450,10 +471,18 @@ interface LoadDataRowProps {
     onResidueInspect2?: () => void;
     residueInspectOn2?: boolean;
     residueInspectDisabled2?: boolean;
+    onResidueHighlight3?: () => void;
+    residueHighlightOn3?: boolean;
+    residueHighlightDisabled3?: boolean;
+    onResidueInspect3?: () => void;
+    residueInspectOn3?: boolean;
+    residueInspectDisabled3?: boolean;
     onResidueZoom: () => void;
     onResidueZoom2?: () => void;
+    onResidueZoom3?: () => void;
     residueZoomDisabled: boolean;
     residueZoomDisabled2?: boolean;
+    residueZoomDisabled3?: boolean;
     zoomExtraRadius?: number;
     onZoomExtraRadiusChange?: (value: number) => void;
     zoomMinRadius?: number;
@@ -508,10 +537,16 @@ interface LoadDataRowProps {
         onSelectChainId: (id: string) => void;
         selectedChainId2?: string;
         onSelectChainId2?: (id: string) => void;
+        selectedChainId3?: string;
+        onSelectChainId3?: (id: string) => void;
+        additionalSelectedChainIds?: string[];
+        onAdditionalSelectedChainIdsChange?: (ids: string[]) => void;
         onClearChainId2?: () => void;
+        onClearChainId3?: () => void;
         chainSelectDisabled: boolean;
         chainZoomLabel: string;
         chainZoomLabel2?: string;
+        chainZoomLabel3?: string;
         onChainHighlight: () => void;
         chainHighlightOn?: boolean;
         chainHighlightDisabled: boolean;
@@ -524,10 +559,18 @@ interface LoadDataRowProps {
         onChainInspect2?: () => void;
         chainInspectOn2?: boolean;
         chainInspectDisabled2?: boolean;
+        onChainHighlight3?: () => void;
+        chainHighlightOn3?: boolean;
+        chainHighlightDisabled3?: boolean;
+        onChainInspect3?: () => void;
+        chainInspectOn3?: boolean;
+        chainInspectDisabled3?: boolean;
         onChainZoom: () => void;
         onChainZoom2?: () => void;
+        onChainZoom3?: () => void;
         chainZoomDisabled: boolean;
         chainZoomDisabled2?: boolean;
+        chainZoomDisabled3?: boolean;
         onCombinedSelectionZoom?: () => void;
         combinedSelectionZoomDisabled?: boolean;
         onCombinedSelectionHighlight?: () => void;
@@ -557,9 +600,17 @@ interface LoadDataRowProps {
         residueCommonIds2?: string[];
         selectedResidueIds2?: string[];
         onSelectResidueIds2?: (ids: string[]) => void;
+        residueInfo3?: {
+            residueLabels: Map<string, ResidueLabelInfo>;
+            residueToAtomIds: Record<string, string[]>;
+        };
+        residueCommonIds3?: string[];
+        selectedResidueIds3?: string[];
+        onSelectResidueIds3?: (ids: string[]) => void;
         residueSelectDisabled: boolean;
         residueZoomLabel: string;
         residueZoomLabel2?: string;
+        residueZoomLabel3?: string;
         onResidueHighlight: () => void;
         residueHighlightOn?: boolean;
         residueHighlightDisabled: boolean;
@@ -572,10 +623,18 @@ interface LoadDataRowProps {
         onResidueInspect2?: () => void;
         residueInspectOn2?: boolean;
         residueInspectDisabled2?: boolean;
+        onResidueHighlight3?: () => void;
+        residueHighlightOn3?: boolean;
+        residueHighlightDisabled3?: boolean;
+        onResidueInspect3?: () => void;
+        residueInspectOn3?: boolean;
+        residueInspectDisabled3?: boolean;
         onResidueZoom: () => void;
         onResidueZoom2?: () => void;
+        onResidueZoom3?: () => void;
         residueZoomDisabled: boolean;
         residueZoomDisabled2?: boolean;
+        residueZoomDisabled3?: boolean;
         zoomExtraRadius?: number;
         onZoomExtraRadiusChange?: (value: number) => void;
         zoomMinRadius?: number;
@@ -595,6 +654,8 @@ interface LoadDataRowProps {
         chainFinderIdPrefix?: string;
         idPrefix: string;
     }
+
+    const EMPTY_CHAIN_SELECTIONS: string[] = [];
 
     export const SelectZoomControls: React.FC<SelectZoomControlsProps> = ({
         subunitToChainIds,
@@ -618,10 +679,16 @@ interface LoadDataRowProps {
         onSelectChainId,
         selectedChainId2 = '',
         onSelectChainId2,
+        selectedChainId3 = '',
+        onSelectChainId3,
         onClearChainId2 = () => {},
+        onClearChainId3 = () => {},
+        additionalSelectedChainIds = EMPTY_CHAIN_SELECTIONS,
+        onAdditionalSelectedChainIdsChange,
         chainSelectDisabled,
         chainZoomLabel,
         chainZoomLabel2 = '',
+        chainZoomLabel3 = '',
         onChainHighlight,
         chainHighlightOn = false,
         chainHighlightDisabled,
@@ -634,10 +701,18 @@ interface LoadDataRowProps {
         onChainInspect2 = () => {},
         chainInspectOn2 = false,
         chainInspectDisabled2 = true,
+        onChainHighlight3 = () => {},
+        chainHighlightOn3 = false,
+        chainHighlightDisabled3 = true,
+        onChainInspect3 = () => {},
+        chainInspectOn3 = false,
+        chainInspectDisabled3 = true,
         onChainZoom,
         onChainZoom2 = () => {},
+        onChainZoom3 = () => {},
         chainZoomDisabled,
         chainZoomDisabled2 = true,
+        chainZoomDisabled3 = true,
         onCombinedSelectionZoom = () => {},
         combinedSelectionZoomDisabled = true,
         onCombinedSelectionHighlight = () => {},
@@ -657,9 +732,14 @@ interface LoadDataRowProps {
         residueCommonIds2 = [],
         selectedResidueIds2 = [],
         onSelectResidueIds2,
+        residueInfo3,
+        residueCommonIds3 = [],
+        selectedResidueIds3 = [],
+        onSelectResidueIds3,
         residueSelectDisabled,
         residueZoomLabel,
         residueZoomLabel2 = '',
+        residueZoomLabel3 = '',
         onResidueHighlight,
         residueHighlightOn = false,
         residueHighlightDisabled,
@@ -672,10 +752,18 @@ interface LoadDataRowProps {
         onResidueInspect2 = () => {},
         residueInspectOn2 = false,
         residueInspectDisabled2 = true,
+        onResidueHighlight3 = () => {},
+        residueHighlightOn3 = false,
+        residueHighlightDisabled3 = true,
+        onResidueInspect3 = () => {},
+        residueInspectOn3 = false,
+        residueInspectDisabled3 = true,
         onResidueZoom,
         onResidueZoom2 = () => {},
+        onResidueZoom3 = () => {},
         residueZoomDisabled,
         residueZoomDisabled2 = true,
+        residueZoomDisabled3 = true,
         zoomExtraRadius = 0,
         onZoomExtraRadiusChange = () => {},
         zoomMinRadius = 0,
@@ -700,20 +788,72 @@ interface LoadDataRowProps {
         const [showChainControls, setShowChainControls] = React.useState(false);
         const [showSelectChainControls, setShowSelectChainControls] = React.useState(false);
         const [showSelectChain2Controls, setShowSelectChain2Controls] = React.useState(false);
+        const [showSelectChain3Controls, setShowSelectChain3Controls] = React.useState(false);
         const [showResidueControls, setShowResidueControls] = React.useState(false);
         const [showResidue2Controls, setShowResidue2Controls] = React.useState(false);
+        const [showResidue3Controls, setShowResidue3Controls] = React.useState(false);
         const filteredChainLabels = getFilteredChainLabels(selectedSubunit, chainInfo.chainLabels, subunitToChainIds);
         const effectiveChainLabels = chainFinderChainLabels ?? filteredChainLabels;
         const residueSectionDisabled = !selectedChainId;
         const chain2SectionDisabled = !selectedChainId;
         const residue2SectionDisabled = !selectedChainId2;
+        const chain3SectionDisabled = !selectedChainId2;
+        const residue3SectionDisabled = !selectedChainId3;
         const effectiveChainLabelsSlot2 = React.useMemo(() => {
             if (!selectedChainId) return effectiveChainLabels;
             return new Map(Array.from(effectiveChainLabels.entries()).filter(([id]) => id !== selectedChainId));
         }, [effectiveChainLabels, selectedChainId]);
+        const effectiveChainLabelsSlot3 = React.useMemo(() => {
+            if (!selectedChainId || !selectedChainId2) return effectiveChainLabelsSlot2;
+            return new Map(Array.from(effectiveChainLabels.entries()).filter(([id]) => id !== selectedChainId && id !== selectedChainId2));
+        }, [effectiveChainLabels, effectiveChainLabelsSlot2, selectedChainId, selectedChainId2]);
         const selectedChain2Label = selectedChainId2
             ? (effectiveChainLabelsSlot2.get(selectedChainId2) ?? chainInfo.chainLabels.get(selectedChainId2) ?? selectedChainId2)
             : 'None';
+        const selectedChain3Label = selectedChainId3
+            ? (effectiveChainLabelsSlot3.get(selectedChainId3) ?? chainInfo.chainLabels.get(selectedChainId3) ?? selectedChainId3)
+            : 'None';
+        const selectedChainSequence = React.useMemo(
+            () => [selectedChainId, selectedChainId2, selectedChainId3, ...additionalSelectedChainIds].map(id => id ?? ''),
+            [selectedChainId, selectedChainId2, selectedChainId3, additionalSelectedChainIds]
+        );
+        const additionalSlotCount = Math.max(0, effectiveChainLabels.size - 3);
+        const additionalSlotVisibility = React.useMemo(() => {
+            const visibility = new Array(additionalSlotCount).fill(false);
+            for (let i = 0; i < additionalSlotCount; i += 1) {
+                const prerequisite = i === 0 ? selectedChainId3 : additionalSelectedChainIds[i - 1];
+                visibility[i] = Boolean(prerequisite);
+            }
+            return visibility;
+        }, [additionalSelectedChainIds, additionalSlotCount, selectedChainId3]);
+        const [showAdditionalChainControlsBySlot, setShowAdditionalChainControlsBySlot] = React.useState<Record<number, boolean>>({});
+
+        const setAdditionalSelectionAt = React.useCallback((slotIndex: number, chainId: string) => {
+            const current = additionalSelectedChainIds.slice(0, additionalSlotCount);
+            const occupied = new Set(
+                [selectedChainId, selectedChainId2, selectedChainId3, ...current.slice(0, slotIndex)].filter(Boolean)
+            );
+            if (!chainId || occupied.has(chainId)) return;
+            const next = current.slice(0, slotIndex);
+            next[slotIndex] = chainId;
+            onAdditionalSelectedChainIdsChange?.(next);
+        }, [additionalSelectedChainIds, additionalSlotCount, onAdditionalSelectedChainIdsChange, selectedChainId, selectedChainId2, selectedChainId3]);
+
+        const clearAdditionalSelectionAt = React.useCallback((slotIndex: number) => {
+            const current = additionalSelectedChainIds.slice(0, additionalSlotCount);
+            const next = current.slice(0, slotIndex);
+            onAdditionalSelectedChainIdsChange?.(next);
+            setShowAdditionalChainControlsBySlot(prev => {
+                const updated: Record<number, boolean> = {};
+                for (const key of Object.keys(prev)) {
+                    const idx = Number(key);
+                    if (Number.isInteger(idx) && idx < slotIndex) {
+                        updated[idx] = prev[idx];
+                    }
+                }
+                return updated;
+            });
+        }, [additionalSelectedChainIds, additionalSlotCount, onAdditionalSelectedChainIdsChange]);
 
         React.useEffect(() => {
             if (residueSectionDisabled) {
@@ -726,13 +866,38 @@ interface LoadDataRowProps {
                 setShowResidue2Controls(false);
             }
         }, [residue2SectionDisabled]);
+        React.useEffect(() => {
+            if (residue3SectionDisabled) {
+                setShowResidue3Controls(false);
+            }
+        }, [residue3SectionDisabled]);
 
         React.useEffect(() => {
             if (chain2SectionDisabled) {
                 setShowSelectChain2Controls(false);
                 setShowResidue2Controls(false);
+                setShowSelectChain3Controls(false);
+                setShowResidue3Controls(false);
             }
         }, [chain2SectionDisabled]);
+        React.useEffect(() => {
+            if (chain3SectionDisabled) {
+                setShowSelectChain3Controls(false);
+                setShowResidue3Controls(false);
+            }
+        }, [chain3SectionDisabled]);
+        React.useEffect(() => {
+            setShowAdditionalChainControlsBySlot(prev => {
+                const next: Record<number, boolean> = {};
+                for (const key of Object.keys(prev)) {
+                    const idx = Number(key);
+                    if (Number.isInteger(idx) && idx < additionalSlotCount && additionalSlotVisibility[idx]) {
+                        next[idx] = prev[idx];
+                    }
+                }
+                return next;
+            });
+        }, [additionalSlotCount, additionalSlotVisibility]);
 
         const selectedChainLabel = selectedChainId
             ? (effectiveChainLabels.get(selectedChainId) ?? chainInfo.chainLabels.get(selectedChainId) ?? selectedChainId)
@@ -751,6 +916,14 @@ interface LoadDataRowProps {
             );
             return orderedEntries.map(([residueId]) => residueId);
         }, [residueInfo2]);
+        const orderedResidueIds3 = React.useMemo(() => {
+            const residueLabels = residueInfo3?.residueLabels;
+            if (!residueLabels) return [] as string[];
+            const orderedEntries = Array.from(residueLabels.entries()).sort(
+                ([, a], [, b]) => a.seqNumber - b.seqNumber || a.insCode.localeCompare(b.insCode)
+            );
+            return orderedEntries.map(([residueId]) => residueId);
+        }, [residueInfo3]);
         const residueTypeBuckets = React.useMemo(() => {
             const buckets = new Map<string, string[]>();
             for (const residueId of orderedResidueIds) {
@@ -792,6 +965,20 @@ interface LoadDataRowProps {
                 .map(([type, residueIds]) => ({ type, residueIds, count: residueIds.length }))
                 .sort((a, b) => a.type.localeCompare(b.type));
         }, [orderedResidueIds2, residueInfo2]);
+        const residueTypeBuckets3 = React.useMemo(() => {
+            const residueLabels = residueInfo3?.residueLabels;
+            if (!residueLabels) return [] as Array<{ type: string; residueIds: string[]; count: number }>;
+            const buckets = new Map<string, string[]>();
+            for (const residueId of orderedResidueIds3) {
+                const info = residueLabels.get(residueId);
+                const key = String(info?.compId || '?').trim().toUpperCase() || '?';
+                if (!buckets.has(key)) buckets.set(key, []);
+                buckets.get(key)!.push(residueId);
+            }
+            return Array.from(buckets.entries())
+                .map(([type, residueIds]) => ({ type, residueIds, count: residueIds.length }))
+                .sort((a, b) => a.type.localeCompare(b.type));
+        }, [orderedResidueIds3, residueInfo3]);
         const orderedSelectionFromSet = React.useCallback((set: Set<string>): string[] => {
             const ordered: string[] = [];
             for (const residueId of orderedResidueIds) {
@@ -807,6 +994,13 @@ interface LoadDataRowProps {
             }
             return ordered;
         }, [orderedResidueIds2]);
+        const orderedSelectionFromSet3 = React.useCallback((set: Set<string>): string[] => {
+            const ordered: string[] = [];
+            for (const residueId of orderedResidueIds3) {
+                if (set.has(residueId)) ordered.push(residueId);
+            }
+            return ordered;
+        }, [orderedResidueIds3]);
 
         const renderResidueControls = ({
             slot,
@@ -828,7 +1022,7 @@ interface LoadDataRowProps {
             selectedChainIdSlot,
             showSharedButton,
         }: {
-            slot: '' | '2';
+            slot: '' | '2' | '3';
             residueInfoSlot: { residueLabels: Map<string, ResidueLabelInfo> };
             selectedResidueIdsSlot: string[];
             onSelectResidueIdsSlot: (ids: string[]) => void;
@@ -848,7 +1042,7 @@ interface LoadDataRowProps {
             showSharedButton: boolean;
         }) => (
             (() => {
-                const slotLabel: 'Select 1' | 'Select 2' = slot === '2' ? 'Select 2' : 'Select 1';
+                const slotLabel: 'Select 1' | 'Select 2' | 'Select 3' = slot === '2' ? 'Select 2' : slot === '3' ? 'Select 3' : 'Select 1';
                 return (
             <>
                 <div className="load-data-control-row" style={{ marginLeft: 36 }}>
@@ -936,7 +1130,13 @@ interface LoadDataRowProps {
                                             } else {
                                                 residueIds.forEach(id => nextSet.add(id));
                                             }
-                                            onSelectResidueIdsSlot(slot === '2' ? orderedSelectionFromSet2(nextSet) : orderedSelectionFromSet(nextSet));
+                                            onSelectResidueIdsSlot(
+                                                slot === '2'
+                                                    ? orderedSelectionFromSet2(nextSet)
+                                                    : slot === '3'
+                                                        ? orderedSelectionFromSet3(nextSet)
+                                                        : orderedSelectionFromSet(nextSet)
+                                            );
                                         }}
                                     >
                                         {actionLabel}
@@ -1293,131 +1493,306 @@ interface LoadDataRowProps {
                                 )}
                             </>
                         )}
-                        <div className="load-data-control-row" id={`${idPrefix}-selected-chain2-label`} style={{ marginLeft: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span>Selected 2: {selectedChain2Label}</span>
-                            <button
-                                type="button"
-                                className="msp-btn msp-form-control"
-                                id={`${idPrefix}-clear-chain2-selection-btn`}
-                                aria-label="Clear Chain 2"
-                                disabled={!selectedChainId2}
-                                onClick={onClearChainId2}
-                                style={{ minWidth: 0, padding: '2px 8px' }}
-                            >
-                                X
-                            </button>
-                        </div>
-                        <div className="load-data-control-row" style={{ marginLeft: 12 }}>
-                            <button
-                                type="button"
-                                className="msp-btn msp-form-control"
-                                id={`${idPrefix}-select-chain2-controls-toggle-btn`}
-                                onClick={() => setShowSelectChain2Controls((current) => !current)}
-                                title={getControlsToggleTitle(
-                                    'Select 2',
-                                    showSelectChain2Controls,
-                                    chain2SectionDisabled
-                                        ? 'Select a chain in Select 1 first.'
-                                        : undefined
-                                )}
-                                aria-disabled={chain2SectionDisabled}
-                                disabled={chain2SectionDisabled}
-                            >
-                                {showSelectChain2Controls ? 'Hide Select 2' : 'Show Select 2'}
-                            </button>
-                        </div>
-                        {showSelectChain2Controls && (
+                        {!!selectedChainId && (
                             <>
-                                <div style={{ marginLeft: 24 }}>
-                                    {!!effectiveChainLabelsSlot2 && effectiveChainLabelsSlot2.size > 0 && (
-                                        <ChainSelectionTable
-                                            chainLabels={effectiveChainLabelsSlot2}
-                                            selectedChainId={selectedChainId2}
-                                            onSelectChainId={onSelectChainId2 ?? (() => {})}
-                                            title="Select"
-                                            titleTooltip={getChainSelectTooltip('Select 2')}
-                                            idPrefix={`${idPrefix}-chain2`}
-                                        />
-                                    )}
-                                </div>
-                                <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 24 }}>
+                                <div className="load-data-control-row" id={`${idPrefix}-selected-chain2-label`} style={{ marginLeft: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span>Selected 2: {selectedChain2Label}</span>
                                     <button
                                         type="button"
                                         className="msp-btn msp-form-control"
-                                        id={`${idPrefix}-zoom-chain2-btn`}
-                                        onClick={onChainZoom2}
-                                        disabled={chainZoomDisabled2}
-                                        aria-label={`Zoom (${chainZoomLabel2})`}
-                                        title={getChainZoomTooltip('Select 2', chainZoomDisabled2, chainZoomLabel2)}
+                                        id={`${idPrefix}-clear-chain2-selection-btn`}
+                                        aria-label="Clear Chain 2"
+                                        disabled={!selectedChainId2}
+                                        onClick={onClearChainId2}
+                                        style={{ minWidth: 0, padding: '2px 8px' }}
                                     >
-                                        Zoom
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="msp-btn msp-form-control"
-                                        id={`${idPrefix}-highlight-chain2-btn`}
-                                        onClick={onChainHighlight2}
-                                        disabled={chainHighlightDisabled2}
-                                        aria-pressed={chainHighlightOn2}
-                                        title={getChainHighlightTooltip('Select 2', chainHighlightDisabled2, chainHighlightOn2)}
-                                    >
-                                        Highlight: {chainHighlightOn2 ? 'On' : 'Off'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="msp-btn msp-form-control"
-                                        id={`${idPrefix}-inspect-chain2-btn`}
-                                        onClick={onChainInspect2}
-                                        disabled={chainInspectDisabled2}
-                                        aria-pressed={chainInspectOn2}
-                                        title={getChainInspectTooltip('Select 2', chainInspectDisabled2, chainInspectOn2)}
-                                    >
-                                        Inspect: {chainInspectOn2 ? 'On' : 'Off'}
+                                        X
                                     </button>
                                 </div>
-                                <div className="load-data-control-row" style={{ marginLeft: 24 }}>
+                                <div className="load-data-control-row" style={{ marginLeft: 12 }}>
                                     <button
                                         type="button"
                                         className="msp-btn msp-form-control"
-                                        id={`${idPrefix}-residue2-controls-toggle-btn`}
-                                        onClick={() => setShowResidue2Controls((current) => !current)}
-                                        title={getControlsToggleTitle(
-                                            'residue',
-                                            showResidue2Controls,
-                                            residue2SectionDisabled
-                                                ? 'Select a chain in Select 2 to enable residue controls.'
-                                                : undefined
+                                        id={`${idPrefix}-select-chain2-controls-toggle-btn`}
+                                        onClick={() => setShowSelectChain2Controls((current) => !current)}
+                                        title={getControlsToggleTitle('Select 2', showSelectChain2Controls)}
+                                    >
+                                        {showSelectChain2Controls ? 'Hide Select 2' : 'Show Select 2'}
+                                    </button>
+                                </div>
+                                {showSelectChain2Controls && (
+                                    <>
+                                        <div style={{ marginLeft: 24 }}>
+                                            {!!effectiveChainLabelsSlot2 && effectiveChainLabelsSlot2.size > 0 && (
+                                                <ChainSelectionTable
+                                                    chainLabels={effectiveChainLabelsSlot2}
+                                                    selectedChainId={selectedChainId2}
+                                                    onSelectChainId={onSelectChainId2 ?? (() => {})}
+                                                    title="Select"
+                                                    titleTooltip={getChainSelectTooltip('Select 2')}
+                                                    idPrefix={`${idPrefix}-chain2`}
+                                                />
+                                            )}
+                                        </div>
+                                        <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 24 }}>
+                                            <button
+                                                type="button"
+                                                className="msp-btn msp-form-control"
+                                                id={`${idPrefix}-zoom-chain2-btn`}
+                                                onClick={onChainZoom2}
+                                                disabled={chainZoomDisabled2}
+                                                aria-label={`Zoom (${chainZoomLabel2})`}
+                                                title={getChainZoomTooltip('Select 2', chainZoomDisabled2, chainZoomLabel2)}
+                                            >
+                                                Zoom
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="msp-btn msp-form-control"
+                                                id={`${idPrefix}-highlight-chain2-btn`}
+                                                onClick={onChainHighlight2}
+                                                disabled={chainHighlightDisabled2}
+                                                aria-pressed={chainHighlightOn2}
+                                                title={getChainHighlightTooltip('Select 2', chainHighlightDisabled2, chainHighlightOn2)}
+                                            >
+                                                Highlight: {chainHighlightOn2 ? 'On' : 'Off'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="msp-btn msp-form-control"
+                                                id={`${idPrefix}-inspect-chain2-btn`}
+                                                onClick={onChainInspect2}
+                                                disabled={chainInspectDisabled2}
+                                                aria-pressed={chainInspectOn2}
+                                                title={getChainInspectTooltip('Select 2', chainInspectDisabled2, chainInspectOn2)}
+                                            >
+                                                Inspect: {chainInspectOn2 ? 'On' : 'Off'}
+                                            </button>
+                                        </div>
+                                        <div className="load-data-control-row" style={{ marginLeft: 24 }}>
+                                            <button
+                                                type="button"
+                                                className="msp-btn msp-form-control"
+                                                id={`${idPrefix}-residue2-controls-toggle-btn`}
+                                                onClick={() => setShowResidue2Controls((current) => !current)}
+                                                title={getControlsToggleTitle(
+                                                    'residue',
+                                                    showResidue2Controls,
+                                                    residue2SectionDisabled
+                                                        ? 'Select a chain in Select 2 to enable residue controls.'
+                                                        : undefined
+                                                )}
+                                                aria-disabled={residue2SectionDisabled}
+                                                disabled={residue2SectionDisabled}
+                                            >
+                                                {showResidue2Controls ? 'Hide Residue Controls' : 'Show Residue Controls'}
+                                            </button>
+                                        </div>
+                                        {showResidue2Controls && residueInfo2 && (
+                                            renderResidueControls({
+                                                slot: '2',
+                                                residueInfoSlot: residueInfo2,
+                                                selectedResidueIdsSlot: selectedResidueIds2,
+                                                onSelectResidueIdsSlot: onSelectResidueIds2 ?? (() => {}),
+                                                residueCommonIdsSlot: residueCommonIds2,
+                                                orderedResidueIdsSlot: orderedResidueIds2,
+                                                residueTypeBucketsSlot: residueTypeBuckets2,
+                                                zoomLabel: residueZoomLabel2,
+                                                onZoom: onResidueZoom2,
+                                                zoomDisabled: residueZoomDisabled2,
+                                                onHighlight: onResidueHighlight2,
+                                                highlightOn: residueHighlightOn2,
+                                                highlightDisabled: residueHighlightDisabled2,
+                                                onInspect: onResidueInspect2,
+                                                inspectOn: residueInspectOn2,
+                                                inspectDisabled: residueInspectDisabled2,
+                                                selectedChainIdSlot: selectedChainId2,
+                                                showSharedButton: true,
+                                            })
                                         )}
-                                        aria-disabled={residue2SectionDisabled}
-                                        disabled={residue2SectionDisabled}
-                                    >
-                                        {showResidue2Controls ? 'Hide Residue Controls' : 'Show Residue Controls'}
-                                    </button>
-                                </div>
-                                {showResidue2Controls && residueInfo2 && (
-                                    renderResidueControls({
-                                        slot: '2',
-                                        residueInfoSlot: residueInfo2,
-                                        selectedResidueIdsSlot: selectedResidueIds2,
-                                        onSelectResidueIdsSlot: onSelectResidueIds2 ?? (() => {}),
-                                        residueCommonIdsSlot: residueCommonIds2,
-                                        orderedResidueIdsSlot: orderedResidueIds2,
-                                        residueTypeBucketsSlot: residueTypeBuckets2,
-                                        zoomLabel: residueZoomLabel2,
-                                        onZoom: onResidueZoom2,
-                                        zoomDisabled: residueZoomDisabled2,
-                                        onHighlight: onResidueHighlight2,
-                                        highlightOn: residueHighlightOn2,
-                                        highlightDisabled: residueHighlightDisabled2,
-                                        onInspect: onResidueInspect2,
-                                        inspectOn: residueInspectOn2,
-                                        inspectDisabled: residueInspectDisabled2,
-                                        selectedChainIdSlot: selectedChainId2,
-                                        showSharedButton: true,
-                                    })
+                                    </>
                                 )}
                             </>
                         )}
+                        {!!selectedChainId2 && (
+                            <>
+                                <div className="load-data-control-row" id={`${idPrefix}-selected-chain3-label`} style={{ marginLeft: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span>Selected 3: {selectedChain3Label}</span>
+                                    <button
+                                        type="button"
+                                        className="msp-btn msp-form-control"
+                                        id={`${idPrefix}-clear-chain3-selection-btn`}
+                                        aria-label="Clear Chain 3"
+                                        disabled={!selectedChainId3}
+                                        onClick={onClearChainId3}
+                                        style={{ minWidth: 0, padding: '2px 8px' }}
+                                    >
+                                        X
+                                    </button>
+                                </div>
+                                <div className="load-data-control-row" style={{ marginLeft: 12 }}>
+                                    <button
+                                        type="button"
+                                        className="msp-btn msp-form-control"
+                                        id={`${idPrefix}-select-chain3-controls-toggle-btn`}
+                                        onClick={() => setShowSelectChain3Controls((current) => !current)}
+                                        title={getControlsToggleTitle('Select 3', showSelectChain3Controls)}
+                                    >
+                                        {showSelectChain3Controls ? 'Hide Select 3' : 'Show Select 3'}
+                                    </button>
+                                </div>
+                                {showSelectChain3Controls && (
+                                    <>
+                                        <div style={{ marginLeft: 24 }}>
+                                            {!!effectiveChainLabelsSlot3 && effectiveChainLabelsSlot3.size > 0 && (
+                                                <ChainSelectionTable
+                                                    chainLabels={effectiveChainLabelsSlot3}
+                                                    selectedChainId={selectedChainId3}
+                                                    onSelectChainId={onSelectChainId3 ?? (() => {})}
+                                                    title="Select"
+                                                    titleTooltip={getChainSelectTooltip('Select 3')}
+                                                    idPrefix={`${idPrefix}-chain3`}
+                                                />
+                                            )}
+                                        </div>
+                                        <div className="load-data-control-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginLeft: 24 }}>
+                                            <button
+                                                type="button"
+                                                className="msp-btn msp-form-control"
+                                                id={`${idPrefix}-zoom-chain3-btn`}
+                                                onClick={onChainZoom3}
+                                                disabled={chainZoomDisabled3}
+                                                aria-label={`Zoom (${chainZoomLabel3})`}
+                                                title={getChainZoomTooltip('Select 3', chainZoomDisabled3, chainZoomLabel3)}
+                                            >
+                                                Zoom
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="msp-btn msp-form-control"
+                                                id={`${idPrefix}-highlight-chain3-btn`}
+                                                onClick={onChainHighlight3}
+                                                disabled={chainHighlightDisabled3}
+                                                aria-pressed={chainHighlightOn3}
+                                                title={getChainHighlightTooltip('Select 3', chainHighlightDisabled3, chainHighlightOn3)}
+                                            >
+                                                Highlight: {chainHighlightOn3 ? 'On' : 'Off'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="msp-btn msp-form-control"
+                                                id={`${idPrefix}-inspect-chain3-btn`}
+                                                onClick={onChainInspect3}
+                                                disabled={chainInspectDisabled3}
+                                                aria-pressed={chainInspectOn3}
+                                                title={getChainInspectTooltip('Select 3', chainInspectDisabled3, chainInspectOn3)}
+                                            >
+                                                Inspect: {chainInspectOn3 ? 'On' : 'Off'}
+                                            </button>
+                                        </div>
+                                        <div className="load-data-control-row" style={{ marginLeft: 24 }}>
+                                            <button
+                                                type="button"
+                                                className="msp-btn msp-form-control"
+                                                id={`${idPrefix}-residue3-controls-toggle-btn`}
+                                                onClick={() => setShowResidue3Controls((current) => !current)}
+                                                title={getControlsToggleTitle(
+                                                    'residue',
+                                                    showResidue3Controls,
+                                                    residue3SectionDisabled
+                                                        ? 'Select a chain in Select 3 to enable residue controls.'
+                                                        : undefined
+                                                )}
+                                                aria-disabled={residue3SectionDisabled}
+                                                disabled={residue3SectionDisabled}
+                                            >
+                                                {showResidue3Controls ? 'Hide Residue Controls' : 'Show Residue Controls'}
+                                            </button>
+                                        </div>
+                                        {showResidue3Controls && residueInfo3 && (
+                                            renderResidueControls({
+                                                slot: '3',
+                                                residueInfoSlot: residueInfo3,
+                                                selectedResidueIdsSlot: selectedResidueIds3,
+                                                onSelectResidueIdsSlot: onSelectResidueIds3 ?? (() => {}),
+                                                residueCommonIdsSlot: residueCommonIds3,
+                                                orderedResidueIdsSlot: orderedResidueIds3,
+                                                residueTypeBucketsSlot: residueTypeBuckets3,
+                                                zoomLabel: residueZoomLabel3,
+                                                onZoom: onResidueZoom3,
+                                                zoomDisabled: residueZoomDisabled3,
+                                                onHighlight: onResidueHighlight3,
+                                                highlightOn: residueHighlightOn3,
+                                                highlightDisabled: residueHighlightDisabled3,
+                                                onInspect: onResidueInspect3,
+                                                inspectOn: residueInspectOn3,
+                                                inspectDisabled: residueInspectDisabled3,
+                                                selectedChainIdSlot: selectedChainId3,
+                                                showSharedButton: true,
+                                            })
+                                        )}
+                                    </>
+                                )}
+                            </>
+                        )}
+                        {Array.from({ length: additionalSlotCount }).map((_, additionalSlotIndex) => {
+                            if (!additionalSlotVisibility[additionalSlotIndex]) return null;
+                            const slotNumber = additionalSlotIndex + 4;
+                            const currentSelection = additionalSelectedChainIds[additionalSlotIndex] ?? '';
+                            const priorSelections = new Set(
+                                selectedChainSequence.slice(0, slotNumber - 1).filter(Boolean)
+                            );
+                            const chainLabelsForSlot = new Map(
+                                Array.from(effectiveChainLabels.entries()).filter(([id]) => !priorSelections.has(id))
+                            );
+                            const selectedLabel = currentSelection
+                                ? (chainInfo.chainLabels.get(currentSelection) ?? currentSelection)
+                                : 'None';
+                            const isExpanded = Boolean(showAdditionalChainControlsBySlot[additionalSlotIndex]);
+                            return (
+                                <React.Fragment key={`additional-select-slot-${slotNumber}`}>
+                                    <div className="load-data-control-row" id={`${idPrefix}-selected-chain${slotNumber}-label`} style={{ marginLeft: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <span>{`Selected ${slotNumber}: ${selectedLabel}`}</span>
+                                        <button
+                                            type="button"
+                                            className="msp-btn msp-form-control"
+                                            id={`${idPrefix}-clear-chain${slotNumber}-selection-btn`}
+                                            aria-label={`Clear Chain ${slotNumber}`}
+                                            disabled={!currentSelection}
+                                            onClick={() => clearAdditionalSelectionAt(additionalSlotIndex)}
+                                            style={{ minWidth: 0, padding: '2px 8px' }}
+                                        >
+                                            X
+                                        </button>
+                                    </div>
+                                    <div className="load-data-control-row" style={{ marginLeft: 12 }}>
+                                        <button
+                                            type="button"
+                                            className="msp-btn msp-form-control"
+                                            id={`${idPrefix}-select-chain${slotNumber}-controls-toggle-btn`}
+                                            onClick={() => setShowAdditionalChainControlsBySlot(prev => ({ ...prev, [additionalSlotIndex]: !prev[additionalSlotIndex] }))}
+                                            title={getControlsToggleTitle(`Select ${slotNumber}`, isExpanded)}
+                                        >
+                                            {isExpanded ? `Hide Select ${slotNumber}` : `Show Select ${slotNumber}`}
+                                        </button>
+                                    </div>
+                                    {isExpanded && (
+                                        <div style={{ marginLeft: 24 }}>
+                                            {!!chainLabelsForSlot && chainLabelsForSlot.size > 0 && (
+                                                <ChainSelectionTable
+                                                    chainLabels={chainLabelsForSlot}
+                                                    selectedChainId={currentSelection}
+                                                    onSelectChainId={(id) => setAdditionalSelectionAt(additionalSlotIndex, id)}
+                                                    title="Select"
+                                                    titleTooltip={getChainSelectTooltip(`Select ${slotNumber}`)}
+                                                    idPrefix={`${idPrefix}-chain${slotNumber}`}
+                                                />
+                                            )}
+                                        </div>
+                                    )}
+                                </React.Fragment>
+                            );
+                        })}
                     </>
                 )}
             </>
@@ -1545,19 +1920,32 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     onSelectChainId,
     selectedChainId2,
     onSelectChainId2,
+    selectedChainId3,
+    onSelectChainId3,
+    additionalSelectedChainIds,
+    onAdditionalSelectedChainIdsChange,
     chainSelectDisabled,
     chainZoomLabel,
     chainZoomLabel2,
+    chainZoomLabel3,
     onChainHighlight,
     chainHighlightOn = false,
     chainHighlightDisabled,
     onChainInspect,
     chainInspectOn = false,
     chainInspectDisabled,
+    onChainHighlight3,
+    chainHighlightOn3 = false,
+    chainHighlightDisabled3,
+    onChainInspect3,
+    chainInspectOn3 = false,
+    chainInspectDisabled3,
     onChainZoom,
     onChainZoom2,
+    onChainZoom3,
     chainZoomDisabled,
     chainZoomDisabled2,
+    chainZoomDisabled3,
     onCombinedSelectionZoom,
     combinedSelectionZoomDisabled,
     showUniprotAccessionInChainLabels = true,
@@ -1571,19 +1959,32 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     residueCommonIds2,
     selectedResidueIds2,
     onSelectResidueIds2,
+    residueInfo3,
+    residueCommonIds3,
+    selectedResidueIds3,
+    onSelectResidueIds3,
     residueSelectDisabled,
     residueZoomLabel,
     residueZoomLabel2,
+    residueZoomLabel3,
     onResidueHighlight,
     residueHighlightOn = false,
     residueHighlightDisabled,
     onResidueInspect,
     residueInspectOn = false,
     residueInspectDisabled,
+    onResidueHighlight3,
+    residueHighlightOn3 = false,
+    residueHighlightDisabled3,
+    onResidueInspect3,
+    residueInspectOn3 = false,
+    residueInspectDisabled3,
     onResidueZoom,
     onResidueZoom2,
+    onResidueZoom3,
     residueZoomDisabled,
     residueZoomDisabled2,
+    residueZoomDisabled3,
     zoomExtraRadius = 0,
     onZoomExtraRadiusChange = () => {},
     zoomMinRadius = 0,
@@ -2050,19 +2451,32 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                         onSelectChainId={onSelectChainId}
                         selectedChainId2={selectedChainId2}
                         onSelectChainId2={onSelectChainId2}
+                        selectedChainId3={selectedChainId3}
+                        onSelectChainId3={onSelectChainId3}
+                        additionalSelectedChainIds={additionalSelectedChainIds}
+                        onAdditionalSelectedChainIdsChange={onAdditionalSelectedChainIdsChange}
                         chainSelectDisabled={chainSelectDisabled}
                         chainZoomLabel={chainZoomLabel}
                         chainZoomLabel2={chainZoomLabel2}
+                        chainZoomLabel3={chainZoomLabel3}
                         onChainHighlight={onChainHighlight}
                         chainHighlightOn={chainHighlightOn}
                         chainHighlightDisabled={chainHighlightDisabled}
                         onChainInspect={onChainInspect}
                         chainInspectOn={chainInspectOn}
                         chainInspectDisabled={chainInspectDisabled}
+                        onChainHighlight3={onChainHighlight3}
+                        chainHighlightOn3={chainHighlightOn3}
+                        chainHighlightDisabled3={chainHighlightDisabled3}
+                        onChainInspect3={onChainInspect3}
+                        chainInspectOn3={chainInspectOn3}
+                        chainInspectDisabled3={chainInspectDisabled3}
                         onChainZoom={onChainZoom}
                         onChainZoom2={onChainZoom2}
+                        onChainZoom3={onChainZoom3}
                         chainZoomDisabled={chainZoomDisabled}
                         chainZoomDisabled2={chainZoomDisabled2}
+                        chainZoomDisabled3={chainZoomDisabled3}
                         onCombinedSelectionZoom={onCombinedSelectionZoom}
                         combinedSelectionZoomDisabled={combinedSelectionZoomDisabled}
                         showUniprotAccessionInChainLabels={showUniprotAccessionInChainLabels}
@@ -2076,19 +2490,32 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                         residueCommonIds2={residueCommonIds2}
                         selectedResidueIds2={selectedResidueIds2}
                         onSelectResidueIds2={onSelectResidueIds2}
+                        residueInfo3={residueInfo3}
+                        residueCommonIds3={residueCommonIds3}
+                        selectedResidueIds3={selectedResidueIds3}
+                        onSelectResidueIds3={onSelectResidueIds3}
                         residueSelectDisabled={residueSelectDisabled}
                         residueZoomLabel={residueZoomLabel}
                         residueZoomLabel2={residueZoomLabel2}
+                        residueZoomLabel3={residueZoomLabel3}
                         onResidueHighlight={onResidueHighlight}
                         residueHighlightOn={residueHighlightOn}
                         residueHighlightDisabled={residueHighlightDisabled}
                         onResidueInspect={onResidueInspect}
                         residueInspectOn={residueInspectOn}
                         residueInspectDisabled={residueInspectDisabled}
+                        onResidueHighlight3={onResidueHighlight3}
+                        residueHighlightOn3={residueHighlightOn3}
+                        residueHighlightDisabled3={residueHighlightDisabled3}
+                        onResidueInspect3={onResidueInspect3}
+                        residueInspectOn3={residueInspectOn3}
+                        residueInspectDisabled3={residueInspectDisabled3}
                         onResidueZoom={onResidueZoom}
                         onResidueZoom2={onResidueZoom2}
+                        onResidueZoom3={onResidueZoom3}
                         residueZoomDisabled={residueZoomDisabled}
                         residueZoomDisabled2={residueZoomDisabled2}
+                        residueZoomDisabled3={residueZoomDisabled3}
                         zoomExtraRadius={zoomExtraRadius}
                         onZoomExtraRadiusChange={onZoomExtraRadiusChange}
                         zoomMinRadius={zoomMinRadius}

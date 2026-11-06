@@ -148,19 +148,27 @@ interface SessionUiState {
             subunit?: string;
             chainId?: string;
             chainId2?: string;
+            chainId3?: string;
+            chainIdsExtra?: string[];
             residueId?: string;
             residueId2?: string;
+            residueId3?: string;
             residueIds?: string[];
             residueIds2?: string[];
+            residueIds3?: string[];
         };
         aligned?: {
             subunit?: string;
             chainId?: string;
             chainId2?: string;
+            chainId3?: string;
+            chainIdsExtra?: string[];
             residueId?: string;
             residueId2?: string;
+            residueId3?: string;
             residueIds?: string[];
             residueIds2?: string[];
+            residueIds3?: string[];
         };
     };
     highlights?: {
@@ -1935,6 +1943,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         setSelectedChainId: setSelectedChainIdAlignedTo,
     } = useChainState();
     const [selectedChainIdAlignedTo2, setSelectedChainIdAlignedTo2] = useState<string>('');
+    const [selectedChainIdAlignedTo3, setSelectedChainIdAlignedTo3] = useState<string>('');
+    const [selectedChainIdsAlignedToExtra, setSelectedChainIdsAlignedToExtra] = useState<string[]>([]);
     const {
         chainInfo: chainInfoAligned,
         setChainInfo: setChainInfoAligned,
@@ -1942,6 +1952,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         setSelectedChainId: setSelectedChainIdAligned,
     } = useChainState();
     const [selectedChainIdAligned2, setSelectedChainIdAligned2] = useState<string>('');
+    const [selectedChainIdAligned3, setSelectedChainIdAligned3] = useState<string>('');
+    const [selectedChainIdsAlignedExtra, setSelectedChainIdsAlignedExtra] = useState<string[]>([]);
     const [chainFinderQueryAlignedTo, setChainFinderQueryAlignedTo] = useState('');
     const [chainFinderQueryAligned, setChainFinderQueryAligned] = useState('');
     // Residue state (custom hook)
@@ -1961,6 +1973,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         selectedResidueId: selectedResidueIdAlignedTo2,
     } = useResidueState();
     const {
+        residueInfo: residueInfoAlignedTo3,
+        setResidueInfo: setResidueInfoAlignedTo3,
+        selectedResidueIds: selectedResidueIdsAlignedTo3,
+        setSelectedResidueIds: setSelectedResidueIdsAlignedTo3,
+        selectedResidueId: selectedResidueIdAlignedTo3,
+    } = useResidueState();
+    const {
         residueInfo: residueInfoAligned,
         setResidueInfo: setResidueInfoAligned,
         selectedResidueIds: selectedResidueIdsAligned,
@@ -1974,6 +1993,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         selectedResidueIds: selectedResidueIdsAligned2,
         setSelectedResidueIds: setSelectedResidueIdsAligned2,
         selectedResidueId: selectedResidueIdAligned2,
+    } = useResidueState();
+    const {
+        residueInfo: residueInfoAligned3,
+        setResidueInfo: setResidueInfoAligned3,
+        selectedResidueIds: selectedResidueIdsAligned3,
+        setSelectedResidueIds: setSelectedResidueIdsAligned3,
+        selectedResidueId: selectedResidueIdAligned3,
     } = useResidueState();
 
     const getChainColorMapForDefaultTheme = useCallback((mode: ColorThemeMode): Map<string, string> => {
@@ -2635,40 +2661,111 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const handleSelectChainIdAlignedTo = useCallback((chainId: string) => {
         setSelectedChainIdAlignedTo(chainId);
         setSelectedResidueIdsAlignedTo([]);
+        setSelectedChainIdsAlignedToExtra([]);
         if (chainId && selectedChainIdAlignedTo2 === chainId) {
             setSelectedChainIdAlignedTo2('');
             setSelectedResidueIdsAlignedTo2([]);
         }
-    }, [selectedChainIdAlignedTo2]);
+        if (chainId && selectedChainIdAlignedTo3 === chainId) {
+            setSelectedChainIdAlignedTo3('');
+            setSelectedResidueIdsAlignedTo3([]);
+        }
+    }, [selectedChainIdAlignedTo2, selectedChainIdAlignedTo3]);
 
     const handleSelectChainIdAlignedTo2 = useCallback((chainId: string) => {
         if (!selectedChainIdAlignedTo || !chainId || chainId === selectedChainIdAlignedTo) return;
+        if (chainId === selectedChainIdAlignedTo3) {
+            setSelectedChainIdAlignedTo3('');
+            setSelectedResidueIdsAlignedTo3([]);
+        }
+        setSelectedChainIdsAlignedToExtra([]);
         setSelectedChainIdAlignedTo2(chainId);
         setSelectedResidueIdsAlignedTo2([]);
-    }, [selectedChainIdAlignedTo]);
+    }, [selectedChainIdAlignedTo, selectedChainIdAlignedTo3]);
     const handleClearChainIdAlignedTo2 = useCallback(() => {
         setSelectedChainIdAlignedTo2('');
         setSelectedResidueIdsAlignedTo2([]);
+        setSelectedChainIdAlignedTo3('');
+        setSelectedResidueIdsAlignedTo3([]);
+        setSelectedChainIdsAlignedToExtra([]);
+    }, []);
+    const handleSelectChainIdAlignedTo3 = useCallback((chainId: string) => {
+        if (!selectedChainIdAlignedTo2 || !chainId || chainId === selectedChainIdAlignedTo || chainId === selectedChainIdAlignedTo2) return;
+        setSelectedChainIdAlignedTo3(chainId);
+        setSelectedResidueIdsAlignedTo3([]);
+        setSelectedChainIdsAlignedToExtra([]);
+    }, [selectedChainIdAlignedTo, selectedChainIdAlignedTo2]);
+    const handleClearChainIdAlignedTo3 = useCallback(() => {
+        setSelectedChainIdAlignedTo3('');
+        setSelectedResidueIdsAlignedTo3([]);
+        setSelectedChainIdsAlignedToExtra([]);
     }, []);
 
     const handleSelectChainIdAligned = useCallback((chainId: string) => {
         setSelectedChainIdAligned(chainId);
         setSelectedResidueIdsAligned([]);
+        setSelectedChainIdsAlignedExtra([]);
         if (chainId && selectedChainIdAligned2 === chainId) {
             setSelectedChainIdAligned2('');
             setSelectedResidueIdsAligned2([]);
         }
-    }, [selectedChainIdAligned2]);
+        if (chainId && selectedChainIdAligned3 === chainId) {
+            setSelectedChainIdAligned3('');
+            setSelectedResidueIdsAligned3([]);
+        }
+    }, [selectedChainIdAligned2, selectedChainIdAligned3]);
 
     const handleSelectChainIdAligned2 = useCallback((chainId: string) => {
         if (!selectedChainIdAligned || !chainId || chainId === selectedChainIdAligned) return;
+        if (chainId === selectedChainIdAligned3) {
+            setSelectedChainIdAligned3('');
+            setSelectedResidueIdsAligned3([]);
+        }
+        setSelectedChainIdsAlignedExtra([]);
         setSelectedChainIdAligned2(chainId);
         setSelectedResidueIdsAligned2([]);
-    }, [selectedChainIdAligned]);
+    }, [selectedChainIdAligned, selectedChainIdAligned3]);
     const handleClearChainIdAligned2 = useCallback(() => {
         setSelectedChainIdAligned2('');
         setSelectedResidueIdsAligned2([]);
+        setSelectedChainIdAligned3('');
+        setSelectedResidueIdsAligned3([]);
+        setSelectedChainIdsAlignedExtra([]);
     }, []);
+    const handleSelectChainIdAligned3 = useCallback((chainId: string) => {
+        if (!selectedChainIdAligned2 || !chainId || chainId === selectedChainIdAligned || chainId === selectedChainIdAligned2) return;
+        setSelectedChainIdAligned3(chainId);
+        setSelectedResidueIdsAligned3([]);
+        setSelectedChainIdsAlignedExtra([]);
+    }, [selectedChainIdAligned, selectedChainIdAligned2]);
+    const handleClearChainIdAligned3 = useCallback(() => {
+        setSelectedChainIdAligned3('');
+        setSelectedResidueIdsAligned3([]);
+        setSelectedChainIdsAlignedExtra([]);
+    }, []);
+
+    const sanitizeAdditionalChainIds = useCallback((nextIds: string[], occupiedChainIds: string[]): string[] => {
+        const used = new Set(occupiedChainIds.filter(Boolean));
+        const sanitized: string[] = [];
+        for (const id of nextIds) {
+            if (!id || used.has(id)) break;
+            sanitized.push(id);
+            used.add(id);
+        }
+        return sanitized;
+    }, []);
+
+    const handleAdditionalChainIdsAlignedToChange = useCallback((nextIds: string[]) => {
+        setSelectedChainIdsAlignedToExtra(
+            sanitizeAdditionalChainIds(nextIds, [selectedChainIdAlignedTo, selectedChainIdAlignedTo2, selectedChainIdAlignedTo3])
+        );
+    }, [sanitizeAdditionalChainIds, selectedChainIdAlignedTo, selectedChainIdAlignedTo2, selectedChainIdAlignedTo3]);
+
+    const handleAdditionalChainIdsAlignedChange = useCallback((nextIds: string[]) => {
+        setSelectedChainIdsAlignedExtra(
+            sanitizeAdditionalChainIds(nextIds, [selectedChainIdAligned, selectedChainIdAligned2, selectedChainIdAligned3])
+        );
+    }, [sanitizeAdditionalChainIds, selectedChainIdAligned, selectedChainIdAligned2, selectedChainIdAligned3]);
     const pendingSessionSelectionsRef = useRef<SessionUiState['selections'] | null>(null);
 
 
@@ -3969,8 +4066,10 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     // Generalized effect for residue ID selection and info update.
     useUpdateResidueInfo(viewerA.ref, structureRefAAlignedTo, molstarA, selectedChainIdAlignedTo, setResidueInfoAlignedTo, selectedResidueIdsAlignedTo, setSelectedResidueIdsAlignedTo, AlignedTo, 'all');
     useUpdateResidueInfo(viewerA.ref, structureRefAAlignedTo, molstarA, selectedChainIdAlignedTo2, setResidueInfoAlignedTo2, selectedResidueIdsAlignedTo2, setSelectedResidueIdsAlignedTo2, `${AlignedTo}-slot2`, 'all');
+    useUpdateResidueInfo(viewerA.ref, structureRefAAlignedTo, molstarA, selectedChainIdAlignedTo3, setResidueInfoAlignedTo3, selectedResidueIdsAlignedTo3, setSelectedResidueIdsAlignedTo3, `${AlignedTo}-slot3`, 'all');
     useUpdateResidueInfo(viewerB.ref, structureRefBAligned, molstarB, selectedChainIdAligned, setResidueInfoAligned, selectedResidueIdsAligned, setSelectedResidueIdsAligned, Aligned, 'all');
     useUpdateResidueInfo(viewerB.ref, structureRefBAligned, molstarB, selectedChainIdAligned2, setResidueInfoAligned2, selectedResidueIdsAligned2, setSelectedResidueIdsAligned2, `${Aligned}-slot2`, 'all');
+    useUpdateResidueInfo(viewerB.ref, structureRefBAligned, molstarB, selectedChainIdAligned3, setResidueInfoAligned3, selectedResidueIdsAligned3, setSelectedResidueIdsAligned3, `${Aligned}-slot3`, 'all');
 
     // Chain zoom handlers
     const chainZoomAAlignedTo = makeZoomHandler({
@@ -4059,6 +4158,50 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncPluginRef: viewerA.ref,
         syncStructureRef: structureRefAAligned,
         syncChainId: selectedChainIdAligned2,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(B, syncEnabled),
+    });
+    const chainZoomAAlignedTo3 = makeZoomHandler({
+        pluginRef: viewerA.ref,
+        structureRef: structureRefAAlignedTo,
+        property: 'chain-test',
+        chainId: selectedChainIdAlignedTo3,
+        sync: syncEnabled,
+        syncPluginRef: viewerB.ref,
+        syncStructureRef: structureRefBAlignedTo,
+        syncChainId: selectedChainIdAlignedTo3,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(A, syncEnabled),
+    });
+    const chainZoomAAligned3 = makeZoomHandler({
+        pluginRef: viewerA.ref,
+        structureRef: structureRefAAligned,
+        property: 'chain-test',
+        chainId: selectedChainIdAligned3,
+        sync: syncEnabled,
+        syncPluginRef: viewerB.ref,
+        syncStructureRef: structureRefBAligned,
+        syncChainId: selectedChainIdAligned3,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(A, syncEnabled),
+    });
+    const chainZoomBAlignedTo3 = makeZoomHandler({
+        pluginRef: viewerB.ref,
+        structureRef: structureRefBAlignedTo,
+        property: 'chain-test',
+        chainId: selectedChainIdAlignedTo3,
+        sync: syncEnabled,
+        syncPluginRef: viewerA.ref,
+        syncStructureRef: structureRefAAlignedTo,
+        syncChainId: selectedChainIdAlignedTo3,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(B, syncEnabled),
+    });
+    const chainZoomBAligned3 = makeZoomHandler({
+        pluginRef: viewerB.ref,
+        structureRef: structureRefBAligned,
+        property: 'chain-test',
+        chainId: selectedChainIdAligned3,
+        sync: syncEnabled,
+        syncPluginRef: viewerA.ref,
+        syncStructureRef: structureRefAAligned,
+        syncChainId: selectedChainIdAligned3,
         onAfterZoom: () => syncClippingFromMolstarAfterZoom(B, syncEnabled),
     });
     const combinedChainIdsAlignedTo = [selectedChainIdAlignedTo, selectedChainIdAlignedTo2].filter(Boolean);
@@ -4261,6 +4404,20 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         selectedChainIdAlignedTo2,
         selectedChainIdAligned2,
     ]);
+    const commonResidueIdsAcrossSelectedChains3 = useMemo(() => {
+        if (!selectedChainIdAlignedTo3 || !selectedChainIdAligned3) return [] as string[];
+        const idsAlignedTo = new Set(residueInfoAlignedTo3.residueLabels.keys());
+        const idsAligned = new Set(residueInfoAligned3.residueLabels.keys());
+        if (idsAlignedTo.size === 0 || idsAligned.size === 0) return [] as string[];
+        const shared = Array.from(idsAlignedTo).filter((id) => idsAligned.has(id));
+        shared.sort((a, b) => Number(a) - Number(b));
+        return shared;
+    }, [
+        residueInfoAlignedTo3.residueLabels,
+        residueInfoAligned3.residueLabels,
+        selectedChainIdAlignedTo3,
+        selectedChainIdAligned3,
+    ]);
     const residueZoomLabelAlignedTo = selectedResidueIdsAlignedTo.length > 1
         ? `${selectedResidueIdsAlignedTo.length} residues`
         : (residueInfoAlignedTo.residueLabels.get(selectedResidueIdAlignedTo)?.name || '');
@@ -4273,10 +4430,18 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const residueZoomLabelAligned2 = selectedResidueIdsAligned2.length > 1
         ? `${selectedResidueIdsAligned2.length} residues`
         : (residueInfoAligned2.residueLabels.get(selectedResidueIdAligned2)?.name || '');
+    const residueZoomLabelAlignedTo3 = selectedResidueIdsAlignedTo3.length > 1
+        ? `${selectedResidueIdsAlignedTo3.length} residues`
+        : (residueInfoAlignedTo3.residueLabels.get(selectedResidueIdAlignedTo3)?.name || '');
+    const residueZoomLabelAligned3 = selectedResidueIdsAligned3.length > 1
+        ? `${selectedResidueIdsAligned3.length} residues`
+        : (residueInfoAligned3.residueLabels.get(selectedResidueIdAligned3)?.name || '');
     const residueZoomDisabledAlignedTo = selectedResidueIdsAlignedTo.length === 0;
     const residueZoomDisabledAligned = selectedResidueIdsAligned.length === 0;
     const residueZoomDisabledAlignedTo2 = selectedResidueIdsAlignedTo2.length === 0;
     const residueZoomDisabledAligned2 = selectedResidueIdsAligned2.length === 0;
+    const residueZoomDisabledAlignedTo3 = selectedResidueIdsAlignedTo3.length === 0;
+    const residueZoomDisabledAligned3 = selectedResidueIdsAligned3.length === 0;
 
     // Residue zoom handlers
     const residueZoomAAlignedTo = makeZoomHandler({
@@ -4375,6 +4540,18 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         ) as Record<string, string | undefined>,
         [selectedResidueIdsAligned2, residueInfoAligned2]
     );
+    const selectedResidueInsCodesAlignedTo3 = useMemo(
+        () => Object.fromEntries(
+            selectedResidueIdsAlignedTo3.map((id) => [id, residueInfoAlignedTo3.residueLabels.get(id)?.insCode])
+        ) as Record<string, string | undefined>,
+        [selectedResidueIdsAlignedTo3, residueInfoAlignedTo3]
+    );
+    const selectedResidueInsCodesAligned3 = useMemo(
+        () => Object.fromEntries(
+            selectedResidueIdsAligned3.map((id) => [id, residueInfoAligned3.residueLabels.get(id)?.insCode])
+        ) as Record<string, string | undefined>,
+        [selectedResidueIdsAligned3, residueInfoAligned3]
+    );
     const residueZoomAAlignedTo2 = makeZoomHandler({
         pluginRef: viewerA.ref,
         structureRef: structureRefAAlignedTo,
@@ -4455,6 +4632,90 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncResidueIds: selectedResidueIdsAligned2,
         residueInsCodes: selectedResidueInsCodesAligned2,
         syncResidueInsCodes: selectedResidueInsCodesAligned2,
+        zoomExtraRadius: zoomExtraRadiusB,
+        zoomMinRadius: zoomMinRadiusB,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(B, syncEnabled),
+    });
+    const residueZoomAAlignedTo3 = makeZoomHandler({
+        pluginRef: viewerA.ref,
+        structureRef: structureRefAAlignedTo,
+        property: 'residue-test',
+        chainId: selectedChainIdAlignedTo3,
+        sync: syncEnabled,
+        syncPluginRef: viewerB.ref,
+        syncStructureRef: structureRefBAlignedTo,
+        syncChainId: selectedChainIdAlignedTo3,
+        residueId: selectedResidueIdAlignedTo3,
+        syncResidueId: selectedResidueIdAlignedTo3,
+        insCode: residueInfoAlignedTo3.residueLabels.get(selectedResidueIdAlignedTo3)?.insCode,
+        syncInsCode: residueInfoAlignedTo3.residueLabels.get(selectedResidueIdAlignedTo3)?.insCode,
+        residueIds: selectedResidueIdsAlignedTo3,
+        syncResidueIds: selectedResidueIdsAlignedTo3,
+        residueInsCodes: selectedResidueInsCodesAlignedTo3,
+        syncResidueInsCodes: selectedResidueInsCodesAlignedTo3,
+        zoomExtraRadius: zoomExtraRadiusA,
+        zoomMinRadius: zoomMinRadiusA,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(A, syncEnabled),
+    });
+    const residueZoomAAligned3 = makeZoomHandler({
+        pluginRef: viewerA.ref,
+        structureRef: structureRefAAligned,
+        property: 'residue-test',
+        chainId: selectedChainIdAligned3,
+        sync: syncEnabled,
+        syncPluginRef: viewerB.ref,
+        syncStructureRef: structureRefBAligned,
+        syncChainId: selectedChainIdAligned3,
+        residueId: selectedResidueIdAligned3,
+        syncResidueId: selectedResidueIdAligned3,
+        insCode: residueInfoAligned3.residueLabels.get(selectedResidueIdAligned3)?.insCode,
+        syncInsCode: residueInfoAligned3.residueLabels.get(selectedResidueIdAligned3)?.insCode,
+        residueIds: selectedResidueIdsAligned3,
+        syncResidueIds: selectedResidueIdsAligned3,
+        residueInsCodes: selectedResidueInsCodesAligned3,
+        syncResidueInsCodes: selectedResidueInsCodesAligned3,
+        zoomExtraRadius: zoomExtraRadiusA,
+        zoomMinRadius: zoomMinRadiusA,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(A, syncEnabled),
+    });
+    const residueZoomBAlignedTo3 = makeZoomHandler({
+        pluginRef: viewerB.ref,
+        structureRef: structureRefBAlignedTo,
+        property: 'residue-test',
+        chainId: selectedChainIdAlignedTo3,
+        sync: syncEnabled,
+        syncPluginRef: viewerA.ref,
+        syncStructureRef: structureRefAAlignedTo,
+        syncChainId: selectedChainIdAlignedTo3,
+        residueId: selectedResidueIdAlignedTo3,
+        syncResidueId: selectedResidueIdAlignedTo3,
+        insCode: residueInfoAlignedTo3.residueLabels.get(selectedResidueIdAlignedTo3)?.insCode,
+        syncInsCode: residueInfoAlignedTo3.residueLabels.get(selectedResidueIdAlignedTo3)?.insCode,
+        residueIds: selectedResidueIdsAlignedTo3,
+        syncResidueIds: selectedResidueIdsAlignedTo3,
+        residueInsCodes: selectedResidueInsCodesAlignedTo3,
+        syncResidueInsCodes: selectedResidueInsCodesAlignedTo3,
+        zoomExtraRadius: zoomExtraRadiusB,
+        zoomMinRadius: zoomMinRadiusB,
+        onAfterZoom: () => syncClippingFromMolstarAfterZoom(B, syncEnabled),
+    });
+    const residueZoomBAligned3 = makeZoomHandler({
+        pluginRef: viewerB.ref,
+        structureRef: structureRefBAligned,
+        property: 'residue-test',
+        chainId: selectedChainIdAligned3,
+        sync: syncEnabled,
+        syncPluginRef: viewerA.ref,
+        syncStructureRef: structureRefAAligned,
+        syncChainId: selectedChainIdAligned3,
+        residueId: selectedResidueIdAligned3,
+        syncResidueId: selectedResidueIdAligned3,
+        insCode: residueInfoAligned3.residueLabels.get(selectedResidueIdAligned3)?.insCode,
+        syncInsCode: residueInfoAligned3.residueLabels.get(selectedResidueIdAligned3)?.insCode,
+        residueIds: selectedResidueIdsAligned3,
+        syncResidueIds: selectedResidueIdsAligned3,
+        residueInsCodes: selectedResidueInsCodesAligned3,
+        syncResidueInsCodes: selectedResidueInsCodesAligned3,
         zoomExtraRadius: zoomExtraRadiusB,
         zoomMinRadius: zoomMinRadiusB,
         onAfterZoom: () => syncClippingFromMolstarAfterZoom(B, syncEnabled),
@@ -4579,6 +4840,66 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncChainId: selectedChainIdAligned2,
         syncResidueIds: selectedResidueIdsAligned2,
         syncResidueInsCodes: selectedResidueInsCodesAligned2,
+    });
+    const residueHighlightAAlignedTo3 = makeResidueHighlightToggleHandler({
+        pluginRef: viewerA.ref,
+        structureRef: structureRefAAlignedTo,
+        chainId: selectedChainIdAlignedTo3,
+        residueIds: selectedResidueIdsAlignedTo3,
+        residueInsCodes: selectedResidueInsCodesAlignedTo3,
+        isHighlighted: residueHighlightOnAlignedTo,
+        setIsHighlighted: setResidueHighlightOnAlignedTo,
+        sync: syncEnabled,
+        syncPluginRef: viewerB.ref,
+        syncStructureRef: structureRefBAlignedTo,
+        syncChainId: selectedChainIdAlignedTo3,
+        syncResidueIds: selectedResidueIdsAlignedTo3,
+        syncResidueInsCodes: selectedResidueInsCodesAlignedTo3,
+    });
+    const residueHighlightAAligned3 = makeResidueHighlightToggleHandler({
+        pluginRef: viewerA.ref,
+        structureRef: structureRefAAligned,
+        chainId: selectedChainIdAligned3,
+        residueIds: selectedResidueIdsAligned3,
+        residueInsCodes: selectedResidueInsCodesAligned3,
+        isHighlighted: residueHighlightOnAligned,
+        setIsHighlighted: setResidueHighlightOnAligned,
+        sync: syncEnabled,
+        syncPluginRef: viewerB.ref,
+        syncStructureRef: structureRefBAligned,
+        syncChainId: selectedChainIdAligned3,
+        syncResidueIds: selectedResidueIdsAligned3,
+        syncResidueInsCodes: selectedResidueInsCodesAligned3,
+    });
+    const residueHighlightBAlignedTo3 = makeResidueHighlightToggleHandler({
+        pluginRef: viewerB.ref,
+        structureRef: structureRefBAlignedTo,
+        chainId: selectedChainIdAlignedTo3,
+        residueIds: selectedResidueIdsAlignedTo3,
+        residueInsCodes: selectedResidueInsCodesAlignedTo3,
+        isHighlighted: residueHighlightOnAlignedTo,
+        setIsHighlighted: setResidueHighlightOnAlignedTo,
+        sync: syncEnabled,
+        syncPluginRef: viewerA.ref,
+        syncStructureRef: structureRefAAlignedTo,
+        syncChainId: selectedChainIdAlignedTo3,
+        syncResidueIds: selectedResidueIdsAlignedTo3,
+        syncResidueInsCodes: selectedResidueInsCodesAlignedTo3,
+    });
+    const residueHighlightBAligned3 = makeResidueHighlightToggleHandler({
+        pluginRef: viewerB.ref,
+        structureRef: structureRefBAligned,
+        chainId: selectedChainIdAligned3,
+        residueIds: selectedResidueIdsAligned3,
+        residueInsCodes: selectedResidueInsCodesAligned3,
+        isHighlighted: residueHighlightOnAligned,
+        setIsHighlighted: setResidueHighlightOnAligned,
+        sync: syncEnabled,
+        syncPluginRef: viewerA.ref,
+        syncStructureRef: structureRefAAligned,
+        syncChainId: selectedChainIdAligned3,
+        syncResidueIds: selectedResidueIdsAligned3,
+        syncResidueInsCodes: selectedResidueInsCodesAligned3,
     });
 
     const residueInspectAAlignedTo = makeResidueInspectToggleHandler({
@@ -4708,6 +5029,70 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncChainId: selectedChainIdAligned2,
         syncResidueIds: selectedResidueIdsAligned2,
         syncResidueInsCodes: selectedResidueInsCodesAligned2,
+    });
+    const residueInspectAAlignedTo3 = makeResidueInspectToggleHandler({
+        pluginRef: viewerA.ref,
+        structureRef: structureRefAAlignedTo,
+        chainId: selectedChainIdAlignedTo3,
+        residueIds: selectedResidueIdsAlignedTo3,
+        residueInsCodes: selectedResidueInsCodesAlignedTo3,
+        isInspecting: residueInspectOnAAlignedTo,
+        setIsInspecting: setResidueInspectOnAAlignedTo,
+        sync: true,
+        shouldSync: () => inspectSyncVisibilityRef.current.viewerBAlignedToVisible,
+        syncPluginRef: viewerB.ref,
+        syncStructureRef: structureRefBAlignedTo,
+        syncChainId: selectedChainIdAlignedTo3,
+        syncResidueIds: selectedResidueIdsAlignedTo3,
+        syncResidueInsCodes: selectedResidueInsCodesAlignedTo3,
+    });
+    const residueInspectAAligned3 = makeResidueInspectToggleHandler({
+        pluginRef: viewerA.ref,
+        structureRef: structureRefAAligned,
+        chainId: selectedChainIdAligned3,
+        residueIds: selectedResidueIdsAligned3,
+        residueInsCodes: selectedResidueInsCodesAligned3,
+        isInspecting: residueInspectOnAAligned,
+        setIsInspecting: setResidueInspectOnAAligned,
+        sync: true,
+        shouldSync: () => inspectSyncVisibilityRef.current.viewerBAlignedVisible,
+        syncPluginRef: viewerB.ref,
+        syncStructureRef: structureRefBAligned,
+        syncChainId: selectedChainIdAligned3,
+        syncResidueIds: selectedResidueIdsAligned3,
+        syncResidueInsCodes: selectedResidueInsCodesAligned3,
+    });
+    const residueInspectBAlignedTo3 = makeResidueInspectToggleHandler({
+        pluginRef: viewerB.ref,
+        structureRef: structureRefBAlignedTo,
+        chainId: selectedChainIdAlignedTo3,
+        residueIds: selectedResidueIdsAlignedTo3,
+        residueInsCodes: selectedResidueInsCodesAlignedTo3,
+        isInspecting: residueInspectOnBAlignedTo,
+        setIsInspecting: setResidueInspectOnBAlignedTo,
+        sync: true,
+        shouldSync: () => inspectSyncVisibilityRef.current.viewerAAlignedToVisible,
+        syncPluginRef: viewerA.ref,
+        syncStructureRef: structureRefAAlignedTo,
+        syncChainId: selectedChainIdAlignedTo3,
+        syncResidueIds: selectedResidueIdsAlignedTo3,
+        syncResidueInsCodes: selectedResidueInsCodesAlignedTo3,
+    });
+    const residueInspectBAligned3 = makeResidueInspectToggleHandler({
+        pluginRef: viewerB.ref,
+        structureRef: structureRefBAligned,
+        chainId: selectedChainIdAligned3,
+        residueIds: selectedResidueIdsAligned3,
+        residueInsCodes: selectedResidueInsCodesAligned3,
+        isInspecting: residueInspectOnBAligned,
+        setIsInspecting: setResidueInspectOnBAligned,
+        sync: true,
+        shouldSync: () => inspectSyncVisibilityRef.current.viewerAAlignedVisible,
+        syncPluginRef: viewerA.ref,
+        syncStructureRef: structureRefAAligned,
+        syncChainId: selectedChainIdAligned3,
+        syncResidueIds: selectedResidueIdsAligned3,
+        syncResidueInsCodes: selectedResidueInsCodesAligned3,
     });
 
     const makeCombinedToggleHandler = (
@@ -5001,6 +5386,32 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 subunitOn: false,
                 displaySettings: selectionDisplayByMode.Aligned,
             },
+            {
+                structureRef: structureRefAAlignedTo,
+                modeKey: 'AlignedTo',
+                colorMode: colorModeByMode.AlignedTo,
+                chainId: selectedChainIdAlignedTo3,
+                residueIds: selectedResidueIdsAlignedTo3,
+                residueInsCodes: selectedResidueInsCodesAlignedTo3,
+                subunitChainIds: selectedSubunitChainIdsAlignedTo,
+                chainOn: false,
+                residueOn: residueHighlightOnAlignedTo,
+                subunitOn: false,
+                displaySettings: selectionDisplayByMode.AlignedTo,
+            },
+            {
+                structureRef: structureRefAAligned,
+                modeKey: 'Aligned',
+                colorMode: colorModeByMode.Aligned,
+                chainId: selectedChainIdAligned3,
+                residueIds: selectedResidueIdsAligned3,
+                residueInsCodes: selectedResidueInsCodesAligned3,
+                subunitChainIds: selectedSubunitChainIdsAligned,
+                chainOn: false,
+                residueOn: residueHighlightOnAligned,
+                subunitOn: false,
+                displaySettings: selectionDisplayByMode.Aligned,
+            },
         ];
 
         applyHighlightsForPlugin(viewerA.ref.current, datasetConfigs);
@@ -5022,16 +5433,22 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         selectionDisplayByMode,
         selectedChainIdAlignedTo,
         selectedChainIdAlignedTo2,
+        selectedChainIdAlignedTo3,
         selectedChainIdAligned,
         selectedChainIdAligned2,
+        selectedChainIdAligned3,
         selectedResidueIdsAlignedTo,
         selectedResidueIdsAlignedTo2,
+        selectedResidueIdsAlignedTo3,
         selectedResidueIdsAligned,
         selectedResidueIdsAligned2,
+        selectedResidueIdsAligned3,
         selectedResidueInsCodesAlignedTo,
         selectedResidueInsCodesAlignedTo2,
+        selectedResidueInsCodesAlignedTo3,
         selectedResidueInsCodesAligned,
         selectedResidueInsCodesAligned2,
+        selectedResidueInsCodesAligned3,
         selectedSubunitChainIdsAlignedTo,
         selectedSubunitChainIdsAligned,
         structureRefAAlignedTo,
@@ -5238,6 +5655,22 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 alignedToDone = false;
             }
         }
+        if (pending.alignedTo?.chainId3) {
+            if (chainInfoAlignedTo.chainLabels.has(pending.alignedTo.chainId3)) {
+                setSelectedChainIdAlignedTo3(pending.alignedTo.chainId3);
+            } else {
+                alignedToDone = false;
+            }
+        }
+        if (Array.isArray((pending.alignedTo as any)?.chainIdsExtra)) {
+            const requestedExtra = (pending.alignedTo as any).chainIdsExtra as string[];
+            const allPresent = requestedExtra.every((id) => chainInfoAlignedTo.chainLabels.has(id));
+            if (allPresent) {
+                setSelectedChainIdsAlignedToExtra(requestedExtra);
+            } else {
+                alignedToDone = false;
+            }
+        }
 
         if (pending.aligned?.chainId) {
             if (chainInfoAligned.chainLabels.has(pending.aligned.chainId)) {
@@ -5249,6 +5682,22 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         if (pending.aligned?.chainId2) {
             if (chainInfoAligned.chainLabels.has(pending.aligned.chainId2)) {
                 setSelectedChainIdAligned2(pending.aligned.chainId2);
+            } else {
+                alignedDone = false;
+            }
+        }
+        if (pending.aligned?.chainId3) {
+            if (chainInfoAligned.chainLabels.has(pending.aligned.chainId3)) {
+                setSelectedChainIdAligned3(pending.aligned.chainId3);
+            } else {
+                alignedDone = false;
+            }
+        }
+        if (Array.isArray((pending.aligned as any)?.chainIdsExtra)) {
+            const requestedExtra = (pending.aligned as any).chainIdsExtra as string[];
+            const allPresent = requestedExtra.every((id) => chainInfoAligned.chainLabels.has(id));
+            if (allPresent) {
+                setSelectedChainIdsAlignedExtra(requestedExtra);
             } else {
                 alignedDone = false;
             }
@@ -5275,6 +5724,16 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 setSelectedResidueIdsAlignedTo2([pending.alignedTo.residueId2]);
             }
         }
+        const pendingAlignedToResidueIds3 = Array.isArray((pending.alignedTo as any)?.residueIds3)
+            ? (pending.alignedTo as any).residueIds3.filter((id: string) => residueInfoAlignedTo3.residueLabels.has(id))
+            : [];
+        if (pendingAlignedToResidueIds3.length > 0) {
+            setSelectedResidueIdsAlignedTo3(pendingAlignedToResidueIds3);
+        } else if (typeof (pending.alignedTo as any)?.residueId3 === 'string' && residueInfoAlignedTo3.residueLabels.size > 0) {
+            if (residueInfoAlignedTo3.residueLabels.has((pending.alignedTo as any).residueId3)) {
+                setSelectedResidueIdsAlignedTo3([(pending.alignedTo as any).residueId3]);
+            }
+        }
 
         const pendingAlignedResidueIds = Array.isArray(pending.aligned?.residueIds)
             ? pending.aligned!.residueIds!.filter(id => residueInfoAligned.residueLabels.has(id))
@@ -5297,6 +5756,16 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 setSelectedResidueIdsAligned2([pending.aligned.residueId2]);
             }
         }
+        const pendingAlignedResidueIds3 = Array.isArray((pending.aligned as any)?.residueIds3)
+            ? (pending.aligned as any).residueIds3.filter((id: string) => residueInfoAligned3.residueLabels.has(id))
+            : [];
+        if (pendingAlignedResidueIds3.length > 0) {
+            setSelectedResidueIdsAligned3(pendingAlignedResidueIds3);
+        } else if (typeof (pending.aligned as any)?.residueId3 === 'string' && residueInfoAligned3.residueLabels.size > 0) {
+            if (residueInfoAligned3.residueLabels.has((pending.aligned as any).residueId3)) {
+                setSelectedResidueIdsAligned3([(pending.aligned as any).residueId3]);
+            }
+        }
 
         if (alignedToDone && alignedDone) {
             pendingSessionSelectionsRef.current = null;
@@ -5308,16 +5777,24 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         residueInfoAligned.residueLabels,
         setSelectedChainIdAlignedTo,
         setSelectedChainIdAlignedTo2,
+        setSelectedChainIdAlignedTo3,
         setSelectedChainIdAligned,
         setSelectedChainIdAligned2,
+        setSelectedChainIdAligned3,
+        setSelectedChainIdsAlignedToExtra,
+        setSelectedChainIdsAlignedExtra,
         setSelectedResidueIdsAlignedTo,
         setSelectedResidueIdsAlignedTo2,
+        setSelectedResidueIdsAlignedTo3,
         setSelectedResidueIdsAligned,
         setSelectedResidueIdsAligned2,
+        setSelectedResidueIdsAligned3,
         setSelectedResidueIdAlignedTo,
         setSelectedResidueIdAligned,
         residueInfoAlignedTo2.residueLabels,
+        residueInfoAlignedTo3.residueLabels,
         residueInfoAligned2.residueLabels,
+        residueInfoAligned3.residueLabels,
     ]);
 
     // Unified robust delete handler for any representation
@@ -6566,19 +7043,27 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     subunit: selectedSubunitAlignedTo,
                     chainId: selectedChainIdAlignedTo,
                     chainId2: selectedChainIdAlignedTo2,
+                    chainId3: selectedChainIdAlignedTo3,
+                    chainIdsExtra: selectedChainIdsAlignedToExtra,
                     residueId: selectedResidueIdAlignedTo,
                     residueId2: selectedResidueIdAlignedTo2,
+                    residueId3: selectedResidueIdAlignedTo3,
                     residueIds: selectedResidueIdsAlignedTo,
                     residueIds2: selectedResidueIdsAlignedTo2,
+                    residueIds3: selectedResidueIdsAlignedTo3,
                 },
                 aligned: {
                     subunit: selectedSubunitAligned,
                     chainId: selectedChainIdAligned,
                     chainId2: selectedChainIdAligned2,
+                    chainId3: selectedChainIdAligned3,
+                    chainIdsExtra: selectedChainIdsAlignedExtra,
                     residueId: selectedResidueIdAligned,
                     residueId2: selectedResidueIdAligned2,
+                    residueId3: selectedResidueIdAligned3,
                     residueIds: selectedResidueIdsAligned,
                     residueIds2: selectedResidueIdsAligned2,
+                    residueIds3: selectedResidueIdsAligned3,
                 },
             },
             highlights: {
@@ -6757,19 +7242,27 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                         subunit: selectedSubunitAlignedTo,
                         chainId: selectedChainIdAlignedTo,
                         chainId2: selectedChainIdAlignedTo2,
+                        chainId3: selectedChainIdAlignedTo3,
+                        chainIdsExtra: selectedChainIdsAlignedToExtra,
                         residueId: selectedResidueIdAlignedTo,
                         residueId2: selectedResidueIdAlignedTo2,
+                        residueId3: selectedResidueIdAlignedTo3,
                         residueIds: selectedResidueIdsAlignedTo,
                         residueIds2: selectedResidueIdsAlignedTo2,
+                        residueIds3: selectedResidueIdsAlignedTo3,
                     },
                     aligned: {
                         subunit: selectedSubunitAligned,
                         chainId: selectedChainIdAligned,
                         chainId2: selectedChainIdAligned2,
+                        chainId3: selectedChainIdAligned3,
+                        chainIdsExtra: selectedChainIdsAlignedExtra,
                         residueId: selectedResidueIdAligned,
                         residueId2: selectedResidueIdAligned2,
+                        residueId3: selectedResidueIdAligned3,
                         residueIds: selectedResidueIdsAligned,
                         residueIds2: selectedResidueIdsAligned2,
+                        residueIds3: selectedResidueIdsAligned3,
                     },
                 },
                 highlights: {
@@ -7090,6 +7583,14 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 if (typeof uiState.selections.alignedTo.subunit === 'string') setSelectedSubunitAlignedTo(uiState.selections.alignedTo.subunit as any);
                 if (typeof uiState.selections.alignedTo.chainId === 'string') setSelectedChainIdAlignedTo(uiState.selections.alignedTo.chainId);
                 if (typeof uiState.selections.alignedTo.chainId2 === 'string') setSelectedChainIdAlignedTo2(uiState.selections.alignedTo.chainId2);
+                if (typeof (uiState.selections.alignedTo as any).chainId3 === 'string') setSelectedChainIdAlignedTo3((uiState.selections.alignedTo as any).chainId3);
+                if (Array.isArray((uiState.selections.alignedTo as any).chainIdsExtra)) {
+                    setSelectedChainIdsAlignedToExtra(
+                        (uiState.selections.alignedTo as any).chainIdsExtra.filter((id: unknown) => typeof id === 'string')
+                    );
+                } else {
+                    setSelectedChainIdsAlignedToExtra([]);
+                }
                 if (Array.isArray((uiState.selections.alignedTo as any).residueIds)) {
                     setSelectedResidueIdsAlignedTo((uiState.selections.alignedTo as any).residueIds.filter((id: unknown) => typeof id === 'string'));
                 } else if (typeof uiState.selections.alignedTo.residueId === 'string') {
@@ -7100,11 +7601,24 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 } else if (typeof (uiState.selections.alignedTo as any).residueId2 === 'string') {
                     setSelectedResidueIdsAlignedTo2([(uiState.selections.alignedTo as any).residueId2]);
                 }
+                if (Array.isArray((uiState.selections.alignedTo as any).residueIds3)) {
+                    setSelectedResidueIdsAlignedTo3((uiState.selections.alignedTo as any).residueIds3.filter((id: unknown) => typeof id === 'string'));
+                } else if (typeof (uiState.selections.alignedTo as any).residueId3 === 'string') {
+                    setSelectedResidueIdsAlignedTo3([(uiState.selections.alignedTo as any).residueId3]);
+                }
             }
             if (uiState?.selections?.aligned) {
                 if (typeof uiState.selections.aligned.subunit === 'string') setSelectedSubunitAligned(uiState.selections.aligned.subunit as any);
                 if (typeof uiState.selections.aligned.chainId === 'string') setSelectedChainIdAligned(uiState.selections.aligned.chainId);
                 if (typeof uiState.selections.aligned.chainId2 === 'string') setSelectedChainIdAligned2(uiState.selections.aligned.chainId2);
+                if (typeof (uiState.selections.aligned as any).chainId3 === 'string') setSelectedChainIdAligned3((uiState.selections.aligned as any).chainId3);
+                if (Array.isArray((uiState.selections.aligned as any).chainIdsExtra)) {
+                    setSelectedChainIdsAlignedExtra(
+                        (uiState.selections.aligned as any).chainIdsExtra.filter((id: unknown) => typeof id === 'string')
+                    );
+                } else {
+                    setSelectedChainIdsAlignedExtra([]);
+                }
                 if (Array.isArray((uiState.selections.aligned as any).residueIds)) {
                     setSelectedResidueIdsAligned((uiState.selections.aligned as any).residueIds.filter((id: unknown) => typeof id === 'string'));
                 } else if (typeof uiState.selections.aligned.residueId === 'string') {
@@ -7114,6 +7628,11 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     setSelectedResidueIdsAligned2((uiState.selections.aligned as any).residueIds2.filter((id: unknown) => typeof id === 'string'));
                 } else if (typeof (uiState.selections.aligned as any).residueId2 === 'string') {
                     setSelectedResidueIdsAligned2([(uiState.selections.aligned as any).residueId2]);
+                }
+                if (Array.isArray((uiState.selections.aligned as any).residueIds3)) {
+                    setSelectedResidueIdsAligned3((uiState.selections.aligned as any).residueIds3.filter((id: unknown) => typeof id === 'string'));
+                } else if (typeof (uiState.selections.aligned as any).residueId3 === 'string') {
+                    setSelectedResidueIdsAligned3([(uiState.selections.aligned as any).residueId3]);
                 }
             }
             if (uiState?.highlights?.alignedTo) {
@@ -7703,11 +8222,19 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     selectedChainId2: selectedChainIdAlignedTo2,
                                     setSelectedChainId2: handleSelectChainIdAlignedTo2,
                                     clearSelectedChainId2: handleClearChainIdAlignedTo2,
+                                    selectedChainId3: selectedChainIdAlignedTo3,
+                                    setSelectedChainId3: handleSelectChainIdAlignedTo3,
+                                    clearSelectedChainId3: handleClearChainIdAlignedTo3,
+                                    additionalSelectedChainIds: selectedChainIdsAlignedToExtra,
+                                    setAdditionalSelectedChainIds: handleAdditionalChainIdsAlignedToChange,
                                     chainZoomLabel: selectedChainIdAlignedTo && chainInfoAlignedTo.chainLabels.has(selectedChainIdAlignedTo)
                                         ? chainInfoAlignedTo.chainLabels.get(selectedChainIdAlignedTo) ?? ''
                                         : '',
                                     chainZoomLabel2: selectedChainIdAlignedTo2 && chainInfoAlignedTo.chainLabels.has(selectedChainIdAlignedTo2)
                                         ? chainInfoAlignedTo.chainLabels.get(selectedChainIdAlignedTo2) ?? ''
+                                        : '',
+                                    chainZoomLabel3: selectedChainIdAlignedTo3 && chainInfoAlignedTo.chainLabels.has(selectedChainIdAlignedTo3)
+                                        ? chainInfoAlignedTo.chainLabels.get(selectedChainIdAlignedTo3) ?? ''
                                         : '',
                                     onChainHighlight: residueHighlightAAlignedTo.handleButtonClick,
                                     chainHighlightOn: viewerA.isMoleculeAlignedToVisible ? residueHighlightOnAlignedTo : false,
@@ -7721,10 +8248,18 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     onChainInspect2: residueInspectAAlignedTo2.handleButtonClick,
                                     chainInspectOn2: viewerA.isMoleculeAlignedToVisible ? residueInspectOnAAlignedTo : false,
                                     chainInspectDisabled2: !viewerA.isMoleculeAlignedToVisible || (selectedResidueIdsAlignedTo2.length === 0 && !residueInspectOnAAlignedTo),
+                                    onChainHighlight3: residueHighlightAAlignedTo3.handleButtonClick,
+                                    chainHighlightOn3: viewerA.isMoleculeAlignedToVisible ? residueHighlightOnAlignedTo : false,
+                                    chainHighlightDisabled3: !viewerA.isMoleculeAlignedToVisible || (selectedResidueIdsAlignedTo3.length === 0 && !residueHighlightOnAlignedTo),
+                                    onChainInspect3: residueInspectAAlignedTo3.handleButtonClick,
+                                    chainInspectOn3: viewerA.isMoleculeAlignedToVisible ? residueInspectOnAAlignedTo : false,
+                                    chainInspectDisabled3: !viewerA.isMoleculeAlignedToVisible || (selectedResidueIdsAlignedTo3.length === 0 && !residueInspectOnAAlignedTo),
                                     onChainZoom: residueZoomAAlignedTo.handleButtonClick,
                                     onChainZoom2: residueZoomAAlignedTo2.handleButtonClick,
+                                    onChainZoom3: residueZoomAAlignedTo3.handleButtonClick,
                                     chainZoomDisabled: !selectedChainIdAlignedTo,
                                     chainZoomDisabled2: residueZoomDisabledAlignedTo2,
+                                    chainZoomDisabled3: residueZoomDisabledAlignedTo3,
                                     onCombinedSelectionZoom: combinedSelectionZoomAAlignedTo.handleButtonClick,
                                     combinedSelectionZoomDisabled: !hasCombinedResiduesAlignedTo,
                                     onCombinedSelectionHighlight: combinedSelectionHighlightAAlignedTo.handleButtonClick,
@@ -7748,8 +8283,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueCommonIds2: commonResidueIdsAcrossSelectedChains2,
                                     selectedResidueIds2: selectedResidueIdsAlignedTo2,
                                     setSelectedResidueIds2: setSelectedResidueIdsAlignedTo2,
+                                    residueInfo3: residueInfoAlignedTo3,
+                                    residueCommonIds3: commonResidueIdsAcrossSelectedChains3,
+                                    selectedResidueIds3: selectedResidueIdsAlignedTo3,
+                                    setSelectedResidueIds3: setSelectedResidueIdsAlignedTo3,
                                     residueZoomLabel: residueZoomLabelAlignedTo,
                                     residueZoomLabel2: residueZoomLabelAlignedTo2,
+                                    residueZoomLabel3: residueZoomLabelAlignedTo3,
                                     onResidueHighlight: residueHighlightAAlignedTo.handleButtonClick,
                                     residueHighlightOn: viewerA.isMoleculeAlignedToVisible ? residueHighlightOnAlignedTo : false,
                                     residueHighlightDisabled: !viewerA.isMoleculeAlignedToVisible || (selectedResidueIdsAlignedTo.length === 0 && !residueHighlightOnAlignedTo),
@@ -7762,10 +8302,18 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     onResidueInspect2: residueInspectAAlignedTo2.handleButtonClick,
                                     residueInspectOn2: viewerA.isMoleculeAlignedToVisible ? residueInspectOnAAlignedTo : false,
                                     residueInspectDisabled2: !viewerA.isMoleculeAlignedToVisible || (selectedResidueIdsAlignedTo2.length === 0 && !residueInspectOnAAlignedTo),
+                                    onResidueHighlight3: residueHighlightAAlignedTo3.handleButtonClick,
+                                    residueHighlightOn3: viewerA.isMoleculeAlignedToVisible ? residueHighlightOnAlignedTo : false,
+                                    residueHighlightDisabled3: !viewerA.isMoleculeAlignedToVisible || (selectedResidueIdsAlignedTo3.length === 0 && !residueHighlightOnAlignedTo),
+                                    onResidueInspect3: residueInspectAAlignedTo3.handleButtonClick,
+                                    residueInspectOn3: viewerA.isMoleculeAlignedToVisible ? residueInspectOnAAlignedTo : false,
+                                    residueInspectDisabled3: !viewerA.isMoleculeAlignedToVisible || (selectedResidueIdsAlignedTo3.length === 0 && !residueInspectOnAAlignedTo),
                                     onResidueZoom: residueZoomAAlignedTo.handleButtonClick,
                                     onResidueZoom2: residueZoomAAlignedTo2.handleButtonClick,
+                                    onResidueZoom3: residueZoomAAlignedTo3.handleButtonClick,
                                     residueZoomDisabled: residueZoomDisabledAlignedTo,
                                     residueZoomDisabled2: residueZoomDisabledAlignedTo2,
+                                    residueZoomDisabled3: residueZoomDisabledAlignedTo3,
                                     zoomExtraRadius: zoomExtraRadiusA,
                                     setZoomExtraRadius: setZoomExtraRadiusA,
                                     zoomMinRadius: zoomMinRadiusA,
@@ -7860,11 +8408,19 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     selectedChainId2: selectedChainIdAligned2,
                                     setSelectedChainId2: handleSelectChainIdAligned2,
                                     clearSelectedChainId2: handleClearChainIdAligned2,
+                                    selectedChainId3: selectedChainIdAligned3,
+                                    setSelectedChainId3: handleSelectChainIdAligned3,
+                                    clearSelectedChainId3: handleClearChainIdAligned3,
+                                    additionalSelectedChainIds: selectedChainIdsAlignedExtra,
+                                    setAdditionalSelectedChainIds: handleAdditionalChainIdsAlignedChange,
                                     chainZoomLabel: selectedChainIdAligned && chainInfoAligned.chainLabels.has(selectedChainIdAligned)
                                         ? chainInfoAligned.chainLabels.get(selectedChainIdAligned) ?? ''
                                         : '',
                                     chainZoomLabel2: selectedChainIdAligned2 && chainInfoAligned.chainLabels.has(selectedChainIdAligned2)
                                         ? chainInfoAligned.chainLabels.get(selectedChainIdAligned2) ?? ''
+                                        : '',
+                                    chainZoomLabel3: selectedChainIdAligned3 && chainInfoAligned.chainLabels.has(selectedChainIdAligned3)
+                                        ? chainInfoAligned.chainLabels.get(selectedChainIdAligned3) ?? ''
                                         : '',
                                     onChainHighlight: residueHighlightAAligned.handleButtonClick,
                                     chainHighlightOn: viewerA.isMoleculeAlignedVisible ? residueHighlightOnAligned : false,
@@ -7878,10 +8434,18 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     onChainInspect2: residueInspectAAligned2.handleButtonClick,
                                     chainInspectOn2: viewerA.isMoleculeAlignedVisible ? residueInspectOnAAligned : false,
                                     chainInspectDisabled2: !viewerA.isMoleculeAlignedVisible || (selectedResidueIdsAligned2.length === 0 && !residueInspectOnAAligned),
+                                    onChainHighlight3: residueHighlightAAligned3.handleButtonClick,
+                                    chainHighlightOn3: viewerA.isMoleculeAlignedVisible ? residueHighlightOnAligned : false,
+                                    chainHighlightDisabled3: !viewerA.isMoleculeAlignedVisible || (selectedResidueIdsAligned3.length === 0 && !residueHighlightOnAligned),
+                                    onChainInspect3: residueInspectAAligned3.handleButtonClick,
+                                    chainInspectOn3: viewerA.isMoleculeAlignedVisible ? residueInspectOnAAligned : false,
+                                    chainInspectDisabled3: !viewerA.isMoleculeAlignedVisible || (selectedResidueIdsAligned3.length === 0 && !residueInspectOnAAligned),
                                     onChainZoom: residueZoomAAligned.handleButtonClick,
                                     onChainZoom2: residueZoomAAligned2.handleButtonClick,
+                                    onChainZoom3: residueZoomAAligned3.handleButtonClick,
                                     chainZoomDisabled: !selectedChainIdAligned,
                                     chainZoomDisabled2: residueZoomDisabledAligned2,
+                                    chainZoomDisabled3: residueZoomDisabledAligned3,
                                     onCombinedSelectionZoom: combinedSelectionZoomAAligned.handleButtonClick,
                                     combinedSelectionZoomDisabled: !hasCombinedResiduesAligned,
                                     onCombinedSelectionHighlight: combinedSelectionHighlightAAligned.handleButtonClick,
@@ -7913,16 +8477,29 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     onResidueInspect: residueInspectAAligned.handleButtonClick,
                                     residueInspectOn: viewerA.isMoleculeAlignedVisible ? residueInspectOnAAligned : false,
                                     residueInspectDisabled: !viewerA.isMoleculeAlignedVisible || (selectedResidueIdsAligned.length === 0 && !residueInspectOnAAligned),
+                                    residueInfo3: residueInfoAligned3,
+                                    residueCommonIds3: commonResidueIdsAcrossSelectedChains3,
+                                    selectedResidueIds3: selectedResidueIdsAligned3,
+                                    setSelectedResidueIds3: setSelectedResidueIdsAligned3,
+                                    residueZoomLabel3: residueZoomLabelAligned3,
                                     onResidueHighlight2: residueHighlightAAligned2.handleButtonClick,
                                     residueHighlightOn2: viewerA.isMoleculeAlignedVisible ? residueHighlightOnAligned : false,
                                     residueHighlightDisabled2: !viewerA.isMoleculeAlignedVisible || (selectedResidueIdsAligned2.length === 0 && !residueHighlightOnAligned),
                                     onResidueInspect2: residueInspectAAligned2.handleButtonClick,
                                     residueInspectOn2: viewerA.isMoleculeAlignedVisible ? residueInspectOnAAligned : false,
                                     residueInspectDisabled2: !viewerA.isMoleculeAlignedVisible || (selectedResidueIdsAligned2.length === 0 && !residueInspectOnAAligned),
+                                    onResidueHighlight3: residueHighlightAAligned3.handleButtonClick,
+                                    residueHighlightOn3: viewerA.isMoleculeAlignedVisible ? residueHighlightOnAligned : false,
+                                    residueHighlightDisabled3: !viewerA.isMoleculeAlignedVisible || (selectedResidueIdsAligned3.length === 0 && !residueHighlightOnAligned),
+                                    onResidueInspect3: residueInspectAAligned3.handleButtonClick,
+                                    residueInspectOn3: viewerA.isMoleculeAlignedVisible ? residueInspectOnAAligned : false,
+                                    residueInspectDisabled3: !viewerA.isMoleculeAlignedVisible || (selectedResidueIdsAligned3.length === 0 && !residueInspectOnAAligned),
                                     onResidueZoom: residueZoomAAligned.handleButtonClick,
                                     onResidueZoom2: residueZoomAAligned2.handleButtonClick,
+                                    onResidueZoom3: residueZoomAAligned3.handleButtonClick,
                                     residueZoomDisabled: residueZoomDisabledAligned,
                                     residueZoomDisabled2: residueZoomDisabledAligned2,
+                                    residueZoomDisabled3: residueZoomDisabledAligned3,
                                     zoomExtraRadius: zoomExtraRadiusA,
                                     setZoomExtraRadius: setZoomExtraRadiusA,
                                     zoomMinRadius: zoomMinRadiusA,
@@ -8123,11 +8700,19 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     selectedChainId2: selectedChainIdAlignedTo2,
                                     setSelectedChainId2: handleSelectChainIdAlignedTo2,
                                     clearSelectedChainId2: handleClearChainIdAlignedTo2,
+                                    selectedChainId3: selectedChainIdAlignedTo3,
+                                    setSelectedChainId3: handleSelectChainIdAlignedTo3,
+                                    clearSelectedChainId3: handleClearChainIdAlignedTo3,
+                                    additionalSelectedChainIds: selectedChainIdsAlignedToExtra,
+                                    setAdditionalSelectedChainIds: handleAdditionalChainIdsAlignedToChange,
                                     chainZoomLabel: selectedChainIdAlignedTo && chainInfoAlignedTo.chainLabels.has(selectedChainIdAlignedTo)
                                         ? chainInfoAlignedTo.chainLabels.get(selectedChainIdAlignedTo) ?? ''
                                         : '',
                                     chainZoomLabel2: selectedChainIdAlignedTo2 && chainInfoAlignedTo.chainLabels.has(selectedChainIdAlignedTo2)
                                         ? chainInfoAlignedTo.chainLabels.get(selectedChainIdAlignedTo2) ?? ''
+                                        : '',
+                                    chainZoomLabel3: selectedChainIdAlignedTo3 && chainInfoAlignedTo.chainLabels.has(selectedChainIdAlignedTo3)
+                                        ? chainInfoAlignedTo.chainLabels.get(selectedChainIdAlignedTo3) ?? ''
                                         : '',
                                     onChainHighlight: residueHighlightBAlignedTo.handleButtonClick,
                                     chainHighlightOn: viewerB.isMoleculeAlignedToVisible ? residueHighlightOnAlignedTo : false,
@@ -8141,10 +8726,18 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     onChainInspect2: residueInspectBAlignedTo2.handleButtonClick,
                                     chainInspectOn2: viewerB.isMoleculeAlignedToVisible ? residueInspectOnBAlignedTo : false,
                                     chainInspectDisabled2: !viewerB.isMoleculeAlignedToVisible || (selectedResidueIdsAlignedTo2.length === 0 && !residueInspectOnBAlignedTo),
+                                    onChainHighlight3: residueHighlightBAlignedTo3.handleButtonClick,
+                                    chainHighlightOn3: viewerB.isMoleculeAlignedToVisible ? residueHighlightOnAlignedTo : false,
+                                    chainHighlightDisabled3: !viewerB.isMoleculeAlignedToVisible || (selectedResidueIdsAlignedTo3.length === 0 && !residueHighlightOnAlignedTo),
+                                    onChainInspect3: residueInspectBAlignedTo3.handleButtonClick,
+                                    chainInspectOn3: viewerB.isMoleculeAlignedToVisible ? residueInspectOnBAlignedTo : false,
+                                    chainInspectDisabled3: !viewerB.isMoleculeAlignedToVisible || (selectedResidueIdsAlignedTo3.length === 0 && !residueInspectOnBAlignedTo),
                                     onChainZoom: residueZoomBAlignedTo.handleButtonClick,
                                     onChainZoom2: residueZoomBAlignedTo2.handleButtonClick,
+                                    onChainZoom3: residueZoomBAlignedTo3.handleButtonClick,
                                     chainZoomDisabled: !selectedChainIdAlignedTo,
                                     chainZoomDisabled2: residueZoomDisabledAlignedTo2,
+                                    chainZoomDisabled3: residueZoomDisabledAlignedTo3,
                                     onCombinedSelectionZoom: combinedSelectionZoomBAlignedTo.handleButtonClick,
                                     combinedSelectionZoomDisabled: !hasCombinedResiduesAlignedTo,
                                     onCombinedSelectionHighlight: combinedSelectionHighlightBAlignedTo.handleButtonClick,
@@ -8168,8 +8761,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueCommonIds2: commonResidueIdsAcrossSelectedChains2,
                                     selectedResidueIds2: selectedResidueIdsAlignedTo2,
                                     setSelectedResidueIds2: setSelectedResidueIdsAlignedTo2,
+                                    residueInfo3: residueInfoAlignedTo3,
+                                    residueCommonIds3: commonResidueIdsAcrossSelectedChains3,
+                                    selectedResidueIds3: selectedResidueIdsAlignedTo3,
+                                    setSelectedResidueIds3: setSelectedResidueIdsAlignedTo3,
                                     residueZoomLabel: residueZoomLabelAlignedTo,
                                     residueZoomLabel2: residueZoomLabelAlignedTo2,
+                                    residueZoomLabel3: residueZoomLabelAlignedTo3,
                                     onResidueHighlight: residueHighlightBAlignedTo.handleButtonClick,
                                     residueHighlightOn: viewerB.isMoleculeAlignedToVisible ? residueHighlightOnAlignedTo : false,
                                     residueHighlightDisabled: !viewerB.isMoleculeAlignedToVisible || (selectedResidueIdsAlignedTo.length === 0 && !residueHighlightOnAlignedTo),
@@ -8182,10 +8780,18 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     onResidueInspect2: residueInspectBAlignedTo2.handleButtonClick,
                                     residueInspectOn2: viewerB.isMoleculeAlignedToVisible ? residueInspectOnBAlignedTo : false,
                                     residueInspectDisabled2: !viewerB.isMoleculeAlignedToVisible || (selectedResidueIdsAlignedTo2.length === 0 && !residueInspectOnBAlignedTo),
+                                    onResidueHighlight3: residueHighlightBAlignedTo3.handleButtonClick,
+                                    residueHighlightOn3: viewerB.isMoleculeAlignedToVisible ? residueHighlightOnAlignedTo : false,
+                                    residueHighlightDisabled3: !viewerB.isMoleculeAlignedToVisible || (selectedResidueIdsAlignedTo3.length === 0 && !residueHighlightOnAlignedTo),
+                                    onResidueInspect3: residueInspectBAlignedTo3.handleButtonClick,
+                                    residueInspectOn3: viewerB.isMoleculeAlignedToVisible ? residueInspectOnBAlignedTo : false,
+                                    residueInspectDisabled3: !viewerB.isMoleculeAlignedToVisible || (selectedResidueIdsAlignedTo3.length === 0 && !residueInspectOnBAlignedTo),
                                     onResidueZoom: residueZoomBAlignedTo.handleButtonClick,
                                     onResidueZoom2: residueZoomBAlignedTo2.handleButtonClick,
+                                    onResidueZoom3: residueZoomBAlignedTo3.handleButtonClick,
                                     residueZoomDisabled: residueZoomDisabledAlignedTo,
                                     residueZoomDisabled2: residueZoomDisabledAlignedTo2,
+                                    residueZoomDisabled3: residueZoomDisabledAlignedTo3,
                                     zoomExtraRadius: zoomExtraRadiusB,
                                     setZoomExtraRadius: setZoomExtraRadiusB,
                                     zoomMinRadius: zoomMinRadiusB,
@@ -8280,11 +8886,19 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     selectedChainId2: selectedChainIdAligned2,
                                     setSelectedChainId2: handleSelectChainIdAligned2,
                                     clearSelectedChainId2: handleClearChainIdAligned2,
+                                    selectedChainId3: selectedChainIdAligned3,
+                                    setSelectedChainId3: handleSelectChainIdAligned3,
+                                    clearSelectedChainId3: handleClearChainIdAligned3,
+                                    additionalSelectedChainIds: selectedChainIdsAlignedExtra,
+                                    setAdditionalSelectedChainIds: handleAdditionalChainIdsAlignedChange,
                                     chainZoomLabel: selectedChainIdAligned && chainInfoAligned.chainLabels.has(selectedChainIdAligned)
                                         ? chainInfoAligned.chainLabels.get(selectedChainIdAligned) ?? ''
                                         : '',
                                     chainZoomLabel2: selectedChainIdAligned2 && chainInfoAligned.chainLabels.has(selectedChainIdAligned2)
                                         ? chainInfoAligned.chainLabels.get(selectedChainIdAligned2) ?? ''
+                                        : '',
+                                    chainZoomLabel3: selectedChainIdAligned3 && chainInfoAligned.chainLabels.has(selectedChainIdAligned3)
+                                        ? chainInfoAligned.chainLabels.get(selectedChainIdAligned3) ?? ''
                                         : '',
                                     onChainHighlight: residueHighlightBAligned.handleButtonClick,
                                     chainHighlightOn: viewerB.isMoleculeAlignedVisible ? residueHighlightOnAligned : false,
@@ -8298,10 +8912,18 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     onChainInspect2: residueInspectBAligned2.handleButtonClick,
                                     chainInspectOn2: viewerB.isMoleculeAlignedVisible ? residueInspectOnBAligned : false,
                                     chainInspectDisabled2: !viewerB.isMoleculeAlignedVisible || (selectedResidueIdsAligned2.length === 0 && !residueInspectOnBAligned),
+                                    onChainHighlight3: residueHighlightBAligned3.handleButtonClick,
+                                    chainHighlightOn3: viewerB.isMoleculeAlignedVisible ? residueHighlightOnAligned : false,
+                                    chainHighlightDisabled3: !viewerB.isMoleculeAlignedVisible || (selectedResidueIdsAligned3.length === 0 && !residueHighlightOnAligned),
+                                    onChainInspect3: residueInspectBAligned3.handleButtonClick,
+                                    chainInspectOn3: viewerB.isMoleculeAlignedVisible ? residueInspectOnBAligned : false,
+                                    chainInspectDisabled3: !viewerB.isMoleculeAlignedVisible || (selectedResidueIdsAligned3.length === 0 && !residueInspectOnBAligned),
                                     onChainZoom: residueZoomBAligned.handleButtonClick,
                                     onChainZoom2: residueZoomBAligned2.handleButtonClick,
+                                    onChainZoom3: residueZoomBAligned3.handleButtonClick,
                                     chainZoomDisabled: !selectedChainIdAligned,
                                     chainZoomDisabled2: residueZoomDisabledAligned2,
+                                    chainZoomDisabled3: residueZoomDisabledAligned3,
                                     onCombinedSelectionZoom: combinedSelectionZoomBAligned.handleButtonClick,
                                     combinedSelectionZoomDisabled: !hasCombinedResiduesAligned,
                                     onCombinedSelectionHighlight: combinedSelectionHighlightBAligned.handleButtonClick,
@@ -8325,8 +8947,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     residueCommonIds2: commonResidueIdsAcrossSelectedChains2,
                                     selectedResidueIds2: selectedResidueIdsAligned2,
                                     setSelectedResidueIds2: setSelectedResidueIdsAligned2,
+                                    residueInfo3: residueInfoAligned3,
+                                    residueCommonIds3: commonResidueIdsAcrossSelectedChains3,
+                                    selectedResidueIds3: selectedResidueIdsAligned3,
+                                    setSelectedResidueIds3: setSelectedResidueIdsAligned3,
                                     residueZoomLabel: residueZoomLabelAligned,
                                     residueZoomLabel2: residueZoomLabelAligned2,
+                                    residueZoomLabel3: residueZoomLabelAligned3,
                                     onResidueHighlight: residueHighlightBAligned.handleButtonClick,
                                     residueHighlightOn: viewerB.isMoleculeAlignedVisible ? residueHighlightOnAligned : false,
                                     residueHighlightDisabled: !viewerB.isMoleculeAlignedVisible || (selectedResidueIdsAligned.length === 0 && !residueHighlightOnAligned),
@@ -8339,10 +8966,18 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     onResidueInspect2: residueInspectBAligned2.handleButtonClick,
                                     residueInspectOn2: viewerB.isMoleculeAlignedVisible ? residueInspectOnBAligned : false,
                                     residueInspectDisabled2: !viewerB.isMoleculeAlignedVisible || (selectedResidueIdsAligned2.length === 0 && !residueInspectOnBAligned),
+                                    onResidueHighlight3: residueHighlightBAligned3.handleButtonClick,
+                                    residueHighlightOn3: viewerB.isMoleculeAlignedVisible ? residueHighlightOnAligned : false,
+                                    residueHighlightDisabled3: !viewerB.isMoleculeAlignedVisible || (selectedResidueIdsAligned3.length === 0 && !residueHighlightOnAligned),
+                                    onResidueInspect3: residueInspectBAligned3.handleButtonClick,
+                                    residueInspectOn3: viewerB.isMoleculeAlignedVisible ? residueInspectOnBAligned : false,
+                                    residueInspectDisabled3: !viewerB.isMoleculeAlignedVisible || (selectedResidueIdsAligned3.length === 0 && !residueInspectOnBAligned),
                                     onResidueZoom: residueZoomBAligned.handleButtonClick,
                                     onResidueZoom2: residueZoomBAligned2.handleButtonClick,
+                                    onResidueZoom3: residueZoomBAligned3.handleButtonClick,
                                     residueZoomDisabled: residueZoomDisabledAligned,
                                     residueZoomDisabled2: residueZoomDisabledAligned2,
+                                    residueZoomDisabled3: residueZoomDisabledAligned3,
                                     zoomExtraRadius: zoomExtraRadiusB,
                                     setZoomExtraRadius: setZoomExtraRadiusB,
                                     zoomMinRadius: zoomMinRadiusB,

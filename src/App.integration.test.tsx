@@ -1691,6 +1691,10 @@ describe('App integration: AlignedTo and Aligned loading', () => {
             chainId2: 'B',
             residueIds2: ['20'],
             residueId2: '20',
+            chainId3: 'A',
+            residueIds3: ['10'],
+            residueId3: '10',
+            chainIdsExtra: ['B'],
           },
           aligned: {
             subunit: 'Small',
@@ -1700,6 +1704,10 @@ describe('App integration: AlignedTo and Aligned loading', () => {
             chainId2: 'A',
             residueIds2: ['10'],
             residueId2: '10',
+            chainId3: 'B',
+            residueIds3: ['20'],
+            residueId3: '20',
+            chainIdsExtra: ['A'],
           },
         },
       },
@@ -1719,9 +1727,61 @@ describe('App integration: AlignedTo and Aligned loading', () => {
       expect(restored.uiState.selections.alignedTo.chainId2).toBe('B');
       expect(restored.uiState.selections.alignedTo.residueIds2).toEqual(['20']);
       expect(restored.uiState.selections.alignedTo.residueId2).toBe('20');
+      expect(restored.uiState.selections.alignedTo.chainId3).toBe('A');
+      expect(restored.uiState.selections.alignedTo.residueIds3).toEqual(['10']);
+      expect(restored.uiState.selections.alignedTo.residueId3).toBe('10');
+      expect((restored.uiState.selections.alignedTo as any).chainIdsExtra).toEqual(['B']);
       expect(restored.uiState.selections.aligned.chainId2).toBe('A');
       expect(restored.uiState.selections.aligned.residueIds2).toEqual(['10']);
       expect(restored.uiState.selections.aligned.residueId2).toBe('10');
+      expect(restored.uiState.selections.aligned.chainId3).toBe('B');
+      expect(restored.uiState.selections.aligned.residueIds3).toEqual(['20']);
+      expect(restored.uiState.selections.aligned.residueId3).toBe('20');
+      expect((restored.uiState.selections.aligned as any).chainIdsExtra).toEqual(['A']);
+    }, { timeout: 5000 });
+  });
+
+  it('filters non-string chainIdsExtra values during session load', async () => {
+    render(<App />);
+    await waitFor(() => expect(screen.getByRole('banner')).toBeInTheDocument());
+
+    const onSessionLoaded = (globalThis as any).__onSessionLoaded as ((session: any, files: Record<string, File>) => Promise<void>) | undefined;
+    expect(onSessionLoaded).toBeDefined();
+
+    const session = {
+      viewerA: { moleculeAlignedTo: { filename: '4ug0.cif' } },
+      viewerB: { moleculeAligned: { filename: '6xu8.cif' } },
+      uiState: {
+        selections: {
+          alignedTo: {
+            chainId: 'A',
+            chainId2: 'B',
+            chainId3: 'C',
+            chainIdsExtra: ['D', 42, null, 'E'],
+          },
+          aligned: {
+            chainId: 'A',
+            chainId2: 'B',
+            chainId3: 'C',
+            chainIdsExtra: ['D', false, {}, 'E'],
+          },
+        },
+      },
+    };
+    const files = {
+      '4ug0.cif': loadTestFile('4ug0.cif'),
+      '6xu8.cif': loadTestFile('6xu8.cif'),
+    };
+
+    await onSessionLoaded!(session, files);
+
+    const getSessionState = (globalThis as any).__getSessionState as (() => any) | undefined;
+    expect(getSessionState).toBeDefined();
+
+    await waitFor(() => {
+      const restored = getSessionState!();
+      expect((restored.uiState.selections.alignedTo as any).chainIdsExtra).toEqual(['D', 'E']);
+      expect((restored.uiState.selections.aligned as any).chainIdsExtra).toEqual(['D', 'E']);
     }, { timeout: 5000 });
   });
 
