@@ -812,10 +812,29 @@ npx playwright install
 - Run all unit/integration tests with `npm test`.
 - Run all E2E tests in strict mode with `npm run test:e2e`.
 - Run all E2E tests while reusing an already-running dev server with `npm run test:e2e:reuse`.
+- Run WebGL-focused E2E checks with `npm run test:e2e:webgl` (or `npm run test:e2e:webgl:reuse`).
 
 Playwright is configured with a `webServer` entry and starts `npm run dev` on port `5173`.
 - `npm run test:e2e` uses strict mode (`reuseExistingServer: false`) and fails if `5173` is already in use.
 - `npm run test:e2e:reuse` sets `PW_E2E_REUSE_SERVER=1` and reuses an existing dev server on `5173`.
+- `npm run test:e2e:webgl` sets `PW_E2E_FORCE_WEBGL=1` and runs WebGL-gated specs in single-worker mode with WebGL launch flags.
+- `npm run test:e2e:webgl:reuse` combines `PW_E2E_FORCE_WEBGL=1` with `PW_E2E_REUSE_SERVER=1`.
+
+#### Expected skipped tests in normal (`test:e2e`) runs
+
+Seeing skipped tests can be expected and does not necessarily indicate failure:
+- Two clipping specs are intentionally marked `test.fixme(...)` for a known issue:
+  - `e2e/clipping-sync-after-molstar-reset-zoom.e2e.spec.ts`
+  - `e2e/clipping-sync-after-molstar-wheel-zoom.e2e.spec.ts`
+- Four visual-regression/manual-flow specs in `e2e/representation-theme-switch-regression.e2e.spec.ts` are skipped when WebGL is unavailable in the run environment.
+
+If you need those visual checks to run, use:
+
+```sh
+npm run test:e2e:webgl
+# or with a pre-running dev server
+npm run test:e2e:webgl:reuse
+```
 
 - To run all E2E tests:
   ```sh
@@ -846,6 +865,8 @@ The following scripts are available in `package.json`:
 
 - `test:e2e` – Run all Playwright E2E tests (strict server mode)
 - `test:e2e:reuse` – Run all Playwright E2E tests while reusing an existing dev server on port `5173`
+- `test:e2e:webgl` – Run E2E tests with `PW_E2E_FORCE_WEBGL=1` (WebGL-gated checks enabled when available)
+- `test:e2e:webgl:reuse` – Same as `test:e2e:webgl`, while reusing an existing dev server on port `5173`
 - `test:e2e:session` – Run the session-load E2E spec (`e2e/session-load.e2e.spec.ts`)
 - `test:e2e:ui` – Open the Playwright Test UI
 

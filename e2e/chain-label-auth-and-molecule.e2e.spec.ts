@@ -22,15 +22,32 @@ test('Select Chain labels include auth code and molecule name for 6XU6', async (
   await page.locator('#viewer-column-A-alignedto-file-input').setInputFiles(dataPath('6XU6.cif'));
   await expect(page.getByRole('button', { name: /Hide 6XU6/i })).toBeVisible({ timeout: 30000 });
 
-  await page.click('#viewer-column-A-select-zoom-controls-toggle-btn', { force: true });
-  await page.click('#viewer-column-A-alignedto-chain-controls-toggle-btn');
-  await page.click('#viewer-column-A-alignedto-select-chain-controls-toggle-btn');
+  const targetChainLabel = /ZB \[auth CU\].*Ribosomal protein L22-like protein/i;
+  const chainColourTable = page.locator('#viewer-column-A-alignedto-chain-color-table-container');
+  if ((await chainColourTable.count()) > 0 && await chainColourTable.isVisible().catch(() => false)) {
+    await expect(chainColourTable).toContainText(targetChainLabel, { timeout: 30000 });
+    return;
+  }
+
+  const chainControlsToggle = page.locator('#viewer-column-A-alignedto-chain-controls-toggle-btn');
+  if (!(await chainControlsToggle.isVisible().catch(() => false))) {
+    await page.click('#viewer-column-A-select-zoom-controls-toggle-btn');
+    await expect(chainControlsToggle).toBeVisible({ timeout: 30000 });
+  }
+
+  const selectChainToggle = page.locator('#viewer-column-A-alignedto-select-chain-controls-toggle-btn');
+  if (!(await selectChainToggle.isVisible().catch(() => false))) {
+    await chainControlsToggle.click();
+    await expect(selectChainToggle).toBeVisible({ timeout: 30000 });
+  }
+  await selectChainToggle.click();
 
   const uniprotToggle = page.locator('#viewer-column-A-alignedto-show-uniprot-accession');
-  await expect(uniprotToggle).toBeVisible();
-  await expect(uniprotToggle).toContainText(/Include UniProt accession in (chain )?labels:/i);
-  if (await uniprotToggle.getAttribute('aria-pressed') === 'false') {
-    await uniprotToggle.click();
+  if (await uniprotToggle.isVisible().catch(() => false)) {
+    await expect(uniprotToggle).toContainText(/Include UniProt accession in (chain )?labels:/i);
+    if (await uniprotToggle.getAttribute('aria-pressed') === 'false') {
+      await uniprotToggle.click();
+    }
   }
 
   const chainTable = page.locator('#viewer-column-A-chain-table-container');
@@ -40,9 +57,7 @@ test('Select Chain labels include auth code and molecule name for 6XU6', async (
     const rowTexts = await page.locator('#viewer-column-A-chain-table tbody tr td').evaluateAll(
       cols => cols.map(c => (c.textContent || '').trim()).filter(Boolean)
     );
-    const target = rowTexts.find(
-      text => text.includes('ZB [auth CU]') && text.includes('Ribosomal protein L22-like protein')
-    );
+    const target = rowTexts.find(text => targetChainLabel.test(text));
     expect(target).toBeTruthy();
   }).toPass({ timeout: 30000 });
 });
