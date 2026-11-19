@@ -14,10 +14,13 @@ This document outlines planned work for upcoming Ribocode versions. It is direct
 ## Planned Versions
 
 
-### v0.23.x Bug Fixes.
+### v0.23.2.
 - Clipping controls now follow native Mol* `Reset Zoom`, including after `Toggle Selection Mode`. Both paths are covered by WebGL-backed E2E tests. See [ribocode-slola/ribocode1#158](https://github.com/ribocode-slola/ribocode1/issues/158).
 
-### v0.24.0 Improve alignment quality.
+### v0.24.0 Unify selection so selection using Ribocode Select and Zoom Controls and Select using Mol* viewer are effectively the same.
+- See [ribocode-slola/ribocode1#136](https://github.com/ribocode-slola/ribocode1/issues/136)
+
+### v0.25.0 Improve alignment quality.
 - Maintain objective benchmark tracking for:
   - 6XU6/6XU8 chain CU -> CU (stable reference case)
   - 7WTT/7WTZ chain e -> e (known weak case)
