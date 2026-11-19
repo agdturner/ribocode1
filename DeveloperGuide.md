@@ -706,6 +706,8 @@ test('renders the component', () => {
 
 ### Running Tests
 
+Before requesting PR review, run `npm run test:pr` to run unit and integration tests once, then the browser E2E suite. Stop any dev server using port `5173` first so Playwright can start its own server. If the first suite fails, the E2E suite does not run.
+
   ```sh
   npm test -- --watch
   ```
@@ -1027,7 +1029,7 @@ For planned future direction and potential contribution areas, also review [ROAD
 
 Use `origin` for your fork and `upstream` for the shared Ribocode repository. If `upstream` is not configured in the Ribocode root, run `git remote add upstream https://github.com/ribocode-slola/ribocode1.git` once.
 
-Keep local `main` for syncing, and do your work on a separate branch. Before starting a new branch or after a pull request is merged, update your local `main`:
+Keep local `main` for syncing, and do your work on a separate branch. Update local `main` before starting a new branch. You can also sync it right after a pull request merges:
 
 ```sh
 git switch main
@@ -1036,4 +1038,8 @@ git pull --ff-only upstream main
 
 `--ff-only` prevents an accidental merge commit. If local `main` has diverged, inspect the local commits before reconciling it; do not force-reset it as part of your routine. You do not need to update your fork's `main` to keep your local `main` current.
 
-Start each new change from the updated `main` with `git switch -c my-change`. Commit on that branch, push it with `git push -u origin my-change`, and open a pull request from your fork's branch into `ribocode-slola/ribocode1:main`. Keep PRs focused and, when possible, have another contributor review before merging.
+Start each new change from the updated `main` with `git switch -c my-change` and commit on that branch.
+
+Before requesting review, run `git fetch upstream` from your feature branch. If `upstream/main` has moved in a way that could affect your work, or if the PR has conflicts, run `git merge upstream/main` and resolve any conflicts before testing. Merging is preferable on a shared branch because it does not rewrite history. If the merge changes the recorded Mol* commit, run `git submodule update --init --recursive` after making sure you have no uncommitted submodule work.
+
+Run `npm run test:pr` on the resulting branch, push it with `git push -u origin my-change`, and open a pull request from your fork's branch into `ribocode-slola/ribocode1:main`. Record the test results in the PR and, when possible, have another contributor review before merging. There is no need to merge every unrelated upstream change.
