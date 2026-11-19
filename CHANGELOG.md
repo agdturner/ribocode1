@@ -3,6 +3,7 @@ A chronological version based list of changes.
 
 ## [Unreleased]
 Release summary: upcoming changes.
+- Fixed clipping controls staying stale after native Mol* Reset Zoom, including after toggling Selection Mode.
 
 ## [v0.23.1]
 Release summary: this patch release streamlines publishing versioned GitHub Releases while keeping the GitHub Pages PWA as the official deployment.

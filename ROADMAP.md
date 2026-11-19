@@ -15,21 +15,7 @@ This document outlines planned work for upcoming Ribocode versions. It is direct
 
 
 ### v0.23.x Bug Fixes.
-- Fix clipping-controls sync gap after native Mol* camera actions (`Reset Zoom` and `Toggle Selection Mode` + `Reset Zoom`).
-  - Current status: two E2E specs are intentionally marked `test.fixme(...)` because clipping UI values do not always reflect camera-state updates triggered from native Mol* controls:
-    - `e2e/clipping-sync-after-molstar-reset-zoom.e2e.spec.ts`
-    - `e2e/clipping-sync-after-molstar-wheel-zoom.e2e.spec.ts`
-  - Treat this as a **bug**, not a test-only issue: expected product behavior is that clipping controls stay in sync with effective camera/radius state regardless of whether zoom is changed via app controls or native Mol* controls.
-  - Delivery plan:
-    1. Reproduce deterministically and capture before/after clip-radius state from UI and runtime.
-    2. Patch camera/clipping state propagation so native Mol* interactions emit/trigger the same observable updates as app-side zoom actions.
-    3. Unskip the two `fixme` specs and verify repeat stability (multiple local runs + CI).
-  - Acceptance criteria:
-    - Both clipping-sync specs pass without `fixme`.
-    - No regression in existing clipping/session/load E2E suite.
-    - Behavior documented in Developer Guide E2E notes.
-  - Tracking:
-    - Add/link a GitHub issue for this bug (if one does not already exist) and reference it here.
+- Clipping controls now follow native Mol* `Reset Zoom`, including after `Toggle Selection Mode`. Both paths are covered by WebGL-backed E2E tests. See [ribocode-slola/ribocode1#158](https://github.com/ribocode-slola/ribocode1/issues/158).
 
 ### v0.24.0 Improve alignment quality.
 - Maintain objective benchmark tracking for:
