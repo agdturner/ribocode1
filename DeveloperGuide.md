@@ -8,6 +8,7 @@ Welcome to the Ribocode Developer Guide!
 - [Quick Test](#quick-test)
 - [Setup](#setup)
   - [Recommended set up](#recommended-set-up)
+  - [Mol* Submodule Workflow](#mol-submodule-workflow)
   - [Build and run locally](#build-and-run-locally)
   - [Production Build & Preview](#production-build--preview)
   - [Notes on Environment Files](#notes-on-environment-files)
@@ -22,7 +23,6 @@ Welcome to the Ribocode Developer Guide!
 - [Re-alignment Implementation Notes](#re-alignment-implementation-notes)
   - [Cache and State Hygiene](#cache-and-state-hygiene)
 - [Mol*](#mol*)
-- [Mol* Submodule Workflow](#mol-submodule-workflow)
 - [Highlighting and Selection Colouring](#highlighting-and-selection-colouring)
 - [Documentation](#documentation)
   - [How to Generate Documentation](#how-to-generate-documentation)
@@ -56,8 +56,7 @@ Welcome to the Ribocode Developer Guide!
 ```sh
 git clone https://github.com/ribocode-slola/ribocode1.git
 cd ribocode1
-mkdir -p packages
-git clone https://github.com/ribocode-slola/molstar.git packages/molstar
+git submodule update --init --recursive
 cd packages/molstar
 npm install
 npm run build:lib
@@ -82,24 +81,16 @@ npm test
 
 You will need [Git](https://git-scm.com/) to clone the repository and [Node](https://nodejs.org/). It is recommended to use Node version 24.11.0 or later.
 
-Please also fork https://github.com/ribocode-slola/ribocode1 and https://github.com/ribocode-slola/molstar, and then clone and use your forks of the ribocode-slola forks.
-
-Note on submodule URL policy:
-- The repository-tracked `.gitmodules` must point to the canonical Ribocode Mol* repository (`https://github.com/ribocode-slola/molstar`).
-- Do not commit personal-fork URLs in `.gitmodules`.
-- Use local submodule remotes to push to your fork.
+Fork [Ribocode](https://github.com/ribocode-slola/ribocode1) if you plan to submit changes. You only need a separate [Ribocode Mol*](https://github.com/ribocode-slola/molstar) fork if you plan to submit changes to Mol* itself.
 
 If you are a member of the Ribocode project and want help getting set up with a development environment or help contributing via a `pull request`, please let it be known.
 
 
 ### Recommended set up
 
-1. Fork the Ribocode repository.
-2. Fork [Ribocode Mol*](https://github.com/ribocode-slola/molstar).
-3. Clone your Ribocode fork into a local directory (Ribocode root).
-4. Clone your Mol* fork into `packages/molstar` inside the Ribocode root.
-5. In `packages/molstar`, add the Ribocode Mol* repository as `upstream`.
-6. Build Mol* library outputs before running Ribocode.
+1. Clone your Ribocode fork into a local directory (the Ribocode root).
+2. Initialize the Mol* submodule at the commit recorded by Ribocode.
+3. Build the Mol* library outputs before running Ribocode.
 
 Example commands:
 
@@ -108,15 +99,11 @@ Example commands:
 git clone https://github.com/<your-github-user>/ribocode1.git
 cd ribocode1
 
-# Clone your Mol* fork to the expected local path
-mkdir -p packages
-git clone https://github.com/<your-github-user>/molstar.git packages/molstar
-
-# Track the canonical Ribocode Mol* repo
-cd packages/molstar
-git remote add upstream https://github.com/ribocode-slola/molstar.git
+# Check out the Mol* commit pinned by Ribocode
+git submodule update --init --recursive
 
 # Install and build the Mol* lib output consumed by Ribocode
+cd packages/molstar
 npm install
 npm run build:lib
 
@@ -125,46 +112,37 @@ cd ../..
 npm install
 ```
 
-## Mol* Submodule Workflow
+### Mol* Submodule Workflow
 
-Ribocode tracks Mol* as a git submodule at `packages/molstar`.
-
-- Repository default (`.gitmodules`):
-  - `url = https://github.com/ribocode-slola/molstar`
-- Developer push target:
-  - Configure your local `origin` in `packages/molstar` to your own fork.
-- Upstream sync target:
-  - Keep `upstream` set to `https://github.com/ribocode-slola/molstar`.
-
-Recommended one-time local setup:
+**For routine Ribocode development**, use the pinned Mol* commit at `packages/molstar`. Do not switch to a moving `master` or `ribocode` branch just to run or test Ribocode. A detached HEAD in the submodule is normal. After switching or updating the Ribocode branch, save any local Mol* work before restoring the recorded checkout from the Ribocode root:
 
 ```sh
-# Initialize/update submodule using canonical URL from .gitmodules
-git submodule sync --recursive
 git submodule update --init --recursive
-
-# In submodule, set your fork as origin (push target)
-cd packages/molstar
-git remote set-url origin https://github.com/<your-github-user>/molstar.git
-
-# Ensure canonical repo is available as upstream (pull/rebase target)
-git remote add upstream https://github.com/ribocode-slola/molstar.git 2>/dev/null || true
-git fetch upstream
+git submodule status -- packages/molstar
 ```
 
-Daily update pattern:
+If you previously made commits in a detached HEAD, put them on a branch before updating. Rebuild the Mol* library if the checked-out commit changes.
+
+**To contribute changes to Mol\***, fork the shared Ribocode Mol* repository. In the submodule, configure `origin` as your personal Mol* fork and `upstream` as the shared Ribocode Mol* repository. For a newly initialized checkout, run these from the Ribocode root (if `upstream` already exists, verify its URL instead of adding it again):
 
 ```sh
-cd packages/molstar
-git fetch upstream
-git checkout master
-git rebase upstream/master
-git push origin master
+git -C packages/molstar remote set-url origin https://github.com/<your-github-user>/molstar.git
+git -C packages/molstar remote add upstream https://github.com/ribocode-slola/molstar.git
+git -C packages/molstar remote -v
 ```
 
-Important:
-- Avoid editing `.gitmodules` for personal workflow changes.
-- If `.gitmodules` changes in a PR, verify it still points to the canonical Ribocode Mol* URL.
+Start a feature branch from the shared fork's `master`; there's no need to update or push your personal `master`:
+
+```sh
+git -C packages/molstar fetch upstream
+git -C packages/molstar switch --no-track -c my-molstar-change upstream/master
+```
+
+Commit your Mol* changes on the feature branch, push it with `git -C packages/molstar push -u origin my-molstar-change`, and open a PR into `ribocode-slola/molstar:master`.
+
+**To update Ribocode's pin after the Mol\* PR merges**, start a Ribocode feature branch. Fetch the shared Mol* fork, check out the intended merged Mol* commit in the submodule, rebuild its library, and run `npm run test:pr` from the Ribocode root. Stage `packages/molstar` to record the new pin, then submit it in a Ribocode PR. Do not pin a commit that exists only on a personal fork.
+
+Keep the tracked `.gitmodules` URL pointed at `https://github.com/ribocode-slola/molstar`. Personal fork URLs belong in local Git configuration only.
 
 
 ### Build and run locally
