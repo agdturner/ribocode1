@@ -829,10 +829,9 @@ Playwright is configured with a `webServer` entry and starts `npm run dev` on po
 #### Expected skipped tests in normal (`test:e2e`) runs
 
 Seeing skipped tests can be expected and does not necessarily indicate failure:
-- Two clipping specs are intentionally marked `test.fixme(...)` for a known issue:
-  - `e2e/clipping-sync-after-molstar-reset-zoom.e2e.spec.ts`
-  - `e2e/clipping-sync-after-molstar-wheel-zoom.e2e.spec.ts`
 - Four visual-regression/manual-flow specs in `e2e/representation-theme-switch-regression.e2e.spec.ts` are skipped when WebGL is unavailable in the run environment.
+
+The [native Reset Zoom test](./e2e/clipping-sync-after-molstar-reset-zoom.e2e.spec.ts) and [Selection Mode + Reset Zoom test](./e2e/clipping-sync-after-molstar-wheel-zoom.e2e.spec.ts) request software WebGL in standard E2E runs and compare the open clipping control with the effective camera radius.
 
 If you need those visual checks to run, use:
 

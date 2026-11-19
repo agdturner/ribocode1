@@ -141,6 +141,7 @@ const MolstarContainer = React.forwardRef(({ viewerKey, setViewer, onMouseDown, 
                 }
                 setPlugin(pluginInstance);
                 setViewer(pluginInstance);
+                // Notify the parent only after its plugin reference has been set.
                 if (onReady) onReady();
             } catch (err) {
                 console.error(`[MolstarContainer ${viewerKey}] Plugin creation failed:`, err);
@@ -184,7 +185,6 @@ const MolstarContainer = React.forwardRef(({ viewerKey, setViewer, onMouseDown, 
                 <RibocodeViewer
                     plugin={plugin}
                     viewerKey={viewerKey}
-                    onReady={onReady}
                     idPrefix={idPrefix}
                 />
             </div>
