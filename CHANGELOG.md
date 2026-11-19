@@ -4,6 +4,12 @@ A chronological version based list of changes.
 ## [Unreleased]
 Release summary: upcoming changes.
 
+## [v0.23.1]
+Release summary: this patch release streamlines publishing versioned GitHub Releases while keeping the GitHub Pages PWA as the official deployment.
+- Added npm commands to verify release prerequisites and push a single annotated version tag to the shared repository after the live PWA has been verified.
+- Added an upstream-only GitHub Actions workflow that publishes release notes from the matching changelog entry when a valid version tag is pushed.
+- Documented the release checklist and the fork-based contribution workflow, including how to sync a local `main`.
+
 ## [v0.23.0] - 2026-11-06
 Release summary: this minor release introduces progressive multi-chain selection expansion with recursive slots, improved residue selection, stronger session round-tripping, and expanded automated coverage.
 - Refined progressive selection disclosure in `src/components/LoadMolecule.tsx` so `Select 2` controls/selection info appear only after a `Select 1` chain is chosen, and `Select 3` controls/selection info appear only after a `Select 2` chain is chosen.

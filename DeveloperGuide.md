@@ -31,6 +31,7 @@ Welcome to the Ribocode Developer Guide!
   - [Docs-only Deployment](#docs-only-deployment)
 - [Deployment](#deployment)
 - [Versioning](#versioning)
+  - [Release checklist](#release-checklist)
 - [Roadmap](#roadmap)
 - [Tests](#tests)
   - [Test File Structure](#test-file-structure)
@@ -47,6 +48,7 @@ Welcome to the Ribocode Developer Guide!
       - [Session Round-Trip Regression Patterns](#session-round-trip-regression-patterns)
   - [Test Types Overview](#test-types-overview)
 - [Contributing](#contributing)
+  - [Working from a fork](#working-from-a-fork)
 
 
 ## Quick Test
@@ -155,9 +157,9 @@ Daily update pattern:
 ```sh
 cd packages/molstar
 git fetch upstream
-git checkout main
-git rebase upstream/main
-git push origin main
+git checkout master
+git rebase upstream/master
+git push origin master
 ```
 
 Important:
@@ -600,13 +602,36 @@ The app header version text is read directly from `package.json` in `src/compone
 
 ### Release checklist
 
-1. Bump version using one of the commands above.
-2. Add/update the release entry in `CHANGELOG.md`.
-3. Run tests (for example `npm test` and any targeted E2E tests as needed).
-4. Commit version/doc/code changes together and push to `main`.
-5. Deploy the PWA build with `npm run deploy`.
-6. Create and push a release tag (e.g., `vX.Y.Z`).
-7. Publish the GitHub release notes for the tag.
+The [GitHub Pages PWA](https://ribocode-slola.github.io/ribocode1/) is where users run and install Ribocode. The upstream [GitHub Releases page](https://github.com/ribocode-slola/ribocode1/releases) records versioned source snapshots and release notes; publishing a GitHub Release does not deploy the PWA.
+
+In the Ribocode root repository (not `packages/molstar`), keep `origin` pointed at your fork and use `upstream` for the shared repository. If `upstream` is not configured, add it and verify both remotes:
+
+```sh
+git remote add upstream https://github.com/ribocode-slola/ribocode1.git
+git remote -v
+```
+
+1. Bump the version using one of the commands above, update [CHANGELOG.md](./CHANGELOG.md), and run the relevant tests.
+2. Push the changes to your fork and open a pull request into upstream `main`.
+3. After merge, an authorized maintainer fetches `upstream` and checks out the exact merged commit in a clean working tree. Run `npm run release:check` before deploying. It checks that the checkout is clean and on upstream `main` history, that `package.json` has a matching `CHANGELOG.md` entry, and that the tag is available upstream. It prints the commit SHA, tag, and destination without creating a tag, deploying, or pushing. Keep the printed SHA for step 5.
+4. Deploy from that checkout, explicitly targeting the shared repository so the build does not go to your fork:
+
+   ```sh
+   npm run deploy -- --repo https://github.com/ribocode-slola/ribocode1.git
+   ```
+
+5. Wait for Pages to serve the new build and verify that the live PWA shows the expected version. Then, from the same source checkout, run the command below, replacing `<deployed-commit-sha>` with the full SHA printed in step 3 (omit the angle brackets):
+
+   ```sh
+   npm run release:tag -- <deployed-commit-sha>
+   ```
+
+   The command repeats the checks, verifies the supplied SHA matches the checkout, and creates and pushes only the matching annotated `vX.Y.Z` tag. It does not check the live PWA for you. If the push fails and the tag did not reach upstream, rerun the command after addressing the error; it can reuse an annotated local tag for the same commit.
+
+6. Confirm the [release workflow](./.github/workflows/release.yml) succeeded and the new entry appears on the upstream Releases page. The workflow publishes notes from the matching changelog entry in the tagged commit. If publishing fails after the tag reaches upstream, inspect and rerun the workflow rather than pushing or moving the tag. If the workflow is not present on the tagged commit, publish manually using the existing upstream tag and changelog entry.
+
+The workflow matches tag pushes, validates the full `vX.Y.Z` format against `package.json`, and only publishes in `ribocode-slola/ribocode1`. Neither a branch beginning with `v` nor a tag pushed to a fork publishes an official release. A GitHub Release created manually on a fork stays there: a tag can be pushed elsewhere, but release notes and uploaded assets are not transferred.
+
 
 ## Roadmap
 
@@ -997,3 +1022,18 @@ For contribution ideas, bug reports, or feature requests, please visit the [GitH
 When triaging bug reports for unexpected UI/alignment behavior, ask reporters to run `Session > Reset Local Caches` and retry the same steps before filing (or updating) the issue. This helps quickly separate stale local state problems from reproducible product defects.
 
 For planned future direction and potential contribution areas, also review [ROADMAP.md](./ROADMAP.md).
+
+### Working from a fork
+
+Use `origin` for your fork and `upstream` for the shared Ribocode repository. If `upstream` is not configured in the Ribocode root, run `git remote add upstream https://github.com/ribocode-slola/ribocode1.git` once.
+
+Keep local `main` for syncing, and do your work on a separate branch. Before starting a new branch or after a pull request is merged, update your local `main`:
+
+```sh
+git switch main
+git pull --ff-only upstream main
+```
+
+`--ff-only` prevents an accidental merge commit. If local `main` has diverged, inspect the local commits before reconciling it; do not force-reset it as part of your routine. You do not need to update your fork's `main` to keep your local `main` current.
+
+Start each new change from the updated `main` with `git switch -c my-change`. Commit on that branch, push it with `git push -u origin my-change`, and open a pull request from your fork's branch into `ribocode-slola/ribocode1:main`. Keep PRs focused and, when possible, have another contributor review before merging.

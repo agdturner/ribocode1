@@ -1,0 +1,27 @@
+name: Publish GitHub Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.repository == 'ribocode-slola/ribocode1' && !github.event.deleted
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Validate tag and extract changelog notes
+        run: node scripts/release.cjs notes "$GITHUB_REF_NAME" > "$RUNNER_TEMP/ribocode-release-notes.md"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --verify-tag --title "Ribocode $GITHUB_REF_NAME" \
+            --notes-file "$RUNNER_TEMP/ribocode-release-notes.md"

@@ -1,6 +1,6 @@
 {
   "name": "ribocode1",
-  "version": "0.23.0",
+  "version": "0.23.1",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -29,6 +29,8 @@
     "docs:deploy:dryrun": "npm run docs && gh-pages -d docs -e docs -a --no-push -m \"Docs: update API documentation\"",
     "docs:deploy:target": "npm run docs && node scripts/docs-deploy-target.cjs",
     "docs:deploy:target:dryrun": "npm run docs && node scripts/docs-deploy-target.cjs --dry-run",
+    "release:check": "node scripts/release.cjs check",
+    "release:tag": "node scripts/release.cjs tag",
     "version:patch": "npm version patch --no-git-tag-version",
     "version:minor": "npm version minor --no-git-tag-version",
     "version:major": "npm version major --no-git-tag-version"
