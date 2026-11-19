@@ -11,7 +11,7 @@ Welcome to the Ribocode Developer Guide!
   - [Build and run locally](#build-and-run-locally)
   - [Production Build & Preview](#production-build--preview)
   - [Notes on Environment Files](#notes-on-environment-files)
-  - [Deployment](#deployment)
+  - [Deployment overview](#deployment-overview)
 - [Source Code Overview](#source-code-overview)
 - [UI Element IDs and data-testid Conventions](#ui-element-ids-and-data-testid-conventions)
   - [General Rules](#general-rules)
@@ -204,12 +204,9 @@ From the Ribocode root directory:
 - Runtime browser code must use Vite environment access (`import.meta.env.*`) rather than CRA-style `process.env.*`.
 - Service worker registration paths should be derived from `import.meta.env.BASE_URL` to avoid incorrect URLs on GitHub Pages subpaths.
 
-#### Deployment
+#### Deployment overview
 
-* `npm run deploy`
-  - Builds and deploys the app to the `gh-pages` branch for GitHub Pages.
-  - Includes the current docs by copying `docs/` to `dist/docs` during build.
-  - The app will be available at `https://<username>.github.io/ribocode1/`.
+The deployment command builds the app and includes the generated API docs. See [Deployment](#deployment) to choose between your fork's test site and the official site.
 
 
 
@@ -579,8 +576,10 @@ gh-pages -d docs -e docs -a -m "Docs: update API documentation" \
 
 ## Deployment
 
-To serve out the `gh-pages` branch for your fork on `GitHub Pages` to create a PWA deployment use the following command:
-* ```npm run deploy```
+The fork and shared repository have separate `gh-pages` branches. Choose the destination before deploying:
+
+- **Testing on your fork (`origin`):** Run `git remote -v` to confirm that `origin` points to your fork, then run `npm run deploy`. This publishes to the fork's `gh-pages` branch, not the official site. If GitHub Pages is enabled for that branch, the test PWA is available at `https://<username>.github.io/ribocode1/`. No release tag is needed.
+- **Official deployment (`upstream`):** An authorized maintainer deploys from the intended upstream source commit using `npm run deploy -- --repo https://github.com/ribocode-slola/ribocode1.git`. For a versioned release, follow the [release checklist](#release-checklist): run preflight before deploying, verify the live PWA, then tag the deployed source commit. A docs-only deployment does not require a new release tag; see [Docs-only Deployment](#docs-only-deployment).
 
 ## Versioning
 
