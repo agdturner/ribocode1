@@ -1,7 +1,7 @@
 # Change Log
 A chronological version based list of changes.
 
-## [Unreleased]
+## [v0.23.2]
 Release summary: upcoming changes.
 - Fixed clipping controls staying stale after native Mol* Reset Zoom, including after toggling Selection Mode.
 
