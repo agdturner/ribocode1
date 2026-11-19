@@ -16,6 +16,7 @@
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
     "test": "vitest",
+    "test:pr": "npm run test -- --run && npm run test:e2e",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
     "test:e2e:reuse": "PW_E2E_REUSE_SERVER=1 playwright test",
