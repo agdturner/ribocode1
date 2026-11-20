@@ -100,6 +100,84 @@ async function loadAlignedToAndPickPhe(page: Page) {
   return { viewer, sequence, entity, phe, pheList, residue };
 }
 
+test('right Mol* viewer synchronizes Aligned residue picks without changing AlignedTo', async ({ page }) => {
+  test.setTimeout(120000);
+  const { viewer: left, phe, residue } = await loadAlignedToAndPickPhe(page);
+  const right = page.locator('#viewer-column-B');
+  await right.locator('#viewer-column-B-aligned-file-input')
+    .setInputFiles(path.resolve(__dirname, '../data/input/6xu8.cif'));
+  await expect(right.getByRole('button', { name: /Hide 6XU8/i })).toBeVisible({ timeout: 60000 });
+  await left.getByRole('button', { name: /Show 6XU8/i }).click();
+
+  await right.getByRole('button', { name: 'Show Advanced Mol* Controls' }).click();
+  const sequence = right.getByTestId('viewer-column-B-advanced-molstar-controls-panel').locator('.msp-sequence');
+  const structure = sequence.getByTitle(/^\[Structure\]/);
+  await structure.selectOption({ label: await structure.locator('option').filter({ hasText: /6XU8/i }).innerText() });
+  await sequence.getByTitle(/^\[Entity\]/).selectOption('0|76');
+  await expect(sequence.getByTitle(/^\[Chain\]/)).toHaveAttribute('title', /\bXB\b.*\bauth CU\b/);
+
+  const marker = /msp-sequence-residue-selected/;
+  const ser = sequence.locator('[data-seqid="0"]').filter({ hasText: 'S' });
+  const leu = sequence.locator('[data-seqid="1"]').filter({ hasText: 'L' });
+  const arg = sequence.locator('[data-seqid="2"]').filter({ hasText: 'R' });
+  await right.getByRole('button', { name: 'Toggle Selection Mode' }).click();
+  await ser.click();
+  await expect(ser).toHaveClass(marker);
+  await leu.click();
+  await expect(leu).toHaveClass(marker);
+  await arg.click();
+  await expect(arg).toHaveClass(marker);
+  await expect(ser).toHaveClass(marker);
+  await expect(phe).toHaveClass(marker);
+  await expect(residue).toBeChecked();
+
+  await right.getByRole('button', { name: 'Show Select and Zoom Controls' }).click();
+  await right.getByRole('button', { name: 'Show Chain Controls' }).click();
+  await right.getByRole('button', { name: 'Show Select 1', exact: true }).click();
+  const chain = right.getByTestId('viewer-column-B-chain-table-row-CU');
+  await expect(chain).toHaveClass(/\bselected\b/);
+  await right.getByRole('button', { name: 'Show Residue Controls' }).click();
+  const selected = right.locator('#viewer-column-B-aligned-residue-select option:checked');
+  const highlight = right.locator('#viewer-column-B-aligned-highlight-residue-btn');
+  await expect(selected).toHaveText(['SER 1 [auth 190]', 'LEU 2 [auth 191]', 'ARG 3 [auth 192]']);
+  await expect(highlight).toHaveAttribute('aria-pressed', 'true');
+
+  const leftSequence = left.getByTestId('viewer-column-A-advanced-molstar-controls-panel').locator('.msp-sequence');
+  const leftStructure = leftSequence.getByTitle(/^\[Structure\]/);
+  const showLeftSequence = async (label: RegExp, entity: string, chain: RegExp) => {
+    const option = leftStructure.locator('option').filter({ hasText: label });
+    await leftStructure.selectOption({ label: await option.innerText() });
+    await leftSequence.getByTitle(/^\[Entity\]/).selectOption(entity);
+    await expect(leftSequence.getByTitle(/^\[Chain\]/)).toHaveAttribute('title', chain);
+  };
+  await showLeftSequence(/6XU8/i, '0|76', /\bXB\b.*\bauth CU\b/);
+  const leftSer = leftSequence.locator('[data-seqid="0"]').filter({ hasText: 'S' });
+  const leftLeu = leftSequence.locator('[data-seqid="1"]').filter({ hasText: 'L' });
+  const leftArg = leftSequence.locator('[data-seqid="2"]').filter({ hasText: 'R' });
+  for (const picked of [leftSer, leftLeu, leftArg]) await expect(picked).toHaveClass(marker);
+
+  await leftLeu.click();
+  await expect(leu).not.toHaveClass(marker);
+  await expect(ser).toHaveClass(marker);
+  await expect(arg).toHaveClass(marker);
+  await expect(selected).toHaveText(['SER 1 [auth 190]', 'ARG 3 [auth 192]']);
+  await leftLeu.click();
+  await expect(leu).toHaveClass(marker);
+  await expect(selected).toHaveText(['SER 1 [auth 190]', 'LEU 2 [auth 191]', 'ARG 3 [auth 192]']);
+  await leu.click();
+  await expect(leftLeu).not.toHaveClass(marker);
+  await ser.click();
+  await arg.click();
+  for (const picked of [ser, arg, leftSer, leftArg]) await expect(picked).not.toHaveClass(marker);
+  await expect(selected).toHaveCount(0);
+  await expect(highlight).toHaveAttribute('aria-pressed', 'false');
+  await expect(chain).toHaveClass(/\bselected\b/);
+  await expect(left.getByTestId('viewer-column-A-chain-table-row-CU')).toHaveClass(/\bselected\b/);
+  await expect(residue).toBeChecked();
+  await showLeftSequence(/6XU6/i, '0|78', /\bZB\b.*\bauth CU\b/);
+  await expect(phe).toHaveClass(marker);
+});
+
 test('Mol* and Ribocode synchronize additions and removals on the same chain', async ({ page }) => {
   test.setTimeout(90000);
   const { viewer, sequence, phe, pheList, residue } = await loadAlignedToAndPickPhe(page);
