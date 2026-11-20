@@ -47,7 +47,8 @@ vi.mock('molstar/lib/mol-plugin/commands', () => ({
   },
 }));
 
-vi.mock('./utils/structure', () => ({
+vi.mock('./utils/structure', async (importOriginal) => ({
+  ...await importOriginal<typeof import('./utils/structure')>(),
   getStructureRepresentations: vi.fn((_plugin: any, structureRef: string) => {
     const byRef = (globalThis as any).__mockStructureRepsByRef || {};
     return byRef[structureRef] || [];

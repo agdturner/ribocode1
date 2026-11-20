@@ -42,6 +42,7 @@ export function useUpdateResidueInfo(
   // without adding it to the dependency array (which would cause infinite loops).
   const selectedResidueIdsRef = useRef(selectedResidueIds);
   selectedResidueIdsRef.current = selectedResidueIds;
+  const getResidueInfo = molstar.getResidueInfo;
 
   useEffect(() => {
     if (!viewerRef.current || !structureRef || !selectedChainId) return;
@@ -52,7 +53,7 @@ export function useUpdateResidueInfo(
       )?.cell.obj?.data;
       if (!structureObj) return;
       // Get residue info from molstar utility
-      const { residueLabels, residueToAtomIds } = molstar.getResidueInfo(structureObj, selectedChainId);
+      const { residueLabels, residueToAtomIds } = getResidueInfo(structureObj, selectedChainId);
       setResidueInfo(prev => {
         const prevLabels = prev.residueLabels;
         const nextLabels = residueLabels;
@@ -135,5 +136,5 @@ export function useUpdateResidueInfo(
     }
   // selectedResidueIds intentionally omitted — accessed via ref to avoid loops
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewerRef, structureRef, molstar, selectedChainId, setResidueInfo, setSelectedResidueIds, label, defaultSelectionMode]);
+  }, [viewerRef, structureRef, getResidueInfo, selectedChainId, setResidueInfo, setSelectedResidueIds, label, defaultSelectionMode]);
 }

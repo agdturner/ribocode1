@@ -1,6 +1,9 @@
 # Change Log
 A chronological version based list of changes.
 
+## [Unreleased]
+- Mol* residue picks on AlignedTo in either viewer fill the first three Ribocode Select slots without replacing other chains. Picks and deselections update the residue markers in both viewers independently of camera sync. Deselecting residues leaves each chain in its slot, even when no residues remain selected. Turning off Residue Highlight removes the markers without changing the selections.
+
 ## [v0.23.2]
 Release summary: upcoming changes.
 - Fixed clipping controls staying stale after native Mol* Reset Zoom, including after toggling Selection Mode.

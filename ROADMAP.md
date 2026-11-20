@@ -19,6 +19,8 @@ This document outlines planned work for upcoming Ribocode versions. It is direct
 
 ### v0.24.0 Unify selection so selection using Ribocode Select and Zoom Controls and Select using Mol* viewer are effectively the same.
 - See [ribocode-slola/ribocode1#136](https://github.com/ribocode-slola/ribocode1/issues/136)
+- Current coverage: [`AlignedTo` selection browser tests](e2e/molstar-residue-selection.e2e.spec.ts) verify residue picks and removals across both Mol* viewers with camera sync off, and confirm that deselecting the last residue leaves the chain in its slot.
+- Next: add a failing browser test with `AlignedTo` and `Aligned` both loaded. Show `Aligned` in both viewers, then pick and deselect an `Aligned` residue. Verify that only the `Aligned` Select slots and Mol* markers change, an existing `AlignedTo` selection is preserved, and removing the last residue leaves the `Aligned` chain in its slot. Repeat from the opposite viewer before considering the two directions covered.
 
 ### v0.25.0 Improve alignment quality.
 - Maintain objective benchmark tracking for:
@@ -46,6 +48,11 @@ This document outlines planned work for upcoming Ribocode versions. It is direct
   - Add a deterministic first-load orientation diagnostic (separate from chain realign metrics) that compares viewer A/B camera forward/up vectors and projected principal axes immediately after load.
   - Evaluate whether orientation parity should be defined by camera state, structure transform, or a canonical molecular frame.
   - Re-run targeted experiments only after those diagnostics are in place.
+
+
+## Future Enhancements
+
+- Make it easier to reorder selected chains in the Select and Zoom Controls without removing and reselecting them. Keep each chain's residue selections with it when it moves to a different slot.
 
 
 ## Tracking and Release Notes

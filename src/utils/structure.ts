@@ -20,6 +20,50 @@ const SUBUNIT_HIGHLIGHT_COLOR = Color(0x4C78A8);
 const CHAIN_HIGHLIGHT_COLOR = Color(0xF58518);
 const RESIDUE_HIGHLIGHT_COLOR = Color(0xE45756);
 const overpaintQueuesByPlugin = new WeakMap<PluginUIContext, Map<string, Promise<void>>>();
+const applyingSelectionByPlugin = new WeakSet<PluginUIContext>();
+const haloAdditionsByPlugin = new WeakMap<PluginUIContext, StructureElement.Loci[]>();
+
+export function isApplyingRibocodeSelection(plugin: PluginUIContext): boolean {
+    return applyingSelectionByPlugin.has(plugin);
+}
+
+export function withRibocodeSelection(plugin: PluginUIContext, apply: () => void) {
+    if (isApplyingRibocodeSelection(plugin)) {
+        apply();
+        return;
+    }
+    applyingSelectionByPlugin.add(plugin);
+    try {
+        apply();
+    } finally {
+        applyingSelectionByPlugin.delete(plugin);
+    }
+}
+
+export function excludeRibocodeHalo(plugin: PluginUIContext, loci: StructureElement.Loci): StructureElement.Loci {
+    let native = loci;
+    for (const added of haloAdditionsByPlugin.get(plugin) ?? []) {
+        if (added.structure === loci.structure) {
+            native = StructureElement.Loci.subtract(native, added);
+        }
+    }
+    return native;
+}
+
+export function clearRibocodeHalo(plugin: PluginUIContext, preserveNativeSelection: boolean) {
+    const additions = haloAdditionsByPlugin.get(plugin);
+    haloAdditionsByPlugin.delete(plugin);
+    const selects = plugin.managers.interactivity?.lociSelects;
+    if (!preserveNativeSelection) {
+        selects?.deselectAll?.();
+        return;
+    }
+    withRibocodeSelection(plugin, () => {
+        for (const loci of additions ?? []) {
+            selects?.deselect?.({ loci }, false);
+        }
+    });
+}
 
 export type HighlightDisplayMode = 'halo' | 'overlay' | 'hybrid';
 
@@ -138,12 +182,26 @@ function applyLociHighlightByMode(
     if (!shouldApplyHalo) return;
 
     const lociSelects = targetPlugin.managers.interactivity?.lociSelects;
-    if (lociSelects?.select) {
-        lociSelects.select({ loci }, false);
-        return;
-    }
-    if (lociSelects?.selectOnly) {
-        lociSelects.selectOnly({ loci }, false);
+    if (lociSelects?.select || lociSelects?.selectOnly) {
+        // Mol* uses the same selection manager for native picks and Ribocode's persistent halo.
+        const selection = targetPlugin.managers.structure?.selection;
+        const structureLoci = StructureElement.Loci.is(loci) ? loci : undefined;
+        const before = structureLoci && selection?.getLoci?.(structureLoci.structure);
+        withRibocodeSelection(targetPlugin, () => {
+            if (lociSelects.select) lociSelects.select({ loci }, false);
+            else lociSelects.selectOnly({ loci }, false);
+            const after = structureLoci && selection?.getLoci?.(structureLoci.structure);
+            if (after && StructureElement.Loci.is(after)) {
+                const added = before && StructureElement.Loci.is(before)
+                    ? StructureElement.Loci.subtract(after, before)
+                    : after;
+                if (!StructureElement.Loci.isEmpty(added)) {
+                    const additions = haloAdditionsByPlugin.get(targetPlugin) ?? [];
+                    additions.push(added);
+                    haloAdditionsByPlugin.set(targetPlugin, additions);
+                }
+            }
+        });
         return;
     }
     targetPlugin.managers.interactivity?.lociHighlights?.highlight?.({ loci }, false);
@@ -338,17 +396,11 @@ export function getSubunitLoci(
     chainIds: string[]
 ) {
     if (!Array.isArray(chainIds) || chainIds.length === 0) return null;
-    let mergedLoci: any = null;
+    let mergedLoci: StructureElement.Loci | null = null;
     for (const chainId of chainIds) {
         const loci = getChainLoci(plugin, structureRef, chainId);
         if (!loci) continue;
-        if (!mergedLoci) {
-            mergedLoci = loci;
-            continue;
-        }
-        if (mergedLoci.kind === 'element-loci' && loci.kind === 'element-loci') {
-            mergedLoci = StructureElement.Loci.union(mergedLoci, loci);
-        }
+        mergedLoci = mergedLoci ? StructureElement.Loci.union(mergedLoci, loci) : loci;
     }
     return mergedLoci;
 }
@@ -789,4 +841,3 @@ export function getStructureRepresentations(plugin: any, structureRef: string) {
     
     return reps;
 }
-
