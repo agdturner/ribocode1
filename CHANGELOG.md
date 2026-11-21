@@ -1,7 +1,7 @@
 # Change Log
 A chronological version based list of changes.
 
-## [Unreleased]
+## [v0.24.0]
 - Mol* residue picks on AlignedTo or Aligned fill the first three Ribocode Select slots for that dataset without replacing other chains. Picks and deselections update the residue markers in both viewers independently of camera sync. Deselecting residues leaves each chain in its slot, even when no residues remain selected. Turning off Residue Highlight removes the markers without changing the selections.
 
 ## [v0.23.2]
