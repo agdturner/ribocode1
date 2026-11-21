@@ -1,3 +1,11 @@
+/**
+ * Playwright E2E test to ensure initial load uses stable aligned transform baseline after hard cache flush.
+ *
+ * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
+ * @author Copilot, Andy Turner <agdturner@gmail.com>
+ * @version 1.0.0
+ * @lastModified 2026-06-11
+ */
 import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
 

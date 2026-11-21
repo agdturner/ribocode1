@@ -1,3 +1,13 @@
+/**
+ * Playwright E2E regression for session load and all dynamic chain slots behavior.
+ *
+ * Covers: 4ug0.cif and 6xu8.cif datasets, chain selection, and dynamic chain slot interactions.
+ *
+ * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
+ * @author Copilot, Andy Turner <agdturner@gmail.com>
+ * @version 1.0.0
+ * @lastModified 2026-06-11
+ */
 import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
 

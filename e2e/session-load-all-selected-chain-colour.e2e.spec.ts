@@ -1,3 +1,13 @@
+/**
+ * Playwright E2E regression for session load and all selected chain color behavior.
+ *
+ * Covers: 4ug0.cif dataset, chain selection, and selected chain color interactions.
+ *
+ * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
+ * @author Copilot, Andy Turner <agdturner@gmail.com>
+ * @version 1.0.0
+ * @lastModified 2026-06-11
+ */
 import { test, expect, type Page } from '@playwright/test';
 import { promises as fs } from 'fs';
 import { dataPath } from './helpers/session-load';

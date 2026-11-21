@@ -1,3 +1,13 @@
+/**
+ * Helper functions for native clipping behavior in Playwright E2E tests.
+ *
+ * Provides utilities for setting up native clipping launch options and verifying clipping behavior.
+ *
+ * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
+ * @author Copilot, Andy Turner <agdturner@gmail.com>
+ * @version 1.0.0
+ * @lastModified 2026-06-11
+ */
 import { expect, type Page } from '@playwright/test';
 import path from 'path';
 
@@ -31,9 +41,8 @@ export async function expectClippingAfterNativeReset(page: Page, toggleSelection
   await expect(page.locator('#viewer-column-B-aligned-load-btn')).toBeEnabled({ timeout: 30000 });
   await page.locator('#viewer-column-B-aligned-file-input')
     .setInputFiles(path.resolve(__dirname, '../../data/input/6xu8.cif'));
-  await expect(page.locator('#viewer-column-B-toggle-visibility-btn').nth(1)).toBeVisible({ timeout: 60000 });
-
   const viewer = page.locator('#viewer-column-B');
+  await expect(viewer.getByRole('button', { name: 'Hide 6XU8', exact: true })).toBeVisible({ timeout: 90000 });
   await viewer.locator('#viewer-column-B-clipping-controls-toggle-btn').click();
   const clipRadius = viewer.locator('#viewer-column-B-aligned-clip-far-number');
   await expect(clipRadius).toBeVisible();

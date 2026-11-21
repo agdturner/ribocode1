@@ -1,11 +1,19 @@
+/**
+ * Playwright E2E test to ensure residue picks and removals mirror between viewers for AlignedTo structures.
+ *
+ * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
+ * @author Copilot, Andy Turner <agdturner@gmail.com>
+ * @version 1.0.0
+ * @lastModified 2026-06-11
+ */
 import { expect, test, type Page } from '@playwright/test';
 import path from 'path';
 import { nativeClippingLaunchOptions } from './helpers/native-clipping';
 
 test.use({ launchOptions: nativeClippingLaunchOptions });
+test.describe.configure({ timeout: 120000 });
 
 test('AlignedTo residue picks and removals mirror between viewers', async ({ page }) => {
-  test.setTimeout(120000);
   await page.goto('/');
   await page.locator('#viewer-column-A-alignedto-file-input')
     .setInputFiles(path.resolve(__dirname, '../data/input/6XU6.cif'));
@@ -101,13 +109,13 @@ async function loadAlignedToAndPickPhe(page: Page) {
 }
 
 test('right Mol* viewer synchronizes Aligned residue picks without changing AlignedTo', async ({ page }) => {
-  test.setTimeout(120000);
+  // Loading and rendering both structures can take longer with parallel software WebGL workers.
+  test.setTimeout(300000);
   const { viewer: left, phe, residue } = await loadAlignedToAndPickPhe(page);
   const right = page.locator('#viewer-column-B');
   await right.locator('#viewer-column-B-aligned-file-input')
     .setInputFiles(path.resolve(__dirname, '../data/input/6xu8.cif'));
-  await expect(right.getByRole('button', { name: /Hide 6XU8/i })).toBeVisible({ timeout: 60000 });
-  await left.getByRole('button', { name: /Show 6XU8/i }).click();
+  await expect(right.getByRole('button', { name: /Hide 6XU8/i })).toBeVisible({ timeout: 90000 });
 
   await right.getByRole('button', { name: 'Show Advanced Mol* Controls' }).click();
   const sequence = right.getByTestId('viewer-column-B-advanced-molstar-controls-panel').locator('.msp-sequence');
@@ -142,6 +150,7 @@ test('right Mol* viewer synchronizes Aligned residue picks without changing Alig
   await expect(selected).toHaveText(['SER 1 [auth 190]', 'LEU 2 [auth 191]', 'ARG 3 [auth 192]']);
   await expect(highlight).toHaveAttribute('aria-pressed', 'true');
 
+  await left.getByRole('button', { name: /Show 6XU8/i }).click();
   const leftSequence = left.getByTestId('viewer-column-A-advanced-molstar-controls-panel').locator('.msp-sequence');
   const leftStructure = leftSequence.getByTitle(/^\[Structure\]/);
   const showLeftSequence = async (label: RegExp, entity: string, chain: RegExp) => {
@@ -179,7 +188,6 @@ test('right Mol* viewer synchronizes Aligned residue picks without changing Alig
 });
 
 test('Mol* and Ribocode synchronize additions and removals on the same chain', async ({ page }) => {
-  test.setTimeout(90000);
   const { viewer, sequence, phe, pheList, residue } = await loadAlignedToAndPickPhe(page);
   const residueHighlight = viewer.locator('#viewer-column-A-alignedto-highlight-residue-btn');
   const chainHighlight = viewer.locator('#viewer-column-A-alignedto-highlight-chain-btn');
@@ -256,7 +264,6 @@ test('Mol* and Ribocode synchronize additions and removals on the same chain', a
 });
 
 test('Mol* picks fill Select 2 and deselecting residues preserves both chain slots', async ({ page }) => {
-  test.setTimeout(90000);
   const { viewer, sequence, entity, phe, pheList, residue } = await loadAlignedToAndPickPhe(page);
   const slot2Chain = viewer.getByTestId('viewer-column-A-alignedto-chain2-chain-table-row-AQ');
   await viewer.locator('#viewer-column-A-alignedto-select-chain2-controls-toggle-btn').click();

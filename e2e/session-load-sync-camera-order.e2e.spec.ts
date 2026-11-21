@@ -1,3 +1,13 @@
+/**
+ * Playwright E2E regression for session load and sync camera order behavior.
+ *
+ * Covers: test-session-sync-camera.json, viewer A and B camera snapshots, and sync state interactions.
+ *
+ * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
+ * @author Copilot, Andy Turner <agdturner@gmail.com>
+ * @version 1.0.0
+ * @lastModified 2026-06-11
+ */
 import { test, expect } from '@playwright/test';
 import { loadSessionAndRequiredFiles } from './helpers/session-load';
 

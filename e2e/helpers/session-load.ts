@@ -1,3 +1,14 @@
+/**
+ * Helper functions for loading sessions and required files in Playwright E2E tests.
+ *
+ * Provides utilities for resolving data paths, session fixture paths, waiting for session menu readiness,
+ * and loading sessions with required files.
+ *
+ * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
+ * @author Copilot, Andy Turner <agdturner@gmail.com>
+ * @version 1.0.0
+ * @lastModified 2026-06-11
+ */
 import { expect, type Page } from '@playwright/test';
 import path from 'path';
 
