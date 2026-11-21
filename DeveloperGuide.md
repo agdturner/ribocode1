@@ -832,6 +832,7 @@ Seeing skipped tests can be expected and does not necessarily indicate failure:
 - Four visual-regression/manual-flow specs in `e2e/representation-theme-switch-regression.e2e.spec.ts` are skipped when WebGL is unavailable in the run environment.
 
 The [native Reset Zoom test](./e2e/clipping-sync-after-molstar-reset-zoom.e2e.spec.ts) and [Selection Mode + Reset Zoom test](./e2e/clipping-sync-after-molstar-wheel-zoom.e2e.spec.ts) request software WebGL in standard E2E runs and compare the open clipping control with the effective camera radius.
+Their shared setup waits for Viewer B's **Hide 6XU8** button before checking the camera fit. The visibility control can be present as a placeholder before the `Aligned` structure is ready.
 
 If you need those visual checks to run, use:
 
@@ -903,6 +904,7 @@ The following scripts are available in `package.json`:
 - Prefer stable ID/testid selectors for repeated controls (`Zoom`, `Highlight`, `Inspect`) because label text is intentionally duplicated across Subunit, Chain, and Residue sections.
 - For session load/save/reload flows, wait for key controls (for example `#session-menu-btn`) before interacting after navigation or reload.
 - Long session workflows can exceed the default 30s test timeout under parallel workers; set a per-test timeout (for example `test.setTimeout(60000)`) for save/reload/load scenarios.
+- If Playwright times out before a test body runs (for example, while setting up `context`), set the timeout with `test.describe.configure({ timeout: 120000 })` at spec or group scope. A `test.setTimeout()` call inside the test runs too late to cover fixture setup.
 - For load completion assertions, prefer checking filename labels (for example `#viewer-column-B-aligned-filename-label`) rather than assuming the absence/presence of a specific load button.
 
 #### Retrospective: 0.16.2 Test Stabilization

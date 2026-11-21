@@ -11,7 +11,7 @@
 import { Structure } from 'molstar/lib/mol-model/structure';
 import { buildChainToUniprotMap, buildEntityToUniprotMap, inferSpeciesKeyFromModel, RpNameLookupBySpecies } from './rpNameTable';
 
-function normalizeChainIdentifier(value: unknown): string {
+export function normalizeChainIdentifier(value: unknown): string {
     const v = String(value ?? '').trim();
     if (!v || v === '?' || v === '.') return '';
     return v;

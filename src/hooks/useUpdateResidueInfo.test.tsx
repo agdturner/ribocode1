@@ -44,23 +44,32 @@ describe('useUpdateResidueInfo', () => {
     };
     const setResidueInfo = vi.fn();
     const setSelectedResidueIds = vi.fn();
-    renderHook(() =>
+    const { rerender } = renderHook(({ selectedIds, chainId }) =>
       useUpdateResidueInfo(
         viewerRef as any,
         'ref1',
-        molstar,
-        'A',
+        { getResidueInfo: molstar.getResidueInfo },
+        chainId,
         setResidueInfo,
-        [],
+        selectedIds,
         setSelectedResidueIds,
         'TestLabel'
-      )
+      ),
+      { initialProps: { selectedIds: [] as string[], chainId: 'A' } }
     );
     expect(molstar.getResidueInfo).toHaveBeenCalledWith(mockStructureObj, 'A');
     expect(setResidueInfo).toHaveBeenCalled();
     const updater = setResidueInfo.mock.calls[0][0];
     const result = updater({ residueLabels: new Map(), residueToAtomIds: {} });
     expect(result).toEqual({ residueLabels: mockResidueLabels, residueToAtomIds: mockResidueToAtomIds });
+    expect(setSelectedResidueIds).toHaveBeenCalledWith(['1']);
+    setSelectedResidueIds.mockClear();
+    rerender({ selectedIds: ['1'], chainId: 'A' });
+    rerender({ selectedIds: [], chainId: 'A' });
+    expect(setSelectedResidueIds).not.toHaveBeenCalled();
+
+    rerender({ selectedIds: [], chainId: 'B' });
+    expect(molstar.getResidueInfo).toHaveBeenLastCalledWith(mockStructureObj, 'B');
     expect(setSelectedResidueIds).toHaveBeenCalledWith(['1']);
   });
 

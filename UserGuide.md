@@ -410,6 +410,7 @@ Next, the user can do several things:
   - Representation can be removed from the `MoleculeUI` components using the `x` buttons.
   - Custom colour themes can be loaded from file via the actionable `Load Colours` button and then selected in either column.
   - The 3D representation of the dataset in `Viewer A` can be rotated, zoomed and panned using mouse controls as normal with a Mol* viewer.
+  - Turn on Mol* `Selection Mode` in either viewer and pick `AlignedTo` or `Aligned` residues in the viewport or in **Show Advanced Mol* Controls → Sequence**. Ribocode checks picked residues in the chain's existing `Select 1`–`Select 3` slot for that dataset, or uses the first empty slot for a new chain. If those slots are full, a pick on a new chain does not replace them. Both viewers showing the same dataset display the same residue markers, even with camera synchronization off. Picking residues in one dataset does not change the other dataset's selections. While a slot's residue `Highlight` is active, checking or unchecking its residues updates their Mol* markers. Deselecting residues in Mol* unchecks them in Ribocode but keeps each chain in its slot, even when no residues remain checked. Use Ribocode's chain removal control to remove a chain. Turning off Ribocode's residue highlight removes the markers but keeps the chain and residue selections.
   - An `Aligned` dataset can be loaded via the `Load Aligned` button.
   - Subunits and chains can be selected and once selected more things can be done...
   

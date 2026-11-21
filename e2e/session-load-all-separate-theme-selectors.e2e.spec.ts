@@ -1,3 +1,13 @@
+/**
+ * Playwright E2E regression for session load and all separate theme selectors behavior.
+ *
+ * Covers: 4ug0.cif dataset, chain and residue theme uploads, and session save/load interactions.
+ *
+ * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
+ * @author Copilot, Andy Turner <agdturner@gmail.com>
+ * @version 1.0.0
+ * @lastModified 2026-06-11
+ */
 import { test, expect, type Page } from '@playwright/test';
 import { promises as fs } from 'fs';
 import path from 'path';
