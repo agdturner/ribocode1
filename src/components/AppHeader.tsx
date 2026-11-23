@@ -23,7 +23,7 @@ const normalizedBaseUrl = appBaseUrl.endsWith('/') ? appBaseUrl : `${appBaseUrl}
 const LOCAL_DOCS_README_URL = `${normalizedBaseUrl}docs/index.html`;
 const LOCAL_DOCS_USER_GUIDE_URL = `${normalizedBaseUrl}docs/documents/UserGuide.html`;
 const CANONICAL_README_URL = 'https://github.com/ribocode-slola/ribocode1/?tab=readme-ov-file#ribocode';
-const CANONICAL_USER_GUIDE_URL = 'https://github.com/ribocode-slola/ribocode1/blob/main/UserGuide.md';
+const CANONICAL_USER_GUIDE_URL = 'https://github.com/ribocode-slola/ribocode1/blob/main/documentation/UserGuide.md';
 
 async function openDocsLinkWithFallback(
   event: React.MouseEvent<HTMLAnchorElement>,

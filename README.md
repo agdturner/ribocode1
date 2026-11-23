@@ -15,7 +15,15 @@ Once installed as a PWA, Ribocode can be used offline.
 
 ## Documentation
 
-For recent UI and workflow updates, see the [CHANGELOG](./CHANGELOG.md).
+The project's authored documentation is in `documentation/`:
+
+- [User Guide](./documentation/UserGuide.md) — using Ribocode.
+- [Developer Quick Start](./documentation/DeveloperQuickStart.md) — setting up a development environment.
+- [Developer Guide](./documentation/DeveloperGuide.md) — development, testing and release workflows.
+- [Alignment Development](./documentation/AlignmentDevelopment.md) and [Alignment Testing](./documentation/AlignmentTesting.md) — implementation and regression checks.
+- [Roadmap](./documentation/ROADMAP.md) — planned work.
+- [Changelog](./documentation/CHANGELOG.md) — released changes.
+- [Alignment Quality Gates ADR](./documentation/decisions/ADR-0001-alignment-quality-gates.md) — alignment decisions and investigation status.
 
 The generated API documentation is created locally by `npm run docs` into the `docs/` directory (entry point: `docs/index.html`).
 
@@ -27,8 +35,6 @@ For this repository, deployed API docs are available at:
 For forks, the equivalent deployed URL is:
 * `https://<username>.github.io/ribocode1/docs/index.html`
 
-Please see the [User Guide](./UserGuide.md) for help using Ribocode.
-
 For a cleaner default workspace, each viewer column shows the Mol* `3D Canvas` and hides extra Mol* panels by default. Advanced users can expand these per column using `Show Advanced Mol* Controls`.
 
 Ribocode source code is mostly [TypeScript](https://www.typescriptlang.org/). The UI is based on the [React](https://react.dev/) library. Build and deployment is based on [Node](https://nodejs.org/) and [Vite](https://vite.dev/). General deployment is via [GitHub](https://github.com/). Other key technologies used for development include [Git](https://git-scm.com/), [GitHub Copilot](https://docs.github.com/en/copilot) and [Visual Studio Code](https://code.visualstudio.com/).
@@ -36,25 +42,8 @@ Ribocode source code is mostly [TypeScript](https://www.typescriptlang.org/). Th
 
 ## Quick Start (for Developers)
 
-To get started with development:
-
-1. Clone the repository:
-	```sh
-	git clone https://github.com/ribocode-slola/ribocode1.git
-	cd ribocode1
-	```
-2. Use Node 24.11.0+.
-3. Install dependencies:
-	```sh
-	npm install
-	```
-4. Start the development server:
-	```sh
-	npm run dev
-	```
-	The app will be available at http://localhost:5173/
-
-For more details, see the [Developer Guide](./DeveloperGuide.md).
+See the [Developer Quick Start](./documentation/DeveloperQuickStart.md) for setup
+and the [Developer Guide](./documentation/DeveloperGuide.md) for detailed guidance.
 
 ## Typical Workflows
 
@@ -96,7 +85,7 @@ Ribocode includes automated unit, integration, and end-to-end (E2E) tests.
   ```
   Playwright will automatically start the dev server if needed.
 
-See the [Developer Guide](./DeveloperGuide.md) for more on testing and best practices.
+See the [Developer Guide](./documentation/DeveloperGuide.md) for more on testing and best practices.
 
 Ribocode is being developed as part of the [Ribocode project](https://ribocode.org/).
 
@@ -107,7 +96,7 @@ Ribocode project participants and Scientific Advisory Board members are encourag
 
 Before filing a bug report for unexpected UI/alignment behaviour, try `Session > Reset Local Caches` and re-test the same workflow. This clears local browser cache/storage used by Ribocode and reloads the app, which helps distinguish stale local state issues from reproducible defects.
 
-Contributions from others are also welcome, please see the [Developer Guide](./DeveloperGuide.md) for more guidance on contributing.
+Contributions from others are also welcome, please see the [Developer Guide](./documentation/DeveloperGuide.md) for more guidance on contributing.
 
 
 ## Acknowledgements

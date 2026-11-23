@@ -110,7 +110,7 @@ Initial loading modifies coordinates during mmCIF parsing. An identity structure
 matrix therefore does not establish that the initial fit is correct. Diagnose coordinate
 alignment separately from camera orientation before changing either.
 
-- [Geometry diagnostics](../src/utils/alignmentGeometry.test.ts) check an asymmetric
+- [Geometry diagnostics](../../src/utils/alignmentGeometry.test.ts) check an asymmetric
   structure with a known rotation and translation, including unequal selected-atom counts
   in both directions and atoms excluded from the fit. They exercise both the compiled
   runtime and the pinned Mol* TypeScript source.
@@ -119,7 +119,7 @@ alignment separately from camera orientation before changing either.
   geometry differs from the source: the runtime uses a shared rigid-transform helper
   that is absent from the source. Do not rebuild or treat a source-only defect as the
   cause of the observed viewer behavior without checking this provenance.
-- [Initial-load browser diagnostics](../e2e/initial-alignment-coordinate-diagnostic.e2e.spec.ts)
+- [Initial-load browser diagnostics](../../e2e/initial-alignment-coordinate-diagnostic.e2e.spec.ts)
   compare actual atomic coordinates for each dataset across viewers, record phosphorus
   counts and centroids, measure CU C-alpha distances using shared author residue IDs,
   and record camera forward/up dot products before manual realignment. The CU anchors
@@ -152,7 +152,7 @@ threshold or camera-parity policy. Existing chain/residue quality gates remain r
 
 ### Selector and pairing comparison (2026-11-23)
 
-[Offline fixture diagnostics](../src/utils/initialAlignmentDiagnostic.test.ts) parse the
+[Offline fixture diagnostics](../../src/utils/initialAlignmentDiagnostic.test.ts) parse the
 first model using Mol*, reproduce initial coordinate centralisation, and compare four
 fits without changing application defaults. Candidate correspondence uses unique
 author chain/residue/insertion-code, residue component, atom name and alternate-location
@@ -312,7 +312,7 @@ weak-fixture global/local trade-off for this experiment only; if correspondence 
 uncertain, warn and leave centered coordinates unfitted (do not fall back to the
 legacy fit).
 
-The prototype in [experimentalInitialAlignment.ts](../src/utils/experimentalInitialAlignment.ts)
+The prototype in [experimentalInitialAlignment.ts](../../src/utils/experimentalInitialAlignment.ts)
 requires unique reciprocal RNA polymer matches, at least 20 known identical residues,
 90% aligned identity and 80% identical coverage bilaterally for every observed RNA
 chain. Matching uses label-chain identity only to distinguish candidates, not to pair
