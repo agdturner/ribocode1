@@ -14,13 +14,6 @@ This document outlines planned work for upcoming Ribocode versions. It is direct
 ## Planned Versions
 
 
-### v0.23.2.
-- Clipping controls now follow native Mol* `Reset Zoom`, including after `Toggle Selection Mode`. Both paths are covered by WebGL-backed E2E tests. See [ribocode-slola/ribocode1#158](https://github.com/ribocode-slola/ribocode1/issues/158).
-
-### v0.24.0 Unify selection so selection using Ribocode Select and Zoom Controls and Select using Mol* viewer are effectively the same.
-- See [ribocode-slola/ribocode1#136](https://github.com/ribocode-slola/ribocode1/issues/136)
-- Current coverage: [selection browser tests](e2e/molstar-residue-selection.e2e.spec.ts) cover `AlignedTo` and `Aligned` residue picks and removals across both Mol* viewers, independent of camera sync. With both datasets loaded, selecting residues on `Aligned` chain CU leaves the existing `AlignedTo` chain CU selection intact. Deselecting the last residue leaves the chain in its slot.
-
 ### v0.25.0 Improve alignment quality.
 - Maintain objective benchmark tracking for:
   - 6XU6/6XU8 chain CU -> CU (stable reference case)
