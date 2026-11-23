@@ -6,6 +6,16 @@
 
 ## Current investigation status (2026-11-23)
 
+- Weak-case follow-up: both 7WTT and 7WTZ contain distinct author chains `E`
+  and `e`. The reference has 262 versus 20 C-alpha atoms respectively; the
+  moving structure has 262 versus 55. Browser diagnostics show the current
+  case-insensitive anchor extraction returns 262 C-alpha anchors for both `e`
+  and `E` in each dataset. The existing e-to-e metric (262 pairs, 72.233
+  Angstrom RMSD) therefore does not measure the intended lowercase chains.
+  Other chain/residue lookup paths also normalize case; correcting the selection
+  consistently, including author/label aliases and multi-chain behavior, needs
+  dedicated tests before changing runtime behavior. The previous 20-pair
+  sequence-identical e diagnostic remains a separate offline metric.
 - Improved initial alignment remains a developer-only experiment; production defaults
   have not changed. Manual 6XU6/6XU8 comparison was positive.
 - Geometry source/runtime mismatch is resolved and pinned to Mol* commit

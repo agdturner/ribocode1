@@ -152,6 +152,28 @@ function compareSequences(reference: Atom[], moving: Atom[], kind: 'protein' | '
 }
 
 describe('initial alignment selector and correspondence diagnostics', () => {
+    it('reports case-sensitive chain IDs that collide with the weak benchmark target', async () => {
+        const fixtureCounts = new Map<string, Map<string, { atoms: number; ca: number; phosphorus: number }>>();
+        for (const filename of ['7WTT.cif', '7WTZ.cif']) {
+            const atoms = await readAtoms(filename);
+            const chains = new Map<string, { atoms: number; ca: number; phosphorus: number }>();
+            for (const atom of atoms) {
+                if (atom.chain.toUpperCase() !== 'E') continue;
+                const counts = chains.get(atom.chain) ?? { atoms: 0, ca: 0, phosphorus: 0 };
+                counts.atoms++;
+                if (atom.name === 'CA' && atom.type === 'C') counts.ca++;
+                if (atom.name === 'P' && atom.type === 'P') counts.phosphorus++;
+                chains.set(atom.chain, counts);
+            }
+            console.log(`[Weak benchmark chain-case diagnostic][${filename}]`, Object.fromEntries(chains));
+            fixtureCounts.set(filename, chains);
+        }
+        expect(fixtureCounts.get('7WTT.cif')?.get('e')?.ca).toBe(20);
+        expect(fixtureCounts.get('7WTZ.cif')?.get('e')?.ca).toBe(55);
+        expect(fixtureCounts.get('7WTT.cif')?.get('E')?.ca).toBe(262);
+        expect(fixtureCounts.get('7WTZ.cif')?.get('E')?.ca).toBe(262);
+    });
+
     it('aligns RNA independently of chain names and author numbers and excludes unknown anchors', () => {
         const reference: Atom[] = ['A', 'C', 'G', 'U', 'A', 'C', 'G', 'U', 'UNK'].map((component, i) => ({
             type: 'C', name: "C4'", chain: 'REF', residue: `${i + 1}:`, component, alt: '',

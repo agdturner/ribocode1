@@ -41,10 +41,28 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('diagnostic: Align Chains on e reports metrics', async ({ page }) => {
-  test.setTimeout(120000);
+  test.setTimeout(240000);
 
   await page.goto('http://localhost:5173/');
   await loadAlignedToAndAligned(page);
+
+  const anchorDiagnostics = await page.evaluate(() => {
+    const api = (window as any).__ribocodeTestApi;
+    return (['AlignedTo', 'Aligned'] as const).map(mode => {
+      const byChain = (chain: string) => {
+        const anchors = api.getInitialAlignmentCoordinates('A', mode, chain).anchors;
+        return {
+          types: anchors.symbolTypes.reduce((counts: Record<string, number>, type: string) => {
+            counts[type] = (counts[type] ?? 0) + 1;
+            return counts;
+          }, {}),
+          count: anchors.residueKeys.length,
+        };
+      };
+      return { mode, lower: byChain('e'), upper: byChain('E') };
+    });
+  });
+  console.log('[Weak benchmark chain-case browser diagnostic]', JSON.stringify(anchorDiagnostics));
 
   await page.click('#viewer-column-A-select-zoom-controls-toggle-btn');
   await page.click('#viewer-column-B-select-zoom-controls-toggle-btn');
