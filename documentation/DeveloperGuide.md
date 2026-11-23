@@ -2,27 +2,19 @@
 
 Welcome to the Ribocode Developer Guide!
 
-
 ## Table of Contents
 
-- [Quick Test](#quick-test)
 - [Setup](#setup)
-  - [Recommended set up](#recommended-set-up)
-  - [Mol* Submodule Workflow](#mol-submodule-workflow)
-  - [Build and run locally](#build-and-run-locally)
-  - [Production Build & Preview](#production-build--preview)
-  - [Notes on Environment Files](#notes-on-environment-files)
-  - [Deployment overview](#deployment-overview)
 - [Source Code Overview](#source-code-overview)
-- [UI Element IDs and data-testid Conventions](#ui-element-ids-and-data-testid-conventions)
+- [Theme System Architecture](#theme-system-architecture-important)
+- [UI Element ID and Test ID Conventions](#ui-element-id-and-test-id-conventions)
   - [General Rules](#general-rules)
   - [Examples](#examples)
   - [Updating Existing Components](#updating-existing-components)
   - [Tooltip Conventions](#tooltip-conventions)
 - [Mol* Advanced Controls Toggle](#mol-advanced-controls-toggle)
 - [Re-alignment Implementation Notes](#re-alignment-implementation-notes)
-  - [Cache and State Hygiene](#cache-and-state-hygiene)
-- [Mol*](#mol*)
+- [Molstar](#molstar)
 - [Highlighting and Selection Colouring](#highlighting-and-selection-colouring)
 - [Documentation](#documentation)
   - [How to Generate Documentation](#how-to-generate-documentation)
@@ -33,6 +25,7 @@ Welcome to the Ribocode Developer Guide!
 - [Versioning](#versioning)
   - [Release checklist](#release-checklist)
 - [Roadmap](#roadmap)
+- [Session Fidelity Inventory (v0.17.x)](#session-fidelity-inventory-v017x)
 - [Tests](#tests)
   - [Test File Structure](#test-file-structure)
   - [Creating Tests](#creating-tests)
@@ -46,71 +39,13 @@ Welcome to the Ribocode Developer Guide!
     - [Using Real Datasets in E2E Tests](#using-real-datasets-in-e2e-tests)
     - [E2E Test Best Practices](#e2e-test-best-practices)
       - [Session Round-Trip Regression Patterns](#session-round-trip-regression-patterns)
-  - [Test Types Overview](#test-types-overview)
 - [Contributing](#contributing)
   - [Working from a fork](#working-from-a-fork)
 
 
-## Quick Test
-
-```sh
-git clone https://github.com/ribocode-slola/ribocode1.git
-cd ribocode1
-git submodule update --init --recursive
-cd packages/molstar
-npm install
-npm run build:lib
-cd ../..
-npm install
-npm run dev
-# Visit http://localhost:5173/
-```
-
-For E2E tests:
-```sh
-npm run test:e2e
-```
-
-For unit/integration tests:
-```sh
-npm test
-```
-
-
 ## Setup
+Follow the [Developer Quick Start Guide](./DeveloperQuickStart.md)
 
-You will need [Git](https://git-scm.com/) to clone the repository and [Node](https://nodejs.org/). It is recommended to use Node version 24.11.0 or later.
-
-Fork [Ribocode](https://github.com/ribocode-slola/ribocode1) if you plan to submit changes. You only need a separate [Ribocode Mol*](https://github.com/ribocode-slola/molstar) fork if you plan to submit changes to Mol* itself.
-
-If you are a member of the Ribocode project and want help getting set up with a development environment or help contributing via a `pull request`, please let it be known.
-
-
-### Recommended set up
-
-1. Clone your Ribocode fork into a local directory (the Ribocode root).
-2. Initialize the Mol* submodule at the commit recorded by Ribocode.
-3. Build the Mol* library outputs before running Ribocode.
-
-Example commands:
-
-```sh
-# Clone Ribocode
-git clone https://github.com/<your-github-user>/ribocode1.git
-cd ribocode1
-
-# Check out the Mol* commit pinned by Ribocode
-git submodule update --init --recursive
-
-# Install and build the Mol* lib output consumed by Ribocode
-cd packages/molstar
-npm install
-npm run build:lib
-
-# Back to Ribocode root
-cd ../..
-npm install
-```
 
 ### Mol* Submodule Workflow
 
@@ -164,7 +99,7 @@ From the Ribocode root directory:
   - Starts the Vite development server using settings from `.env` (base path is `/`).
   - Visit the local URL shown in the terminal (usually http://localhost:5173/).
 
-#### Production Build & Preview
+#### Production Build and Preview
 
 * `npm run build`
   - Builds the app for production using settings from `.env.production` (base path is `/ribocode1/`).
@@ -204,11 +139,12 @@ Configuration files are in the top-level directory. The main source code is in t
   - `hooks/`: Custom React hooks for encapsulating stateful logic and side effects (e.g., useMolstarViewer, useMoleculeLoader, useUpdateColors, useSessionSave, etc.).
   - `constants/`: Centralized runtime constants (e.g., ribocode.ts for alignment and viewer key constants).
   - `types/`: Shared TypeScript types and interfaces (e.g., ribocode.ts for core app types, molstar.d.ts for Mol* types).
-  - `utils/`: Utility functions and helpers for data processing, color themes, structure manipulation, and viewer helpers. Includes files like `chain.ts`, `residue.ts`, `colors.ts`, `data.ts`, `dictionary.ts`, `structureUtils.ts`, and `viewerHelpers.ts` (with corresponding test files).
-  - `public/`: Static assets for the PWA (e.g., icons, manifest, robots.txt).
+  - `utils/`: Utility functions and helpers for data processing, color themes, structure manipulation, and viewer helpers. Includes files like `chain.ts`, `residue.ts`, `colors.ts`, `data.ts`, `dictionary.ts`, and `viewerHelpers.ts` (with corresponding test files).
   - `main.tsx`: Entry point for the React application. Renders the root App component and applies global styles.
   - `service-worker.ts`: The PWA service worker for offline support and caching.
   - `serviceWorkerRegistration.ts`: Registers or unregisters the service worker as needed.
+
+The repository-root `public/` directory contains static assets for the PWA.
 
 Notes:
 - Some UI components for loading dictionary/alignment data and for advanced visualization controls (e.g., fog, camera planes) exist but may be hidden or under development.
@@ -298,91 +234,9 @@ This keeps default user workflows focused on Ribocode controls while preserving 
 
 ## Re-alignment Implementation Notes
 
-Chain-based re-alignment now uses a staged approach in `src/App.tsx`.
+See the [alignment development reference](./AlignmentDevelopment.md) for the coordinate and camera contracts, implementation, and cache hygiene.
 
-### Two-Layer Alignment Model (Important)
-
-Ribocode intentionally uses two related but distinct alignment layers:
-
-- Geometry/frame alignment (coordinate-space):
-  - Applied during load/parse to place structures into a comparable coordinate frame.
-  - This keeps structural operations (selection loci, clipping behavior, fit computations, and session transform restore) numerically consistent across both viewers.
-- View alignment (camera-space):
-  - Applied after user-triggered realign actions so both viewers present the same viewpoint.
-  - This is a UI consistency rule and is independent of whether the fitted atom coordinates are already correct.
-
-Why we keep both layers:
-
-- Geometry-only alignment can still look "wrong" to users if viewer cameras drift apart after sequential actions.
-- Camera-only alignment makes visual parity easy, but can leave structures in different coordinate frames and complicate downstream structural logic.
-- The current design keeps coordinate normalization for robust structural behavior, then enforces camera parity after realign actions for perceptual consistency.
-
-Practical contract for contributors:
-
-- Any action that changes `Aligned` structure transforms (chain/subunit/residue realign; in-place or reload fallback) should explicitly restore viewer camera parity.
-- In current implementation this is done by copying camera A -> B after successful realign apply.
-- If this contract is changed in future, update both this guide and regression tests together.
-
-- Preferred path (in-place):
-  - Fit is computed using `alignDatasetUsingChains` from the customized Mol* ribocode geometry utilities.
-  - A rigid transform matrix is built from the fitted rotation and derived translation.
-  - The transform is applied to existing aligned structures using `StateTransforms.Model.TransformStructureConformation`.
-  - Applied in-place chain pairs are tracked and deduplicated so the same `(from, to)` pair is not transformed repeatedly.
-- Fallback path (reload-based):
-  - If in-place transform cannot be applied, the app falls back to the existing `ReAligned` loading flow using alignment data.
-- Post-realign camera behavior:
-  - After chain re-alignment is applied, the `Aligned` viewer camera is matched to the `AlignedTo` viewer camera (zoom, pan target, and orientation) to keep both viewers in the same viewpoint.
-- Alignment-data transform behavior:
-  - Mol* trajectory alignment application now uses full `rotation + translation` when `rotMat`, `centroid`, and `centroidReference` are available.
-  - Equal-count fit mapping is normalized so `centroid` is the moving-set centroid and `centroidReference` is the reference-set centroid, matching the transform convention `R * (p - centroid) + centroidReference`.
-- Diagnostics:
-  - Re-alignment logs include chain atom summaries, atom selector mode, selected atom counts, pair count, and RMSD.
-- Feature flag:
-  - In-place path can be controlled via `ENABLE_IN_PLACE_CHAIN_REALIGN` in `src/App.tsx`.
-- Sync behavior note:
-  - Camera sync propagation is source-directed from the current `activeViewer` only.
-  - Sync applies source camera deltas (pan/rotation/zoom) to the target viewer, preserving the target viewer's local frame instead of replacing it with the source camera frame.
-  - Zoom propagation combines radius scaling and source camera-distance scaling (`|position-target|`) so wheel/dolly zoom is propagated even when radius does not change.
-  - `activeViewer` switches based on pointer presence/interactions in a viewer (`pointerenter`, `pointermove`, `wheel`, `pointerdown`), so a click is not required to change sync source.
-  - Viewer activation listeners are attached natively on the Mol* container in capture mode (`MolstarContainer`) for reliable detection across nested Mol* UI roots.
-  - Unchanged source snapshots are ignored to avoid no-op camera churn.
-  - A lightweight animation-frame poll loop keeps sync responsive during pan/zoom/rotation interactions where camera events may be sparse.
-  - Poll frequency is configurable via `VITE_SYNC_POLL_INTERVAL_MS` (default `20`, clamped to `5..100`) in `.env`/`.env.production`.
-- Utility helpers:
-  - Re-align pair-key and dedupe helpers are implemented in `src/utils/realignment.ts` (`makeRealignPairKey`, `hasRealignPair`, `addRealignPair`).
-
-### Cache and State Hygiene
-
-Alignment regressions can be obscured by stale state from prior loads if either browser caches or in-memory transform caches are reused between scenarios.
-
-Current policy:
-
-- Do not force a full browser cache flush on every normal app initialization.
-- Do clear internal alignment caches when loading a new dataset pair (AlignedTo or Aligned) so each load starts from a fresh transform baseline.
-- Do provide explicit diagnostics/test hooks for manual and automated cache resets.
-- Provide a user-facing troubleshooting reset (`Session > Reset Local Caches`) so reporters can quickly verify whether issues persist after a clean local state reset.
-
-Why we do not hard-flush all browser caches at startup:
-
-- It can degrade performance by defeating normal browser and service-worker caching.
-- It can interfere with offline/PWA behavior.
-- It can unexpectedly remove persisted local state users may rely on.
-- It does not target the main source of alignment confusion (in-memory transform carryover), so it is broader than necessary.
-
-Recommended practice for debugging and regression tests:
-
-- In E2E setup, perform a hard browser-state reset when validating initial-load parity scenarios:
-  - clear `localStorage` and `sessionStorage`
-  - clear IndexedDB databases
-  - unregister service workers
-  - clear Cache Storage
-- Also clear app-internal alignment caches before taking diagnostics snapshots.
-
-Reference regression test:
-
-- `e2e/initial-load-transform-stability.e2e.spec.ts` validates that a hard cache flush + fresh load yields stable initial aligned transforms across repeated runs.
-
-## UI Element IDs and `data-testid` Conventions
+## UI Element ID and Test ID Conventions
 
 To ensure robust, maintainable, and testable UI code, Ribocode uses the following conventions for element IDs and `data-testid` attributes:
 
@@ -434,7 +288,7 @@ Testing guidance:
 - Verify both enabled and disabled-state wording when behavior changes by state.
 
 
-## Mol*
+## Molstar
 
 Ribocode depends upon a customised version of [Mol*](https://github.com/molstar/molstar) - [Ribocode Mol*](https://github.com/ribocode-slola/molstar). This is currently Mol* Version 5.4.2 with some files added for Ribocode that might be generally useful for Mol*. These are being contributed via [Mol* Pull Request #1726](https://github.com/molstar/molstar/pull/1726), but if this does not happen, they will be folded back into Ribocode to make it easier to build on later versions of Mol*.
 
@@ -478,7 +332,7 @@ When modifying highlight/colour behavior:
 
 - Prefer robust IDs and `data-testid` selectors for new controls.
 - Add both integration and E2E coverage, because highlight behavior can differ under mocked vs real browser rendering.
-- Keep generated `docs/` output out of code-focused commits unless the change is explicitly documentation publication/refresh.
+- Commit authored documentation changes under `documentation/`; generated `docs/` output is ignored by Git.
 
 
 ## Documentation
@@ -497,8 +351,8 @@ There is a [CHANGELOG](./CHANGELOG.md) which summarises changes, particularly ch
 	```
 - The documentation will be available as static HTML files in the `docs/` folder.
 - `npm run docs` generates docs locally only; it does not deploy them.
-- The `docs/` directory is generated output. For normal feature/bugfix commits, do not include `docs/` changes unless the pull request is explicitly about documentation publication or docs content refresh.
-- If `npm run build` or `npm run docs` updates generated files during development, leave those changes unstaged for code-focused commits.
+- Authored Markdown is maintained in `documentation/`; TypeDoc reads those files and `README.md`.
+- `docs/` is generated output and is ignored by Git. Commit the authored files and configuration, not the generated output. Deployment publishes the generated files separately.
 
 
 ### Configuration
@@ -607,7 +461,7 @@ git remote -v
 
    The command repeats the checks, verifies the supplied SHA matches the checkout, and creates and pushes only the matching annotated `vX.Y.Z` tag. It does not check the live PWA for you. If the push fails and the tag did not reach upstream, rerun the command after addressing the error; it can reuse an annotated local tag for the same commit.
 
-6. Confirm the [release workflow](./.github/workflows/release.yml) succeeded and the new entry appears on the upstream Releases page. The workflow publishes notes from the matching changelog entry in the tagged commit. If publishing fails after the tag reaches upstream, inspect and rerun the workflow rather than pushing or moving the tag. If the workflow is not present on the tagged commit, publish manually using the existing upstream tag and changelog entry.
+6. Confirm the [release workflow](../.github/workflows/release.yml) succeeded and the new entry appears on the upstream Releases page. The workflow publishes notes from the matching changelog entry in the tagged commit. If publishing fails after the tag reaches upstream, inspect and rerun the workflow rather than pushing or moving the tag. If the workflow is not present on the tagged commit, publish manually using the existing upstream tag and changelog entry.
 
 The workflow matches tag pushes, validates the full `vX.Y.Z` format against `package.json`, and only publishes in `ribocode-slola/ribocode1`. Neither a branch beginning with `v` nor a tag pushed to a fork publishes an official release. A GitHub Release created manually on a fork stays there: a tag can be pushed elsewhere, but release notes and uploaded assets are not transferred.
 
@@ -623,7 +477,9 @@ Developers looking for contributions should consult both:
 
 ## Session Fidelity Inventory (v0.17.x)
 
-This section tracks session save/load parity for the roadmap workstream "v0.17.x (Session Fidelity and Collaboration)".
+This historical inventory records session save/load parity for the v0.17.x
+roadmap workstream. It is not a complete guarantee for later features; check the
+current session tests and implementation when changing session behavior.
 
 ### Parity Matrix
 
@@ -687,6 +543,11 @@ test('renders the component', () => {
 
 Before requesting PR review, run `npm run test:pr` to run unit and integration tests once, then the browser E2E suite. Stop any dev server using port `5173` first so Playwright can start its own server. If the first suite fails, the E2E suite does not run.
 
+- To run the unit and integration suite once:
+  ```sh
+  npm run test -- --run
+  ```
+- To run tests in watch mode:
   ```sh
   npm test -- --watch
   ```
@@ -701,120 +562,7 @@ Before requesting PR review, run `npm run test:pr` to run unit and integration t
 
 ### Alignment Regression Testing
 
-Alignment changes should be validated with both automated and manual checks before release.
-
-Reference decision record: [ADR-0001 Alignment Quality Gates](decisions/ADR-0001-alignment-quality-gates.md).
-
-Camera parity should also be checked with `PW_E2E_FORCE_WEBGL=1`: the default
-browser mode did not consistently reproduce a clipping readback regression.
-Mol* exposes clipping radius as a rounded percentage. When reflecting camera events
-in the controls, do not write an unchanged percentage back through `setProps`:
-that round trip quantizes the exact camera radius and can undo realignment parity.
-Intentional clipping changes must still be applied.
-
-Run the focused camera/residue/clipping checks with software WebGL:
-
-```sh
-npm run test:e2e:webgl -- e2e/residue-realign.e2e.spec.ts e2e/clipping-controls-live-sync.e2e.spec.ts e2e/clipping-sync-after-molstar-reset-zoom.e2e.spec.ts e2e/clipping-sync-after-molstar-wheel-zoom.e2e.spec.ts e2e/sync-and-realign-camera.e2e.spec.ts
-```
-
-The full-ribosome residue and related live-clipping/repeat-alignment workflows have
-240-second budgets. Load readiness must wait for the Aligned visibility control's
-`Hide` accessible label, not merely visibility of its disabled `Show Aligned`
-placeholder. The camera check requires both snapshots and a maximum difference
-below `0.0001`; it polls for completion because fit metrics precede asynchronous
-structure transforms and camera restoration.
-
-#### Developer-only initial alignment experiment
-
-Start `npm run dev` and open `http://localhost:5173/?experimentalInitialAlignment=1`
-**before loading files**. Load AlignedTo and then Aligned normally. This opt-in fits
-reciprocal RNA sequence-identical C4' anchors; it does not change manual chain/residue
-alignment. Without the query parameter, or in a production build, the default initial
-alignment is unchanged.
-
-Every observed RNA polymer chain must have a unique reciprocal match, at least 20
-known identical residues, at least 90% identity among aligned positions and at least
-80% identical coverage on both sides. Ambiguous, insufficient, unsupported or
-over-budget matching warns and leaves both datasets centered but **unfitted**, rather
-than using the default fit. The comparison is limited to 50 million sequence matrix
-cells and uses observed residues, not complete deposited sequences.
-
-Console diagnostics use `[Experimental Initial Alignment]`; development test API
-`getExperimentalInitialAlignment()` reports the outcome. Parsing/fitting errors
-remain load errors, not unfitted successes. Session restoration bypasses this
-experiment; do not use Save/Load round trips to validate an experimental baseline.
-This option is not yet release-ready: full PR-suite qualification, a passing full
-Mol* library build and experimental session-baseline round trips remain outstanding.
-The production Vite/PWA bundle builds successfully, but that does not certify the
-full Mol* library build. The geometry source/runtime mismatch is resolved as described
-below. See the ADR's current-status section for validation results and known blockers.
-
-The source/runtime geometry mismatch was subsequently repaired on Mol* branch
-`fix/rigid-alignment-centroid-mapping`: all count branches now apply
-`R * (moving - movingCentroid) + referenceCentroid`, retaining the single-pair
-translation guard. Both source and regenerated library tests pass. The source changes
-are committed and pushed to `agdturner/molstar` at
-`2d4fd2c68fe4cdf600ebb38a84e9030bed4f8725`, and Ribocode's submodule pin now identifies
-that source. Fetching this SHA from the configured shared Mol* remote was verified.
-
-A full Mol* library build currently also encounters unrelated Express route-parameter
-type errors. The geometry dependency tree can be rebuilt without those server entry
-points using the root repository's TypeScript compiler:
-
-```sh
-node node_modules/typescript/bin/tsc packages/molstar/src/extensions/ribocode/utils/geometry.ts --target es2018 --module esnext --moduleResolution node --esModuleInterop --strict --skipLibCheck --rootDir packages/molstar/src --outDir packages/molstar/lib
-node node_modules/typescript/bin/tsc packages/molstar/src/extensions/ribocode/utils/geometry.ts --target es2018 --module commonjs --moduleResolution node --esModuleInterop --strict --skipLibCheck --rootDir packages/molstar/src --outDir packages/molstar/lib/commonjs
-npm run build:lib-extra --workspace=molstar
-```
-
-This focused rebuild validates geometry only; it is not evidence that the full
-Mol* library build passes. Generated library files are not committed.
-
-```sh
-npm run test -- --run src/utils/experimentalInitialAlignment.test.ts
-npm run test:e2e:webgl -- e2e/initial-alignment-coordinate-diagnostic.e2e.spec.ts
-```
-
-Recent findings from benchmark datasets:
-
-- 6XU6.cif -> 6XU8.cif, chain CU -> CU is currently stable with strong improvement.
-- 7WTT.cif -> 7WTZ.cif, chain e -> e currently improves only modestly and remains a known weak case.
-- The current fit already includes both rotation and translation, so adding a second translation pass is not expected to fix weak fits by itself.
-- A robust outlier-trim re-fit experiment was evaluated and did not improve the 7WTT/7WTZ e-case.
-
-Recommended focused automated checks:
-
-```sh
-npm test -- src/utils/alignmentGeometry.test.ts src/utils/realignment.test.ts src/App.test.tsx
-npm test -- src/utils/alignmentPerformance.test.ts
-npx playwright test e2e/sync-and-realign-camera.e2e.spec.ts
-npx playwright test e2e/alignment-performance-cu-6xu6-6xu8.e2e.spec.ts
-npx playwright test e2e/alignment-diagnostic-e-7wtt-7wtz.e2e.spec.ts
-```
-
-Recommended manual benchmark workflow:
-
-1. Load `AlignedTo` using `6XU6.cif`.
-2. Load `Aligned` using `6XU8.cif`.
-3. Select known chain pairs used in day-to-day analysis and run `Align Chains`.
-4. Repeat alignment for the same pair and for several different pairs.
-5. Confirm alignment quality does not degrade and that camera/viewpoint behavior remains consistent.
-
-When alignment internals are changed:
-
-- If the change is in `packages/molstar`, treat it as package-level geometry behavior and validate against the benchmark workflow above.
-- If the change is in `src/App.tsx`, verify both in-place transform behavior and reload-based fallback behavior.
-- Verify camera/viewpoint parity after sequential realign actions (for example chain -> residue and residue -> chain), not just fit metrics.
-- Record any expected behavior changes in `CHANGELOG.md` so regressions are easier to trace.
-
-Next alignment investigation focus:
-
-- Improve correspondence quality for difficult chain pairs (for example, long-chain e -> e cases) rather than adding extra translation-only corrections.
-- Investigate residue-correspondence-aware pairing coverage in chain alignment tests, including gaps in automated checks for residue-key alignment behavior.
-- Keep both benchmark families active during changes:
-  - Strong-case guardrail: 6XU6/6XU8 CU -> CU should remain stable.
-  - Weak-case guardrail: 7WTT/7WTZ e -> e should materially improve without regressions elsewhere.
+See the [alignment testing reference](./AlignmentTesting.md) for molecular-fit checks and separate post-alignment camera/clipping checks. For implementation and the developer-only experiment, see the [alignment development reference](./AlignmentDevelopment.md).
 
 ### Additional Resources
 
@@ -873,11 +621,11 @@ See the [Playwright system requirements](https://playwright.dev/docs/installatio
 
 ### Installing Playwright
 
-If not already installed, add Playwright and its test runner:
+Playwright and its test runner are project dependencies installed by `npm install`.
+Install the Chromium browser used by the configured E2E suite:
 
 ```sh
-npm install --save-dev playwright @playwright/test
-npx playwright install
+npx playwright install chromium
 ```
 
 
@@ -902,7 +650,7 @@ Playwright is configured with a `webServer` entry and starts `npm run dev` on po
 Seeing skipped tests can be expected and does not necessarily indicate failure:
 - Four visual-regression/manual-flow specs in `e2e/representation-theme-switch-regression.e2e.spec.ts` are skipped when WebGL is unavailable in the run environment.
 
-The [native Reset Zoom test](./e2e/clipping-sync-after-molstar-reset-zoom.e2e.spec.ts) and [Selection Mode + Reset Zoom test](./e2e/clipping-sync-after-molstar-wheel-zoom.e2e.spec.ts) request software WebGL in standard E2E runs and compare the open clipping control with the effective camera radius.
+The [native Reset Zoom test](../e2e/clipping-sync-after-molstar-reset-zoom.e2e.spec.ts) and [Selection Mode + Reset Zoom test](../e2e/clipping-sync-after-molstar-wheel-zoom.e2e.spec.ts) request software WebGL in standard E2E runs and compare the open clipping control with the effective camera radius.
 Their shared setup waits for Viewer B's **Hide 6XU8** button before checking the camera fit. The visibility control can be present as a placeholder before the `Aligned` structure is ready.
 
 If you need those visual checks to run, use:
@@ -976,7 +724,7 @@ The following scripts are available in `package.json`:
 - For session load/save/reload flows, wait for key controls (for example `#session-menu-btn`) before interacting after navigation or reload.
 - Long session workflows can exceed the default 30s test timeout under parallel workers; set a per-test timeout (for example `test.setTimeout(60000)`) for save/reload/load scenarios.
 - If Playwright times out before a test body runs (for example, while setting up `context`), set the timeout with `test.describe.configure({ timeout: 120000 })` at spec or group scope. A `test.setTimeout()` call inside the test runs too late to cover fixture setup.
-- For load completion assertions, prefer checking filename labels (for example `#viewer-column-B-aligned-filename-label`) rather than assuming the absence/presence of a specific load button.
+- Wait for a readiness signal appropriate to the workflow, not just a filename label: filenames can appear before loading finishes. For the Aligned dataset, the enabled visibility control with an accessible label beginning `Hide` indicates that it is loaded.
 
 #### Retrospective: 0.16.2 Test Stabilization
 
@@ -990,85 +738,12 @@ The following scripts are available in `package.json`:
 
 ---
 
-## Test Types Overview
-
-Ribocode uses three main types of tests to ensure code quality and robust user experience:
-
-| Test Type         | Location/Pattern                | Tooling                | Purpose & Scope                                                                 |
-|-------------------|---------------------------------|------------------------|--------------------------------------------------------------------------------|
-| Unit Test         | `*.test.ts(x)` (next to code)   | Vitest, Testing Library| Test individual functions, hooks, or components in isolation.                   |
-| Integration Test  | `*.integration.test.ts(x)`      | Vitest, Testing Library| Test workflows involving multiple components or hooks together in jsdom.        |
-| End-to-End (E2E)  | `e2e/*.spec.ts`                 | Playwright             | Test real user workflows in a real browser, including file downloads, datasets. |
-
-### Unit Tests
-- Located next to the code they test (e.g., `src/components/Foo.test.tsx`).
-- Use Vitest and @testing-library/react for fast, isolated checks.
-- Example: Testing a single button renders and fires an event.
-
-### Integration Tests
-- Used for multi-component or workflow tests (e.g., `src/App.integration.test.tsx`).
-- Still run in jsdom, but cover more of the app's logic and UI.
-- Example: Testing session save/load logic across several components.
-
-
-### End-to-End (E2E) Tests
-- Located in the `e2e/` directory (e.g., `e2e/example-session.spec.ts`, `e2e/session-load.e2e.spec.ts`).
-- Use Playwright to automate real browsers.
-- Test real user flows: loading datasets, saving sessions, verifying downloads, file selection modals, and session restoration.
-- Can assert on file downloads, network requests, and full UI behavior.
-
-### Best Practices
-- Use clear, descriptive test names and group related tests with `describe` blocks.
-- Use `data-testid` or accessible selectors for robust element targeting.
-- Clean up test state between tests to avoid cross-test interference.
-- Document any new tests and datasets added.
-
-
-See the sections above for how to run each type of test and for more detailed examples, including Playwright E2E workflows and npm scripts.
-
----
-
-
-## UI Element IDs and `data-testid` Conventions
-
-To ensure robust, maintainable, and testable UI code, Ribocode uses the following conventions for element IDs and `data-testid` attributes:
-
-### General Rules
-- **IDs** should be unique, predictable, and use kebab-case (e.g., `viewer-column-a-load-btn`).
-- **data-testid** attributes should be added to all modal fields, file inputs, and dynamic elements that are targeted in E2E/component tests.
-- Use `data-testid` for elements that may have dynamic content, multiple instances, or where IDs are not unique.
-- Prefer `data-testid` in Playwright and Testing Library selectors for E2E and integration tests.
-
-### Examples
-
-#### Modal Components
-```jsx
-<input type="file" id="session-modal-alignedto-input" data-testid="session-modal-alignedto-input" />
-<button id="session-modal-load-btn" data-testid="session-modal-load-btn">Load Session</button>
-```
-
-#### Viewer Column Buttons
-```jsx
-<button id="viewer-column-a-load-btn" data-testid="viewer-column-a-load-btn">Load AlignedTo</button>
-<input id="viewer-column-a-file-input" data-testid="viewer-column-a-file-input" type="file" />
-```
-
-#### General Guidelines
-- Always use the same value for `id` and `data-testid` when possible for clarity.
-- Document any new IDs or `data-testid` attributes added to components.
-- Update tests to use these selectors instead of brittle text or class selectors.
-
-### Updating Existing Components
-If you add a new modal, file input, or dynamic UI element, ensure it has a `data-testid` attribute following the conventions above. Update the relevant tests to use these selectors.
-
----
-
 ## Contributing
 
 If you contribute changes, please submit a Pull Request that includes documentation updates and, if appropriate, includes tests.
 
-**Please add your name to the CONTRIBUTORS file in the repository when you make a first contribution.**
-Also, add your details to the list of authors in the header of any source files you modify.
+The project lists contributors in `package.json`. Contributors may add their details
+there and to the authors in the header of source files they modify.
 
 For contribution ideas, bug reports, or feature requests, please visit the [GitHub Issues page](https://github.com/ribocode-slola/ribocode1/issues).
 

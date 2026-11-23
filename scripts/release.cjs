@@ -20,13 +20,13 @@ function readRelease() {
   const tag = `v${version}`;
   if (!tagPattern.test(tag)) throw new Error('package.json must have a stable X.Y.Z version.');
 
-  const lines = readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8').split(/\r?\n/);
+  const lines = readFileSync(path.join(root, 'documentation', 'CHANGELOG.md'), 'utf8').split(/\r?\n/);
   const heading = `## [${tag}]`;
   const start = lines.findIndex((line) => line === heading || line.startsWith(`${heading} - `));
-  if (start === -1) throw new Error(`Add a ${heading} entry to CHANGELOG.md.`);
+  if (start === -1) throw new Error(`Add a ${heading} entry to documentation/CHANGELOG.md.`);
   const end = lines.findIndex((line, index) => index > start && line.startsWith('## '));
   const notes = lines.slice(start + 1, end === -1 ? lines.length : end).join('\n').trim();
-  if (!notes) throw new Error(`The ${heading} entry in CHANGELOG.md is empty.`);
+  if (!notes) throw new Error(`The ${heading} entry in documentation/CHANGELOG.md is empty.`);
   return { tag, notes };
 }
 

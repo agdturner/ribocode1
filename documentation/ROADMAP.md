@@ -23,6 +23,11 @@ This document outlines planned work for upcoming Ribocode versions. It is direct
 - Accept changes only when weak-case metrics improve without regressing stable-case metrics.
 
 #### Investigation note (2026-10-17): initial load orientation mismatch
+This is a historical note, not the current investigation status. Subsequent
+diagnostics and the developer-only correspondence experiment are described in the
+[alignment decision record](decisions/ADR-0001-alignment-quality-gates.md#current-investigation-status-2026-11-23).
+The improved initial fit remains disabled in production.
+
 - Symptom reported: for 6XU6/6XU8, initial Aligned display in viewer B can appear ~180-degree rotated relative to viewer A before any manual selection/re-align.
 - Important constraint: do not rely on pre-selected chains for initial auto-alignment because shared chain identity is not generally known in advance.
 - Work attempted:

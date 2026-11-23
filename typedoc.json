@@ -29,10 +29,13 @@
     "csv"
   ],
   "projectDocuments": [
-    "UserGuide.md",
-    "DeveloperGuide.md",
-    "CHANGELOG.md",
-    "ROADMAP.md",
-    "decisions/*.md"
+    "documentation/UserGuide.md",
+    "documentation/DeveloperQuickStart.md",
+    "documentation/DeveloperGuide.md",
+    "documentation/AlignmentDevelopment.md",
+    "documentation/AlignmentTesting.md",
+    "documentation/CHANGELOG.md",
+    "documentation/ROADMAP.md",
+    "documentation/decisions/*.md"
   ]
 }
