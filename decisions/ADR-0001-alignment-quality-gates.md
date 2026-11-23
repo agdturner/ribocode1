@@ -4,6 +4,49 @@
 - Date: 2026-10-13
 - Decision Makers: Ribocode maintainers
 
+## Current investigation status (2026-11-23)
+
+- Improved initial alignment remains a developer-only experiment; production defaults
+  have not changed. Manual 6XU6/6XU8 comparison was positive.
+- Geometry source/runtime mismatch is resolved and pinned to Mol* commit
+  `2d4fd2c68fe4cdf600ebb38a84e9030bed4f8725`; formerly failing geometry tests now pass.
+- An instrumented full-CU residue regression passed all assertions in 176 seconds.
+  The previous 120-second budget could expire during loading or controls before fitting.
+  Its readiness wait now requires the Aligned visibility control's accessible label
+  to indicate `Hide`, rather than matching the disabled `Show Aligned` placeholder.
+  Full-ribosome residue tests and the related clipping/repeat-alignment workflows
+  use 240 seconds; the smaller AlphaFold test budget and all numerical assertions
+  are unchanged. Aligned readiness allows up to 120 seconds for cold loading.
+- Full PR-suite qualification, a passing full Mol* library build, experimental session
+  round trips and broader structure validation remain required before release.
+- The persistent camera-parity failure was reproduced with forced software WebGL:
+  position, target and up matched exactly, but radius was 173.195677 in A versus
+  172.354395 in B (difference 0.841282). Default browser runs could pass, so both
+  modes matter when qualifying this regression.
+- Root cause: Mol* reports clipping radius as a rounded integer percentage of the
+  scene radius. App camera-event readback updated the clipping controls, whose
+  fog/clipping effect wrote that percentage back to Mol*, quantizing the exact
+  radius just copied during realignment. The effect now omits radius when the
+  requested percentage already matches Mol*; intentional slider changes still apply.
+- With that fix, all three residue regressions pass under forced software WebGL,
+  including the unchanged camera threshold of 0.0001. Camera parity also passed a
+  second focused run. Related reset-zoom, wheel/selection-mode clipping, live clipping
+  and repeat-alignment checks pass across focused runs. Live clipping's interactive
+  close/reopen check needs a 20-second polling budget on this environment.
+- Camera helper/context/sync unit coverage passes (31 tests). TypeScript reports only
+  the two previously known `container` TS2454 errors in `MolstarContainer.test.tsx`;
+  the production Vite/PWA bundle builds successfully. Full PR-suite and full Mol*
+  build qualification remain outstanding.
+
+The dated investigation sections below preserve historical observations. Statements
+about deliberately failing geometry tests or unresolved provenance describe earlier
+checkpoints, not the current state.
+
+The camera check now requires both snapshots and polls the same threshold instead
+of silently skipping missing snapshots or using a fixed final delay. On failure it
+includes normalized and raw snapshots to distinguish radius drift from orientation
+or translation differences.
+
 ## Context
 
 Ribocode alignment behavior is implemented across two layers:

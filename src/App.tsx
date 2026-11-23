@@ -858,6 +858,32 @@ export async function runWithTemporarySyncDisabled<T>(
     }
 }
 
+export function updateFog(pluginA: any, pluginB: any, enabled: boolean, near: number, far: number, clippingMinNear: number, clippingRadius: number) {
+    const safeMinNear = Math.max(0.1, Number(clippingMinNear));
+    const safeRadius = Math.max(0, Math.min(99, Number(clippingRadius)));
+    [pluginA, pluginB].forEach(plugin => {
+        if (!plugin?.canvas3d) return;
+        if (typeof plugin.canvas3d.setProps !== 'function') return;
+        const currentCamera = plugin.canvas3d.props?.camera ?? {};
+        const currentCameraClipping = plugin.canvas3d.props?.cameraClipping ?? {};
+        plugin.canvas3d.setProps({
+            camera: {
+                ...currentCamera,
+                fog: enabled,
+                fogNear: Number(near),
+                fogFar: Number(far),
+            },
+            cameraClipping: {
+                far: true,
+                minNear: safeMinNear,
+                // Mol* exposes a rounded percentage: writing it back changes the exact camera radius.
+                ...(safeRadius !== currentCameraClipping.radius ? { radius: safeRadius } : {}),
+            },
+        });
+        plugin.canvas3d.requestDraw?.();
+    });
+}
+
 function getSelectedSubunitChainIds(
     subunitToChainIds: Map<string, Set<string>>,
     selectedSubunit: string
@@ -3819,33 +3845,6 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const [subunitInspectOnAAligned, setSubunitInspectOnAAligned] = useState(false);
     const [subunitInspectOnBAlignedTo, setSubunitInspectOnBAlignedTo] = useState(false);
     const [subunitInspectOnBAligned, setSubunitInspectOnBAligned] = useState(false);
-
-    const updateFog = useCallback((pluginARef: any, pluginBRef: any, enabled: boolean, near: number, far: number, clippingMinNear: number, clippingRadius: number) => {
-        const safeMinNear = Math.max(0.1, Number(clippingMinNear));
-        const safeRadius = Math.max(0, Math.min(99, Number(clippingRadius)));
-        [pluginARef, pluginBRef].forEach((pluginRef: any) => {
-            const plugin = pluginRef?.canvas3d ? pluginRef : pluginRef?.current;
-            if (!plugin?.canvas3d) return;
-            if (typeof plugin.canvas3d.setProps !== 'function') return;
-            const currentCamera = plugin.canvas3d.props?.camera ?? {};
-            const currentCameraClipping = plugin.canvas3d.props?.cameraClipping ?? {};
-            plugin.canvas3d.setProps({
-                camera: {
-                    ...currentCamera,
-                    fog: enabled,
-                    fogNear: Number(near),
-                    fogFar: Number(far),
-                },
-                cameraClipping: {
-                    ...currentCameraClipping,
-                    far: true,
-                    minNear: safeMinNear,
-                    radius: safeRadius,
-                },
-            });
-            plugin.canvas3d.requestDraw?.();
-        });
-    }, []);
 
     useEffect(() => {
         if (!viewerAReady || clippingAInitializedRef.current) return;

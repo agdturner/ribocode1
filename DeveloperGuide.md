@@ -705,6 +705,26 @@ Alignment changes should be validated with both automated and manual checks befo
 
 Reference decision record: [ADR-0001 Alignment Quality Gates](decisions/ADR-0001-alignment-quality-gates.md).
 
+Camera parity should also be checked with `PW_E2E_FORCE_WEBGL=1`: the default
+browser mode did not consistently reproduce a clipping readback regression.
+Mol* exposes clipping radius as a rounded percentage. When reflecting camera events
+in the controls, do not write an unchanged percentage back through `setProps`:
+that round trip quantizes the exact camera radius and can undo realignment parity.
+Intentional clipping changes must still be applied.
+
+Run the focused camera/residue/clipping checks with software WebGL:
+
+```sh
+npm run test:e2e:webgl -- e2e/residue-realign.e2e.spec.ts e2e/clipping-controls-live-sync.e2e.spec.ts e2e/clipping-sync-after-molstar-reset-zoom.e2e.spec.ts e2e/clipping-sync-after-molstar-wheel-zoom.e2e.spec.ts e2e/sync-and-realign-camera.e2e.spec.ts
+```
+
+The full-ribosome residue and related live-clipping/repeat-alignment workflows have
+240-second budgets. Load readiness must wait for the Aligned visibility control's
+`Hide` accessible label, not merely visibility of its disabled `Show Aligned`
+placeholder. The camera check requires both snapshots and a maximum difference
+below `0.0001`; it polls for completion because fit metrics precede asynchronous
+structure transforms and camera restoration.
+
 #### Developer-only initial alignment experiment
 
 Start `npm run dev` and open `http://localhost:5173/?experimentalInitialAlignment=1`
@@ -724,8 +744,11 @@ Console diagnostics use `[Experimental Initial Alignment]`; development test API
 `getExperimentalInitialAlignment()` reports the outcome. Parsing/fitting errors
 remain load errors, not unfitted successes. Session restoration bypasses this
 experiment; do not use Save/Load round trips to validate an experimental baseline.
-This option is not yet release-ready: source/runtime Mol* provenance and the existing
-full-CU residue-regression timeout remain unresolved.
+This option is not yet release-ready: full PR-suite qualification, a passing full
+Mol* library build and experimental session-baseline round trips remain outstanding.
+The production Vite/PWA bundle builds successfully, but that does not certify the
+full Mol* library build. The geometry source/runtime mismatch is resolved as described
+below. See the ADR's current-status section for validation results and known blockers.
 
 The source/runtime geometry mismatch was subsequently repaired on Mol* branch
 `fix/rigid-alignment-centroid-mapping`: all count branches now apply
