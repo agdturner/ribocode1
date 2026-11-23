@@ -16,6 +16,18 @@ describe.each([
     { implementation: 'compiled runtime', align: alignDatasetsGeneral },
     { implementation: 'pinned source', align: alignSourceDatasets },
 ])('$implementation initial alignment rigid transform', ({ align }) => {
+    it('preserves the single-pair translation safeguard for excluded atoms', () => {
+        const result = align(
+            [{ type: 'P', x: 10, y: 20, z: 30 }, { type: 'C', x: 12, y: 23, z: 34 }],
+            [{ type: 'P', x: 1, y: 2, z: 3 }],
+            atom => atom.type === 'P'
+        );
+        expect(result.rotmat).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+        expect(result.alignedX).toEqual([1, 3]);
+        expect(result.alignedY).toEqual([2, 5]);
+        expect(result.alignedZ).toEqual([3, 7]);
+    });
+
     it.each(['equal', 'extra moving', 'extra reference'] as const)(
         'maps actual coordinates to the reference with %s selected atom counts',
         (counts) => {

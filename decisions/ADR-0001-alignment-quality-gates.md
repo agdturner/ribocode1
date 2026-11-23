@@ -313,6 +313,45 @@ This is a work-in-progress safety checkpoint, not a release-ready change. No rel
 version or default alignment policy has changed. The full PR suite has not passed on
 this branch; targeted validation and its limitations are recorded above.
 
+### Source/runtime geometry reconciliation (2026-11-23)
+
+The Mol* source on branch `fix/rigid-alignment-centroid-mapping` now uses the same
+rigid-coordinate helper as the previously working local runtime in all count branches.
+For extra moving atoms, the previous source added the moving centroid rather than
+the reference centroid. For extra reference atoms, it added the moving centroid before
+rotation and subtracted it afterward. Both paths now consistently apply
+`R * (moving - movingCentroid) + referenceCentroid`. Selection, truncation and rotation
+fitting policy are unchanged. The pinned source's single-pair translation safeguard,
+which was absent from the old generated runtime, is preserved.
+
+Both unequal-count diagnostics now pass against source and regenerated runtime.
+Additional single-pair source/runtime checks pass. Six Mol* Jest geometry tests pass,
+and the rebuilt application's focused 79-test unit/integration run passed before the
+two new single-pair checks. The subsequent geometry/performance/pair-tracking run
+passes all 15 tests.
+
+Build qualification: local dependencies were restored after TypeScript version drift
+and missing packages were observed; no dependency manifests or lockfiles were changed.
+The normal full library build remains blocked by unrelated Express server
+route-parameter type errors. A focused TypeScript build regenerated the geometry
+dependency tree in ESM and CommonJS, then ran the library asset/alias step. This
+does not qualify the full library build as passing. Parent type-checking still reports
+only the two existing MolstarContainer test diagnostics.
+
+Seven rebuilt browser checks passed: default and experimental initial coordinates,
+centered/unfitted rejection, CU and e chain benchmarks, repeat alignment in the camera
+regression spec, and the selected 7WTT/AlphaFold residue regression. CU remains at
+5.999-Angstrom chain RMSD with 17.997-fold improvement. The weak e diagnostic remains
+poor (72.233-Angstrom RMSD over 262 chain-fit atoms); a passing diagnostic is not a
+quality approval. This chain-fit metric uses different atoms from the earlier offline
+20-pair C-alpha comparison and must not be conflated with it.
+
+The reconciled source is committed and pushed to `agdturner/molstar` on branch
+`fix/rigid-alignment-centroid-mapping`, commit
+`2d4fd2c68fe4cdf600ebb38a84e9030bed4f8725`. Ribocode's submodule pin is updated to this
+commit. Fetching the exact SHA from the configured `ribocode-slola/molstar` remote
+succeeded, so the submodule URL does not need to change for this checkpoint.
+
 ## Consequences
 
 - Alignment changes become easier to review objectively.

@@ -727,6 +727,27 @@ experiment; do not use Save/Load round trips to validate an experimental baselin
 This option is not yet release-ready: source/runtime Mol* provenance and the existing
 full-CU residue-regression timeout remain unresolved.
 
+The source/runtime geometry mismatch was subsequently repaired on Mol* branch
+`fix/rigid-alignment-centroid-mapping`: all count branches now apply
+`R * (moving - movingCentroid) + referenceCentroid`, retaining the single-pair
+translation guard. Both source and regenerated library tests pass. The source changes
+are committed and pushed to `agdturner/molstar` at
+`2d4fd2c68fe4cdf600ebb38a84e9030bed4f8725`, and Ribocode's submodule pin now identifies
+that source. Fetching this SHA from the configured shared Mol* remote was verified.
+
+A full Mol* library build currently also encounters unrelated Express route-parameter
+type errors. The geometry dependency tree can be rebuilt without those server entry
+points using the root repository's TypeScript compiler:
+
+```sh
+node node_modules/typescript/bin/tsc packages/molstar/src/extensions/ribocode/utils/geometry.ts --target es2018 --module esnext --moduleResolution node --esModuleInterop --strict --skipLibCheck --rootDir packages/molstar/src --outDir packages/molstar/lib
+node node_modules/typescript/bin/tsc packages/molstar/src/extensions/ribocode/utils/geometry.ts --target es2018 --module commonjs --moduleResolution node --esModuleInterop --strict --skipLibCheck --rootDir packages/molstar/src --outDir packages/molstar/lib/commonjs
+npm run build:lib-extra --workspace=molstar
+```
+
+This focused rebuild validates geometry only; it is not evidence that the full
+Mol* library build passes. Generated library files are not committed.
+
 ```sh
 npm run test -- --run src/utils/experimentalInitialAlignment.test.ts
 npm run test:e2e:webgl -- e2e/initial-alignment-coordinate-diagnostic.e2e.spec.ts
