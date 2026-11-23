@@ -705,6 +705,33 @@ Alignment changes should be validated with both automated and manual checks befo
 
 Reference decision record: [ADR-0001 Alignment Quality Gates](decisions/ADR-0001-alignment-quality-gates.md).
 
+#### Developer-only initial alignment experiment
+
+Start `npm run dev` and open `http://localhost:5173/?experimentalInitialAlignment=1`
+**before loading files**. Load AlignedTo and then Aligned normally. This opt-in fits
+reciprocal RNA sequence-identical C4' anchors; it does not change manual chain/residue
+alignment. Without the query parameter, or in a production build, the default initial
+alignment is unchanged.
+
+Every observed RNA polymer chain must have a unique reciprocal match, at least 20
+known identical residues, at least 90% identity among aligned positions and at least
+80% identical coverage on both sides. Ambiguous, insufficient, unsupported or
+over-budget matching warns and leaves both datasets centered but **unfitted**, rather
+than using the default fit. The comparison is limited to 50 million sequence matrix
+cells and uses observed residues, not complete deposited sequences.
+
+Console diagnostics use `[Experimental Initial Alignment]`; development test API
+`getExperimentalInitialAlignment()` reports the outcome. Parsing/fitting errors
+remain load errors, not unfitted successes. Session restoration bypasses this
+experiment; do not use Save/Load round trips to validate an experimental baseline.
+This option is not yet release-ready: source/runtime Mol* provenance and the existing
+full-CU residue-regression timeout remain unresolved.
+
+```sh
+npm run test -- --run src/utils/experimentalInitialAlignment.test.ts
+npm run test:e2e:webgl -- e2e/initial-alignment-coordinate-diagnostic.e2e.spec.ts
+```
+
 Recent findings from benchmark datasets:
 
 - 6XU6.cif -> 6XU8.cif, chain CU -> CU is currently stable with strong improvement.

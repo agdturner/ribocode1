@@ -6,8 +6,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT. See LICENSE file for more info.
  *
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.2.0
- * @lastModified 2026-06-24
+ * @version 1.3.0
+ * @lastModified 2026-11-23
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -1021,6 +1021,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const [alignedFile, setAlignedFile] = useState<any | null>(null);
     const [alignedFilename, setAlignedFilename] = useState<string | null>(null);
     const [alignedToFile, setAlignedToFile] = useState<any | null>(null);
+    const experimentalInitialAlignmentRef = useRef<import('./utils/experimentalInitialAlignment').ExperimentalInitialAlignmentResult | null>(null);
+    const experimentalReferenceFileRef = useRef<File | null>(null);
     const [alignedToFilename, setAlignedToFilename] = useState<string | null>(null);
     const [expectedAlignedToFilename, setExpectedAlignedToFilename] = useState<string | null>(null);
 
@@ -3101,6 +3103,39 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 viewerA: viewerA.ref.current?.canvas3d?.camera?.getSnapshot?.(),
                 viewerB: viewerB.ref.current?.canvas3d?.camera?.getSnapshot?.(),
             }),
+            getExperimentalInitialAlignment: () => experimentalInitialAlignmentRef.current,
+            getInitialAlignmentCoordinates: (viewerKey: ViewerKey, mode: typeof AlignedTo | typeof Aligned, chainId: string) => {
+                const plugin = viewerKey === B ? viewerB.ref.current : viewerA.ref.current;
+                const diagnostics = getStructureTransformDiagnostics();
+                const refs = viewerKey === B ? diagnostics.viewerB.resolvedRefs : diagnostics.viewerA.resolvedRefs;
+                const structureRef = mode === Aligned ? refs.aligned : refs.alignedTo;
+                const structure = plugin?.managers.structure.hierarchy.current.structures
+                    .find(entry => entry.cell.transform.ref === structureRef)?.cell.obj?.data;
+                if (!structure) throw new Error(`Initial alignment diagnostic: ${viewerKey}/${mode} is not loaded.`);
+
+                const xs: number[] = [];
+                const ys: number[] = [];
+                const zs: number[] = [];
+                const atomIds: number[] = [];
+                const units: Array<{ id: number; atomCount: number }> = [];
+                let phosphorusCount = 0;
+                for (const unit of structure.units) {
+                    if (!Unit.isAtomic(unit)) continue;
+                    units.push({ id: unit.id, atomCount: unit.elements.length });
+                    for (let i = 0; i < unit.elements.length; i++) {
+                        const element = unit.elements[i];
+                        atomIds.push(element);
+                        xs.push(unit.conformation.x(element));
+                        ys.push(unit.conformation.y(element));
+                        zs.push(unit.conformation.z(element));
+                        if (unit.model.atomicHierarchy.atoms.type_symbol.value(element) === 'P') phosphorusCount++;
+                    }
+                }
+                return {
+                    xs, ys, zs, atomIds, units, phosphorusCount,
+                    anchors: buildAnchorAtomDataForChain(structure, chainId),
+                };
+            },
             getStructureTransformDiagnostics,
             captureStructureTransformCheckpoint: (label: string) => {
                 const key = typeof label === 'string' && label.trim().length > 0 ? label.trim() : 'default';
@@ -3467,7 +3502,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         alignmentData?: any,
         sessionRepresentationsA: SessionRepresentationSpec[] = [],
         sessionRepresentationsB: SessionRepresentationSpec[] = [],
-        options?: { hideInRightViewerByDefault?: boolean }
+        options?: { hideInRightViewerByDefault?: boolean; restoreSession?: boolean }
     ): Promise<LoadedMolecule | undefined> => {
         const hideInRightViewerByDefault = options?.hideInRightViewerByDefault === true;
         void discoverUniprotAccessionsFromFile(file, mode);
@@ -3500,6 +3535,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             // Loading a new reference dataset establishes a new baseline; clear
             // any previously accumulated in-place realign cache state.
             realignTransformCacheRef.current = {};
+            experimentalInitialAlignmentRef.current = null;
+            experimentalReferenceFileRef.current = file;
             realignBaseTransformCacheRef.current = {};
             realignDiagnosticsCounterRef.current = {};
             lastChainRealignMetricsRef.current = null;
@@ -3594,9 +3631,27 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             persistedStructureTransformsRef.current = {};
             persistedStructureTransformsByModeRef.current = { viewerA: {}, viewerB: {} };
             structureTransformCheckpointsRef.current = {};
+            let alignData = alignmentData ?? viewerA.moleculeAlignedTo?.alignmentData;
+            if (import.meta.env.DEV && !options?.restoreSession
+                && new URLSearchParams(window.location.search).get('experimentalInitialAlignment') === '1') {
+                const referenceFile = experimentalReferenceFileRef.current;
+                if (!referenceFile) throw new Error('Experimental alignment requires the reference file.');
+                const { parseExperimentalAlignmentModel, fitExperimentalInitialAlignment } = await import('./utils/experimentalInitialAlignment');
+                const reference = await parseExperimentalAlignmentModel(referenceFile);
+                const moving = await parseExperimentalAlignmentModel(file);
+                const result = fitExperimentalInitialAlignment(reference, moving);
+                experimentalInitialAlignmentRef.current = result;
+                if (result.status === 'fitted') {
+                    alignData = result.alignmentData;
+                    console.info('[Experimental Initial Alignment]', result);
+                } else {
+                    alignData = undefined;
+                    console.warn('[Experimental Initial Alignment] Centered but unfitted:', result.reason);
+                    alert(`Experimental initial alignment was skipped: ${result.reason}\nBoth structures will remain centered but unfitted. Use manual alignment controls.`);
+                }
+            }
             setAlignedFile(file);
             setAlignedFilename(file.name);
-            const alignData = alignmentData ?? viewerA.moleculeAlignedTo?.alignmentData;
             let refAAligned: string | null = null;
             let refBAligned: string | null = null;
 
@@ -7805,7 +7860,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                             Aligned,
                             restoredAlignmentData,
                             alignedRepresentationsA,
-                            alignedRepresentationsB
+                            alignedRepresentationsB,
+                            { restoreSession: true }
                         );
                     }
                 }
@@ -7815,7 +7871,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     Aligned,
                     undefined,
                     alignedRepresentationsA,
-                    alignedRepresentationsB
+                    alignedRepresentationsB,
+                    { restoreSession: true }
                 );
                 loadedAny = true;
             }
