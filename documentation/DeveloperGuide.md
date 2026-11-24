@@ -597,7 +597,13 @@ test('renders the component', () => {
 
 ### Running Tests
 
-Before requesting PR review, run `npm run test:pr` to run unit and integration tests once, then the browser E2E suite. Stop any dev server using port `5173` first so Playwright can start its own server. If the first suite fails, the E2E suite does not run.
+Before requesting PR review, run `npx tsc --noEmit --pretty false` and
+`npm run test:pr`. The latter runs unit and integration tests once, then the
+standard browser E2E suite; it does not run the TypeScript check or force
+WebGL. Stop any dev server using port `5173` first so Playwright can start its
+own server. If the first suite fails, the E2E suite does not run. For alignment
+or viewer changes, also run the relevant forced-WebGL checks in the
+[alignment testing reference](./AlignmentTesting.md).
 
 - To run the unit and integration suite once:
   ```sh
@@ -690,7 +696,7 @@ npx playwright install chromium
 **Note:** Playwright E2E tests and unit/integration tests (run with Vitest) should be run separately. E2E tests require a real browser and dev server, are slower, and have different dependencies and environments than fast, isolated unit/integration tests. Keeping them separate ensures clarity, speed, and easier debugging.
 
 **Summary:**
-- Run all unit/integration tests with `npm test`.
+- Run unit/integration tests once with `npm run test -- --run` (`npm test` starts watch mode).
 - Run all E2E tests in strict mode with `npm run test:e2e`.
 - Run all E2E tests while reusing an already-running dev server with `npm run test:e2e:reuse`.
 - Run WebGL-focused E2E checks with `npm run test:e2e:webgl` (or `npm run test:e2e:webgl:reuse`).
@@ -824,4 +830,4 @@ Start each new change from the updated `main` with `git switch -c my-change` and
 
 Before requesting review, run `git fetch upstream` from your feature branch. If `upstream/main` has moved in a way that could affect your work, or if the PR has conflicts, run `git merge upstream/main` and resolve any conflicts before testing. Merging is preferable on a shared branch because it does not rewrite history. If the merge changes the recorded Mol* commit, run `git submodule update --init --recursive` after making sure you have no uncommitted submodule work.
 
-Run `npm run test:pr` on the resulting branch, push it with `git push -u origin my-change`, and open a pull request from your fork's branch into `ribocode-slola/ribocode1:main`. Record the test results in the PR and, when possible, have another contributor review before merging. There is no need to merge every unrelated upstream change.
+Run the TypeScript, PR and relevant focused checks described in [Running Tests](#running-tests) on the resulting branch, push it with `git push -u origin my-change`, and open a pull request from your fork's branch into `ribocode-slola/ribocode1:main`. Record the test results in the PR and, when possible, have another contributor review before merging. There is no need to merge every unrelated upstream change.

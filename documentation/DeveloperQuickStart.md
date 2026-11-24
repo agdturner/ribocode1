@@ -16,10 +16,9 @@ npm run build:lib --workspace=molstar
 
 The Mol* build is required because Ribocode imports its generated library; rebuild
 it after changing the submodule checkout or Mol* source. A detached submodule HEAD
-at the recorded commit is normal. The full Mol* build has encountered Express
-route-parameter type errors in the current development environment. If it fails,
-see the [build notes](./AlignmentDevelopment.md#developer-only-initial-alignment-experiment);
-the documented geometry-only workaround does not replace a full library build.
+at the recorded commit is normal. The current Mol* 5.13.1-based pin has passed
+the full library build; see the [Mol* setup notes](./DeveloperGuide.md#molstar)
+for the pin and troubleshooting context.
 
 Start the app:
 
@@ -35,14 +34,48 @@ browser before the first E2E run:
 
 ```sh
 npx playwright install chromium
-npm run test -- --run
-npm run test:e2e
+npx tsc --noEmit --pretty false
+npm run test:pr
 ```
+
+`test:pr` runs the unit/integration suite once and then the standard Playwright
+suite; it does not run the TypeScript check above. For a smaller change, run
+its focused tests first, for example `npm test -- --run path/to/file.test.ts`.
+For alignment or viewer changes, also run the applicable forced-WebGL checks in
+the [alignment testing reference](./AlignmentTesting.md). Standard browser tests
+may skip WebGL-dependent checks; the WebGL suite is separate from `test:pr`.
 
 On Linux, Playwright may also need system dependencies; see the
 [Playwright setup instructions](./DeveloperGuide.md#system-dependencies-for-playwright-linux).
-To reuse a running server instead, use `npm run test:e2e:reuse`. Before requesting
-PR review, run `npm run test:pr` with port 5173 free.
+To reuse a running server for browser tests instead, use
+`npm run test:e2e:reuse`. Run `npm run test:pr` with port 5173 free before
+requesting PR review.
+
+## Make a first contribution
+
+From the Ribocode root, add the shared repository as `upstream` once (if it is
+not already configured), update local `main` and create a feature branch:
+
+```sh
+git remote add upstream https://github.com/ribocode-slola/ribocode1.git
+git switch main
+git pull --ff-only upstream main
+git switch -c my-change
+```
+
+After changing code, run focused tests and the checks above, then commit your
+changes and push the branch to your fork:
+
+```sh
+git add <changed-files>
+git commit -m "Describe the change"
+git push -u origin my-change
+```
+
+Open a pull request from your fork's `my-change` branch into
+`ribocode-slola/ribocode1:main` and record the tests you ran. If the submodule
+pin changes when updating branches, save any submodule work, run
+`git submodule update --init --recursive` and rebuild its library.
 
 See the [Developer Guide](./DeveloperGuide.md) for the full setup, test, contribution,
 and release workflows.
