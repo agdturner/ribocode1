@@ -69,6 +69,84 @@ These particular pairs agree well; e has only 20/55 moving-anchor coverage.
 Synthetic conflicting pairs also check that the weighting changes the compromise.
 These measurements do not choose a production weighting policy.
 
+### Developer-only multi-chain fit
+
+Open the app with `?experimentalMultiChainAlignment=1` to enable the
+experimental Align Chains path; without the flag the existing behavior is
+unchanged. Select corresponding chains in the same slot on each side and press
+Align Chains. Every occupied fixed or dynamic slot must have a chain on both
+sides. A failed or ambiguous pair blocks the entire fit; it is not silently
+excluded.
+
+The experiment uses the first anchor type in `P`, `CA`, `C4'`, `C1'` order
+with at least ten unique matches for each chain pair. A match uses author
+residue number, insertion code and component; duplicate keys are excluded,
+and missing author numbers or components cannot match. Unknown insertion codes
+are treated as blank, following the offline diagnostic; the report warns about
+this assumption and counts affected pairs. These keys do not establish sequence
+correspondence and cannot handle renumbered chains reliably.
+If residue-key coverage is below 50% on either side, the affected report row
+warns, but the fit is still applied and no chain is excluded. Exactly 50%
+does not trigger this warning. The threshold is an experimental prompt to
+inspect the result, not a correctness guarantee; even a high-coverage match
+can be wrong.
+
+If no anchor type has ten key matches, the experiment tries a protein-only
+sequence fallback using observed C-alpha anchors ordered by `label_seq_id`.
+It rejects non-protein anchors, missing or duplicate sequence positions and
+alignments larger than 2,000,000 matrix cells. Mol* aligns the observed amino
+acid sequences using BLOSUM62; only identical known amino acids become pairs.
+It requires at least ten pairs, at least 50% identity among aligned positions
+and at least 50% matched-anchor coverage on each side. Forward and reversed
+sequence alignments must produce the same identical-residue pairs. These
+thresholds and the two-trace check are experimental safeguards, not proof of a
+unique or biologically correct alignment; missing residues, repeats and
+divergence remain sources of uncertainty. RNA does not have a sequence
+fallback. No ordered atom pairing is used.
+
+The shared fit gives each matched anchor pair equal weight. The persistent report
+shows the last applied fit's correspondence method, sequence identity when
+applicable, per-pair coverage, shared-fit RMSD and independent fit RMSD.
+Observed counts include finite anchors of the chosen type even if they
+cannot be matched. The report is not saved with sessions and may describe an
+earlier selection after the user changes chains. The experiment is not a
+production correspondence policy or a recommendation to deselect chains.
+
+#### 6XU6/6xu8 CU and CP observation
+
+A manual CU/CP selection and the automated fixture test both produce one shared
+fit with 240 pairs. CU uses 55 protein-sequence pairs (57.9% identity; 55/96
+reference and 55/99 moving anchors); its shared and individual RMSDs are 3.134
+and 2.850 Angstrom. CP uses 185 residue-key pairs (185/185 on both sides);
+its shared and individual RMSDs are 2.082 and 1.841 Angstrom.
+
+All 185 CP matches carry the unknown-insertion warning. In each input, the
+`_atom_site.pdbx_PDB_ins_code` value for every CP C-alpha anchor is `?`
+(unknown). For those same label-chain and sequence positions, the
+`_pdbx_poly_seq_scheme.pdb_ins_code` value is `.` (not present/not applicable)
+and the author sequence numbers agree. This supports the blank-code assumption
+for this example but does not make the atom-site values known or establish
+biological correspondence. The experiment continues to warn.
+
+Other tested pairs illustrate the limits of the safeguards: CO/CO has 205
+residue-key matches and 0.982 Angstrom individual RMSD; deliberately mismatched
+CP/CU is rejected because the forward and reverse sequence traces disagree.
+However, deliberately mismatched CP/CO **is accepted**: 14 incidental residue
+keys pass the minimum of ten, despite coverage of only 14/185 and 14/205 and
+an individual RMSD of 20.135 Angstrom. The report now warns about its low
+coverage but still applies the fit. Residue-key matches are not subject to
+the sequence fallback's identity and coverage thresholds. A successful fit is
+therefore not a correspondence-quality check; inspect the report and do not
+rely on a fit merely because it was accepted. This known limitation needs a
+separate policy decision before any production use.
+
+```sh
+npm test -- --run src/utils/experimentalMultiChainAlignment.test.ts
+PW_E2E_FORCE_WEBGL=1 npx playwright test e2e/experimental-multi-chain-alignment.e2e.spec.ts --workers=1
+```
+
+### Conflicting chain fixture
+
 The same diagnostic compares 7WTT/7WTZ author chains T (40S S19), F (40S S5)
 and K (RRP12-like protein). Both files identify the chains with those descriptions.
 Correspondences use matching author residue number, insertion code and component.
