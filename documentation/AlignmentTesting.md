@@ -44,6 +44,31 @@ Recent findings from benchmark datasets:
   for a combined fit.
 - A robust outlier-trim re-fit experiment was evaluated and did not improve the 7WTT/7WTZ e-case.
 
+### Offline multi-chain weighting diagnostic
+
+Run the diagnostic separately to print its report:
+
+```sh
+npm test -- --run --maxWorkers=1 --disableConsoleIntercept src/utils/multiChainAlignmentDiagnostic.test.ts
+```
+
+This developer-only experiment fits one transform using either equal atom-pair
+weights or equal total weight per chain pair. It reports per-pair anchor counts,
+coverage, fit weight, and RMSD under the shared transform and each pair's own
+transform. Coverage uses the observed C-alpha anchor counts in each input, not
+the full biological sequence. The 7WTT/7WTZ diagnostic matches unique author
+residue number, insertion code and component; duplicate keys are excluded. It
+does not handle renumbered chains and is not the production pairing policy.
+Low coverage or a large shared-versus-individual difference warrants further
+investigation; neither establishes a cause or an automatic exclusion threshold.
+
+On the e/E fixture, the fit used 20 e and 262 E pairs. Per-atom weighting gave
+shared RMSDs of 0.494 and 0.326 Angstrom respectively; equal-chain weighting
+gave 0.415 and 0.353 Angstrom. Individual fits were 0.354 and 0.316 Angstrom.
+These particular pairs agree well; e has only 20/55 moving-anchor coverage.
+Synthetic conflicting pairs also check that the weighting changes the compromise.
+These measurements do not choose a production weighting policy.
+
 Recommended focused automated checks:
 
 ```sh

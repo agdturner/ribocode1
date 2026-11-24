@@ -29,6 +29,12 @@
   In a forced-WebGL run selecting e/E in both 7WTT and 7WTZ, the metric listed
   both pairs but remained at 20 pairs, exactly the single e-pair count. Combined
   two-chain highlighting passed a separate forced-WebGL browser check.
+- An offline weighting diagnostic now compares a shared per-atom fit with equal
+  total weight per pair, reporting observed-anchor coverage and per-pair
+  shared/individual RMSDs. For e/E, both pairs fit well together, while e covers
+  only 20/55 moving anchors. The results and correspondence limitations are in
+  the [alignment testing reference](../AlignmentTesting.md#offline-multi-chain-weighting-diagnostic);
+  they do not justify a production weighting or automatic exclusion policy.
 - Improved initial alignment remains a developer-only experiment; production defaults
   have not changed. Manual 6XU6/6XU8 comparison was positive.
 - Geometry source/runtime mismatch is resolved and pinned to Mol* commit
