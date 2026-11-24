@@ -4,6 +4,19 @@
 - Date: 2026-10-13
 - Decision Makers: Ribocode maintainers
 
+## Validation update (2026-11-24)
+
+- Ribocode now pins the shared Mol* 5.13.1-based branch at commit
+  `901cef218be8f231ebb749160e83d586be77ab34`, which carries forward the geometry
+  fix. The full Mol* library build, Ribocode type-check and production build pass.
+- The full unit suite passed 410 tests with two workers and a 30-second test
+  timeout; the full forced-WebGL browser suite passed 54 tests with one worker
+  and a 180-second default timeout. The initial concurrent unit run had five
+  failures, mostly timeouts. These adjusted runs do not establish that the
+  default PR command passes under all conditions.
+- Experimental session round trips and broader structure validation remain
+  outstanding; the initial-alignment experiment is not production-qualified.
+
 ## Current investigation status (2026-11-23)
 
 - Weak-case follow-up: both 7WTT and 7WTZ contain distinct author chains `E`
@@ -35,6 +48,12 @@
   only 20/55 moving anchors. The results and correspondence limitations are in
   the [alignment testing reference](../AlignmentTesting.md#offline-multi-chain-weighting-diagnostic);
   they do not justify a production weighting or automatic exclusion policy.
+- A screened real conflict in 7WTT/7WTZ (T, F and K) shows that the weighting
+  can change which selected chains have the largest shared-fit residuals. T/F
+  fit well without K, while K is displaced under their transform. This is a
+  diagnostic observation, not a confirmed biological explanation or a reason
+  to automatically exclude a chain; see the testing reference for per-pair
+  coverage and measured values.
 - Improved initial alignment remains a developer-only experiment; production defaults
   have not changed. Manual 6XU6/6XU8 comparison was positive.
 - Geometry source/runtime mismatch is resolved and pinned to Mol* commit
@@ -67,7 +86,7 @@
   the production Vite/PWA bundle builds successfully. Full PR-suite and full Mol*
   build qualification remain outstanding.
 
-The dated investigation sections below preserve historical observations. Statements
+The dated investigation sections preserve historical observations. Statements
 about deliberately failing geometry tests or unresolved provenance describe earlier
 checkpoints, not the current state.
 

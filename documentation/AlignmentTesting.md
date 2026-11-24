@@ -69,6 +69,26 @@ These particular pairs agree well; e has only 20/55 moving-anchor coverage.
 Synthetic conflicting pairs also check that the weighting changes the compromise.
 These measurements do not choose a production weighting policy.
 
+The same diagnostic compares 7WTT/7WTZ author chains T (40S S19), F (40S S5)
+and K (RRP12-like protein). Both files identify the chains with those descriptions.
+Correspondences use matching author residue number, insertion code and component.
+This is a candidate selected by screening these fixtures, not proof of the cause
+of the observed differences:
+
+| Pair | Matched C-alpha anchors (reference / moving observed) | Individual RMSD | Shared per-atom RMSD | Shared equal-chain RMSD |
+|---|---:|---:|---:|---:|
+| T | 144 (144 / 144) | 0.701 Angstrom | 16.291 Angstrom | 6.062 Angstrom |
+| F | 189 (189 / 189) | 0.821 Angstrom | 12.510 Angstrom | 4.715 Angstrom |
+| K | 909 (1022 / 909) | 1.425 Angstrom | 10.796 Angstrom | 15.853 Angstrom |
+
+Per-atom weighting gives K 73% of the fit weight, while equal-chain weighting
+gives each pair one third. Fitting T and F without K gives their RMSDs as 0.731
+and 0.834 Angstrom; the excluded K anchors under that transform have 20.650
+Angstrom RMSD.
+This supports reporting trade-offs and coverage, not automatically deselecting
+K or concluding that the mismatch is necessarily biological. Different sets
+have different overall RMSD denominators and should be compared per pair.
+
 Recommended focused automated checks:
 
 ```sh

@@ -1,6 +1,13 @@
 /**
  * Offline comparison of multi-chain fit weighting. This is not a production
  * correspondence or alignment policy.
+ *
+ * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Andy Turner <agdturner@gmail.com>
+ * @version 1.0.0
+ * @lastModified 2026-11-23
+ * @see https://github.com/ribocode-slola/ribocode1
  */
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';
@@ -131,6 +138,35 @@ function makeChainPair(referenceChain: string, movingChain: string, reference: A
 }
 
 describe('offline multi-chain weighting diagnostic', () => {
+    it('compares conflicting T, F and K chain pairs in 7WTT/7WTZ', async () => {
+        const ids = ['T', 'F', 'K'];
+        const ref = await readAnchors('7WTT.cif', ids);
+        const mov = await readAnchors('7WTZ.cif', ids);
+        const chains = ids.map(id => {
+            const reference = ref.get(id);
+            const moving = mov.get(id);
+            if (!reference?.length || !moving?.length) throw new Error(`Missing chain ${id} anchors.`);
+            return makeChainPair(id, id, reference, moving);
+        });
+        const results = {
+            perAtom: report(chains, 'per-atom'),
+            perChain: report(chains, 'per-chain'),
+            withoutK: report(chains.slice(0, 2), 'per-atom'),
+            excludedKUnderWithoutKFit: rmsd(chains[2].pairs, fit(chains.slice(0, 2), 'per-atom')),
+        };
+        console.log('[Offline conflict diagnostic][7WTT<-7WTZ]', JSON.stringify(results, null, 2));
+        expect(chains.map(item => item.pairs.length)).toEqual([144, 189, 909]);
+        for (const entry of results.perAtom.chains) {
+            expect(entry.referenceCoverage).toBeGreaterThan(0.8);
+            expect(entry.movingCoverage).toBeGreaterThan(0.8);
+            expect(entry.individualFitRmsd).toBeLessThan(2);
+        }
+        expect(results.perAtom.overallRmsd).toBeGreaterThan(5);
+        expect(results.withoutK.chains.every(entry => entry.sharedFitRmsd < 1)).toBe(true);
+        expect(results.excludedKUnderWithoutKFit).toBeGreaterThan(10);
+        expect(results.perChain.chains[2].sharedFitRmsd).toBeGreaterThan(results.perAtom.chains[2].sharedFitRmsd);
+        expect(results.perChain.chains[0].sharedFitRmsd).toBeLessThan(results.perAtom.chains[0].sharedFitRmsd);
+    }, 120000);
     const tetrahedron: Point[] = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]];
     const chain = (id: string, repetitions: number, displacement: number): ChainPair => {
         const pairs = Array.from({ length: repetitions }, () => tetrahedron).flat().map(reference => ({
