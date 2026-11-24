@@ -4,8 +4,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-04-24
+ * @version 1.1.0
+ * @lastModified 2026-11-23
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { vi } from 'vitest';
@@ -48,18 +48,16 @@ describe('MolstarContainer', () => {
     it('calls onMouseDown when the plugin root is clicked', async () => {
         const setViewer = vi.fn();
         const onMouseDown = vi.fn();
-        let container: HTMLElement;
-        await act(async () => {
-            const rendered = render(
+        const { container } = await act(async () =>
+            render(
                 <MolstarContainer
                     viewerKey="A"
                     setViewer={setViewer}
                     onMouseDown={onMouseDown}
                     idPrefix="test-molstar"
                 />
-            );
-            container = rendered.container;
-        });
+            )
+        );
 
         await waitFor(() => {
             expect(container.querySelector('.molstar-container-root')).not.toBeNull();
@@ -73,18 +71,16 @@ describe('MolstarContainer', () => {
     it('calls onMouseDown when pointer moves over the container', async () => {
         const setViewer = vi.fn();
         const onMouseDown = vi.fn();
-        let container: HTMLElement;
-        await act(async () => {
-            const rendered = render(
+        const { container } = await act(async () =>
+            render(
                 <MolstarContainer
                     viewerKey="B"
                     setViewer={setViewer}
                     onMouseDown={onMouseDown}
                     idPrefix="test-molstar-hover"
                 />
-            );
-            container = rendered.container;
-        });
+            )
+        );
 
         await waitFor(() => {
             expect(container.querySelector('.molstar-container-root')).not.toBeNull();
