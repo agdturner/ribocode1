@@ -4,13 +4,38 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.1
- * @lastModified 2026-06-22
+ * @version 1.1.0
+ * @lastModified 2026-11-22
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { vi } from 'vitest';
-import { getChainInfo } from './chain';
+import { getChainInfo, resolveChainIndices } from './chain';
 import { RpNameLookupBySpecies } from './rpNameTable';
+
+describe('resolveChainIndices', () => {
+    const chains = {
+        _rowCount: 6,
+        auth_asym_id: { value: (i: number) => ['E', 'e', 'G', 'AA', 'aa', '.'][i] },
+        label_asym_id: { value: (i: number) => ['X', 'G', 'Y', 'U', 'V', 'Z'][i] },
+    };
+
+    it('prefers exact author IDs over exact label aliases', () => {
+        expect([...resolveChainIndices(chains, 'E')]).toEqual([0]);
+        expect([...resolveChainIndices(chains, 'e')]).toEqual([1]);
+        expect([...resolveChainIndices(chains, 'G')]).toEqual([2]);
+        expect([...resolveChainIndices(chains, 'X')]).toEqual([0]);
+        expect([...resolveChainIndices(chains, 'Z')]).toEqual([5]);
+    });
+
+    it('supports unambiguous case-insensitive aliases but rejects ambiguity', () => {
+        expect([...resolveChainIndices(chains, 'x')]).toEqual([0]);
+        expect([...resolveChainIndices(chains, 'g')]).toEqual([2]);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        expect([...resolveChainIndices(chains, 'Aa')]).toEqual([]);
+        expect(warn).toHaveBeenCalledWith('[Chain lookup] Ambiguous case-insensitive chain ID:', 'Aa');
+        warn.mockRestore();
+    });
+});
 
 describe('getChainInfo', () => {
     let originalWarn: any;

@@ -4,22 +4,17 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-04-24
+ * @version 1.1.0
+ * @lastModified 2026-11-23
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { PluginUIContext } from 'molstar/lib/mol-plugin-ui/context';
 import { Asset } from 'molstar/lib/mol-util/assets';
 import { Vec3 } from 'molstar/lib/mol-math/linear-algebra';
 import { StructureElement, StructureProperties } from 'molstar/lib/mol-model/structure';
+import { normalizeChainIdentifier, resolveChainIndices } from './chain';
 
 const ENABLE_ATOM_DATA_DIAGNOSTICS = false;
-
-function normalizeChainIdValue(value: unknown): string {
-    const s = String(value ?? '').trim();
-    if (!s || s === '?' || s === '.') return '';
-    return s;
-}
 
 /**
  * Load a molecule from a URL into the Molstar viewer.
@@ -88,7 +83,20 @@ export function getAtomDataFromStructureUnits(structure: any, filterChainId?: st
         }
     }
 
-    const normalizedFilterChainId = filterChainId ? String(filterChainId).trim().toUpperCase() : undefined;
+    const normalizedFilterChainId = filterChainId ? normalizeChainIdentifier(filterChainId) : undefined;
+    if (filterChainId?.trim() && !normalizedFilterChainId) {
+        console.warn('[getAtomDataFromStructureUnits] Invalid chain ID:', filterChainId);
+        return { symbolTypes, chainIds, xs, ys, zs };
+    }
+    const chainIndicesByModel = new Map<object, Set<number>>();
+    const selectedChainIndices = (model: any): Set<number> => {
+        let indices = chainIndicesByModel.get(model);
+        if (!indices) {
+            indices = resolveChainIndices(model.atomicHierarchy.chains, normalizedFilterChainId ?? '');
+            chainIndicesByModel.set(model, indices);
+        }
+        return indices;
+    };
 
     // Preferred extraction path for real Mol* Structure objects.
     const canUseStructureLocation = !!structure?.unitMap
@@ -108,14 +116,12 @@ export function getAtomDataFromStructureUnits(structure: any, filterChainId?: st
 
                     const authId = String(StructureProperties.chain.auth_asym_id(loc) ?? '');
                     const labelId = String(StructureProperties.chain.label_asym_id(loc) ?? '');
-                    const normalizedAuthId = normalizeChainIdValue(authId);
-                    const normalizedLabelId = normalizeChainIdValue(labelId);
+                    const normalizedAuthId = normalizeChainIdentifier(authId);
+                    const normalizedLabelId = normalizeChainIdentifier(labelId);
                     const resolvedChainId = normalizedAuthId || normalizedLabelId;
-                    const authNorm = normalizedAuthId.toUpperCase();
-                    const labelNorm = normalizedLabelId.toUpperCase();
 
                     if (resolvedChainId) uniqueChainIds.add(resolvedChainId);
-                    if (normalizedFilterChainId && authNorm !== normalizedFilterChainId && labelNorm !== normalizedFilterChainId) {
+                    if (normalizedFilterChainId && !selectedChainIndices(unit.model).has(unit.model.atomicHierarchy.chainAtomSegments.index[atomIdx])) {
                         continue;
                     }
 
@@ -141,14 +147,10 @@ export function getAtomDataFromStructureUnits(structure: any, filterChainId?: st
     if (units.length > 0) chains = units[0].model.atomicHierarchy.chains;
     const resolveChainIdxForAtom = (unit: any, atomIdx: number, elementOffset: number): number | undefined => {
         const model = unit?.model;
-        const residueAtomSegmentsIndex = model?.atomicHierarchy?.residueAtomSegments?.index;
         const chainAtomSegmentsIndex = model?.atomicHierarchy?.chainAtomSegments?.index;
-        if (residueAtomSegmentsIndex && chainAtomSegmentsIndex) {
-            const residueIdx = residueAtomSegmentsIndex[atomIdx];
-            if (residueIdx !== undefined) {
-                const derivedChainIdx = chainAtomSegmentsIndex[residueIdx];
-                if (derivedChainIdx !== undefined) return derivedChainIdx;
-            }
+        if (chainAtomSegmentsIndex) {
+            const derivedChainIdx = chainAtomSegmentsIndex[atomIdx];
+            if (derivedChainIdx !== undefined) return derivedChainIdx;
         }
         const unitChainIndex = unit?.chainIndex;
         if (unitChainIndex) {
@@ -172,15 +174,13 @@ export function getAtomDataFromStructureUnits(structure: any, filterChainId?: st
             let chainId = '';
             let labelChainId = '';
             if (chains && chains.auth_asym_id && typeof chains.auth_asym_id.value === 'function' && chainIdx !== undefined) {
-                chainId = normalizeChainIdValue(chains.auth_asym_id.value(chainIdx));
-                labelChainId = normalizeChainIdValue(chains.label_asym_id?.value?.(chainIdx) ?? '');
+                chainId = normalizeChainIdentifier(chains.auth_asym_id.value(chainIdx));
+                labelChainId = normalizeChainIdentifier(chains.label_asym_id?.value?.(chainIdx) ?? '');
             }
             const resolvedChainId = chainId || labelChainId;
             if (resolvedChainId) uniqueChainIds.add(resolvedChainId);
             if (normalizedFilterChainId) {
-                const authNorm = String(chainId ?? '').toUpperCase();
-                const labelNorm = String(labelChainId ?? '').toUpperCase();
-                if (authNorm !== normalizedFilterChainId && labelNorm !== normalizedFilterChainId) continue;
+                if (chainIdx === undefined || !selectedChainIndices(model).has(chainIdx)) continue;
             }
             let symbol = '';
             if (atoms.type_symbol && typeof atoms.type_symbol.value === 'function') {

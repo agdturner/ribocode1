@@ -4,8 +4,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-04-24
+ * @version 1.1.0
+ * @lastModified 2026-11-23
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { vi } from 'vitest';
@@ -23,6 +23,33 @@ describe('getResidueInfo', () => {
     afterAll(() => {
         console.warn = originalWarn;
         console.info = originalInfo;
+    });
+
+    it('selects the exact author chain rather than a case or label collision', () => {
+        const structure = {
+            units: [{
+                kind: 0,
+                model: {
+                    atomicHierarchy: {
+                        chains: {
+                            _rowCount: 3,
+                            auth_asym_id: { value: (i: number) => ['E', 'e', 'G'][i] },
+                            label_asym_id: { value: (i: number) => ['X', 'G', 'Y'][i] },
+                        },
+                        residues: {
+                            auth_seq_id: { value: (i: number) => [10, 20, 30][i] },
+                            label_comp_id: { value: () => 'GLY' },
+                        },
+                    },
+                },
+                elements: [0, 1, 2],
+                chainIndex: [0, 1, 2],
+                residueIndex: [0, 1, 2],
+            }],
+        };
+        expect(Object.keys(getResidueInfo(structure, 'E').residueToAtomIds)).toEqual(['10']);
+        expect(Object.keys(getResidueInfo(structure, 'e').residueToAtomIds)).toEqual(['20']);
+        expect(Object.keys(getResidueInfo(structure, 'G').residueToAtomIds)).toEqual(['30']);
     });
 
     it('returns empty maps and warns if no units', () => {

@@ -7,15 +7,28 @@
 ## Current investigation status (2026-11-23)
 
 - Weak-case follow-up: both 7WTT and 7WTZ contain distinct author chains `E`
-  and `e`. The reference has 262 versus 20 C-alpha atoms respectively; the
-  moving structure has 262 versus 55. Browser diagnostics show the current
-  case-insensitive anchor extraction returns 262 C-alpha anchors for both `e`
-  and `E` in each dataset. The existing e-to-e metric (262 pairs, 72.233
-  Angstrom RMSD) therefore does not measure the intended lowercase chains.
-  Other chain/residue lookup paths also normalize case; correcting the selection
-  consistently, including author/label aliases and multi-chain behavior, needs
-  dedicated tests before changing runtime behavior. The previous 20-pair
-  sequence-identical e diagnostic remains a separate offline metric.
+  and `e`. Case-sensitive anchor, atom and residue lookup now distinguishes them,
+  prioritizes exact author IDs over label aliases, and rejects ambiguous
+  case-insensitive fallback matches. A forced-WebGL browser run found 262 `E`
+  anchors in each structure and 20 and 55 `e` anchors in the reference and
+  moving structures respectively. The e-to-e fit used 20 pairs, with RMSD
+  0.354 Angstrom and improvement ratio 8.44; it covers only 20 of the moving
+  chain's 55 anchors. The old 262-pair, 72.233 Angstrom result used the wrong
+  chain and is not comparable. The previous sequence-identical 20-pair analysis
+  remains a separate offline metric.
+- The same browser run retained the CU-to-CU result: 95 pairs, RMSD 5.999
+  Angstrom and improvement ratio 18.00. These results do not establish a general
+  correspondence policy or qualify the release. Chain and residue loci now use
+  the same chain resolution for selection, highlighting and zoom; residue loci
+  also apply a supplied insertion code. Case-normalized custom chain colors
+  remain a separate limitation.
+- Multi-chain alignment has a separate limitation: when the first selected pair
+  has enough anchors, the fit uses that pair's anchors only, even though metrics
+  list both pairs. Element-data fallback combines selected chains. A separate
+  correspondence policy and regression are needed before changing this behavior.
+  In a forced-WebGL run selecting e/E in both 7WTT and 7WTZ, the metric listed
+  both pairs but remained at 20 pairs, exactly the single e-pair count. Combined
+  two-chain highlighting passed a separate forced-WebGL browser check.
 - Improved initial alignment remains a developer-only experiment; production defaults
   have not changed. Manual 6XU6/6XU8 comparison was positive.
 - Geometry source/runtime mismatch is resolved and pinned to Mol* commit

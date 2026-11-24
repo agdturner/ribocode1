@@ -4,8 +4,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.1.0
- * @lastModified 2026-07-23
+ * @version 1.2.0
+ * @lastModified 2026-11-23
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { Structure } from 'molstar/lib/mol-model/structure';
@@ -15,6 +15,38 @@ export function normalizeChainIdentifier(value: unknown): string {
     const v = String(value ?? '').trim();
     if (!v || v === '?' || v === '.') return '';
     return v;
+}
+
+type ChainColumns = {
+    _rowCount: number;
+    auth_asym_id?: { value: (index: number) => unknown };
+    label_asym_id?: { value: (index: number) => unknown };
+};
+
+/** Resolve author IDs first, then label aliases; case-insensitive matches must be unambiguous. */
+export function resolveChainIndices(chains: ChainColumns | undefined, requestedId: string): Set<number> {
+    const requested = normalizeChainIdentifier(requestedId);
+    if (!chains || !requested) return new Set();
+    const rows = Array.from({ length: chains._rowCount }, (_, index) => ({
+        index,
+        auth: normalizeChainIdentifier(chains.auth_asym_id?.value(index)),
+        label: normalizeChainIdentifier(chains.label_asym_id?.value(index)),
+    }));
+    const exactAuth = rows.filter(row => row.auth === requested);
+    if (exactAuth.length) return new Set(exactAuth.map(row => row.index));
+    const exactLabel = rows.filter(row => row.label === requested);
+    if (exactLabel.length) return new Set(exactLabel.map(row => row.index));
+
+    const folded = requested.toUpperCase();
+    const auth = rows.filter(row => row.auth && row.auth.toUpperCase() === folded);
+    const label = rows.filter(row => row.label && row.label.toUpperCase() === folded);
+    const candidates = auth.length ? auth : label;
+    const identities = new Set(candidates.map(row => row.auth || row.label));
+    if (identities.size > 1) {
+        console.warn('[Chain lookup] Ambiguous case-insensitive chain ID:', requested);
+        return new Set();
+    }
+    return new Set(candidates.map(row => row.index));
 }
 
 function getEntityIdForChain(chains: any, row: number): string | undefined {

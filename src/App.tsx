@@ -56,7 +56,7 @@ import { StateTransforms } from 'molstar/lib/mol-plugin-state/transforms';
 import { Mat4, Vec3 } from 'molstar/lib/mol-math/linear-algebra';
 import { StructureElement, StructureProperties, Unit } from 'molstar/lib/mol-model/structure';
 import { OrderedSet, SortedArray } from 'molstar/lib/mol-data/int';
-import { normalizeChainIdentifier } from './utils/chain';
+import { normalizeChainIdentifier, resolveChainIndices } from './utils/chain';
 import type { LoadedMolecule, ViewerKey, MoleculeMode } from './types/ribocode';
 import { A, B } from './constants/ribocode';
 import { makeFogSetters, makeClippingSetters, makeZoomHandler, makeChainHighlightToggleHandler, makeResidueHighlightToggleHandler, makeSubunitHighlightToggleHandler, makeChainInspectToggleHandler, makeResidueInspectToggleHandler, makeSubunitInspectToggleHandler } from './utils/viewerHelpers';
@@ -531,9 +531,17 @@ function buildAnchorAtomDataForChain(structure: any, chainId: string) {
 
     if (!structure || !chainId) return { symbolTypes, chainIds, xs, ys, zs, residueKeys };
 
-    const normalizedChainId = String(chainId).trim().toUpperCase();
     const units = structure?.data?.units ?? structure?.units ?? [];
     const seen = new Set<string>();
+    const indicesByModel = new Map<object, Set<number>>();
+    const selectedChainIndices = (model: any): Set<number> => {
+        let indices = indicesByModel.get(model);
+        if (!indices) {
+            indices = resolveChainIndices(model.atomicHierarchy.chains, chainId);
+            indicesByModel.set(model, indices);
+        }
+        return indices;
+    };
 
     const normalizeAnchorName = (raw: string): string => {
         const name = String(raw || '').trim().toUpperCase();
@@ -560,11 +568,8 @@ function buildAnchorAtomDataForChain(structure: any, chainId: string) {
                     loc.unit = unit;
                     loc.element = atomIdx;
 
-                    const authChainId = String(StructureProperties.chain.auth_asym_id(loc) ?? '');
-                    const labelChainId = String(StructureProperties.chain.label_asym_id(loc) ?? '');
-                    const authNorm = authChainId.trim().toUpperCase();
-                    const labelNorm = labelChainId.trim().toUpperCase();
-                    if (authNorm !== normalizedChainId && labelNorm !== normalizedChainId) continue;
+                    const chainIdx = unit.model.atomicHierarchy.chainAtomSegments.index[atomIdx];
+                    if (!selectedChainIndices(unit.model).has(chainIdx)) continue;
 
                     const labelAtomId = String(StructureProperties.atom.label_atom_id(loc) ?? '');
                     const authAtomId = String(StructureProperties.atom.auth_atom_id(loc) ?? '');
@@ -613,12 +618,9 @@ function buildAnchorAtomDataForChain(structure: any, chainId: string) {
         const elements = unit.elements ?? [];
         for (let i = 0; i < elements.length; i++) {
             const atomIdx = elements[i];
-            const chainIdx = unit?.chainIndex?.[i] ?? unit?.chainIndex?.[atomIdx];
-            const authChainId = getColumnStringValue(chains.auth_asym_id, chainIdx ?? -1);
-            const labelChainId = getColumnStringValue(chains.label_asym_id, chainIdx ?? -1);
-            const authNorm = String(authChainId).trim().toUpperCase();
-            const labelNorm = String(labelChainId).trim().toUpperCase();
-            if (authNorm !== normalizedChainId && labelNorm !== normalizedChainId) continue;
+            const chainIdx = model.atomicHierarchy.chainAtomSegments?.index?.[atomIdx]
+                ?? unit?.chainIndex?.[i] ?? unit?.chainIndex?.[atomIdx];
+            if (chainIdx === undefined || !selectedChainIndices(model).has(chainIdx)) continue;
 
             const labelAtomId = getColumnStringValue(atoms.label_atom_id, atomIdx);
             const authAtomId = getColumnStringValue(atoms.auth_atom_id, atomIdx);

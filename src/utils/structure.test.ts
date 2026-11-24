@@ -10,10 +10,111 @@
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { PluginUIContext } from 'molstar/lib/mol-plugin-ui/context';
-import { getStructureRepresentations, focusLociOnChain, focusLociOnResidue, getChainLoci, getResidueLoci } from './structure';
+import { CIF } from 'molstar/lib/mol-io/reader/cif';
+import { trajectoryFromMmCIF } from 'molstar/lib/mol-model-formats/structure/mmcif';
+import { Structure, StructureElement } from 'molstar/lib/mol-model/structure';
+import { OrderedSet } from 'molstar/lib/mol-data/int';
+import { getStructureRepresentations, focusLociOnChain, focusLociOnResidue, getChainLoci, getResidueLoci, getResiduesLoci, getSubunitLoci, highlightLociOnChain, highlightLociOnResidues } from './structure';
 
 // Static mock for a valid Loci object
 const lociObj = { kind: 'element-loci', structure: {}, elements: [] } as any;
+
+describe('chain and residue loci identity', () => {
+    let plugin: PluginUIContext;
+    let select: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+        const rows = [
+            'ATOM 1 C CA . GLY X 1 1 ? 0 0 0 1 10 1 E 1',
+            'ATOM 2 C CA . GLY G 1 1 ? 1 0 0 1 10 1 e 1',
+            'ATOM 3 C CA . GLY Y 1 1 ? 2 0 0 1 10 1 G 1',
+            'ATOM 4 C CA . GLY Z 1 1 ? 3 0 0 1 10 1 . 1',
+            'ATOM 7 C CA . GLY Z 1 2 B 3 1 0 1 10 1 . 1',
+            'ATOM 5 C CA . GLY U 1 1 ? 4 0 0 1 10 1 AA 1',
+            'ATOM 6 C CA . GLY V 1 1 ? 5 0 0 1 10 1 aa 1',
+        ];
+        const cif = `data_test
+loop_
+_entity.id
+_entity.type
+1 polymer
+loop_
+_entity_poly.entity_id
+_entity_poly.type
+1 polypeptide(L)
+loop_
+_atom_site.group_PDB
+_atom_site.id
+_atom_site.type_symbol
+_atom_site.label_atom_id
+_atom_site.label_alt_id
+_atom_site.label_comp_id
+_atom_site.label_asym_id
+_atom_site.label_entity_id
+_atom_site.label_seq_id
+_atom_site.pdbx_PDB_ins_code
+_atom_site.Cartn_x
+_atom_site.Cartn_y
+_atom_site.Cartn_z
+_atom_site.occupancy
+_atom_site.B_iso_or_equiv
+_atom_site.auth_seq_id
+_atom_site.auth_asym_id
+_atom_site.pdbx_PDB_model_num
+${rows.join('\n')}
+`;
+        const parsed = await CIF.parseText(cif).run();
+        if (parsed.isError) throw new Error(parsed.message);
+        const model = (await trajectoryFromMmCIF(parsed.result.blocks[0]).run()).representative;
+        const structure = Structure.ofModel(model);
+        select = vi.fn();
+        plugin = {
+            managers: { interactivity: { lociSelects: { select } }, structure: { hierarchy: { current: { structures: [
+                { cell: { transform: { ref: 'ref' }, obj: { data: structure } } },
+            ] } } } },
+        } as any;
+    });
+
+    function atomIndices(loci: StructureElement.Loci | null): number[] {
+        if (!loci) throw new Error('Expected a structure loci');
+        return loci.elements.flatMap(({ unit, indices }) =>
+            Array.from({ length: OrderedSet.size(indices) }, (_, i) =>
+                unit.elements[OrderedSet.getAt(indices, i)]));
+    }
+
+    it('uses author priority, case-sensitive identities, and label aliases', () => {
+        expect(atomIndices(getChainLoci(plugin, 'ref', 'E'))).toEqual([0]);
+        expect(atomIndices(getChainLoci(plugin, 'ref', 'e'))).toEqual([1]);
+        expect(atomIndices(getChainLoci(plugin, 'ref', 'G'))).toEqual([2]);
+        expect(atomIndices(getChainLoci(plugin, 'ref', 'X'))).toEqual([0]);
+        expect(atomIndices(getChainLoci(plugin, 'ref', 'Z'))).toEqual([3, 4]);
+        expect(atomIndices(getChainLoci(plugin, 'ref', 'x'))).toEqual([0]);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        expect(atomIndices(getChainLoci(plugin, 'ref', 'Aa'))).toEqual([]);
+        expect(warn).toHaveBeenCalled();
+        warn.mockRestore();
+    });
+
+    it('intersects residue loci with the same resolved chain', () => {
+        expect(atomIndices(getResidueLoci(plugin, 'ref', 'E', '1'))).toEqual([0]);
+        expect(atomIndices(getResidueLoci(plugin, 'ref', 'e', '1'))).toEqual([1]);
+        expect(atomIndices(getResidueLoci(plugin, 'ref', 'G', '1'))).toEqual([2]);
+        expect(atomIndices(getResidueLoci(plugin, 'ref', 'Z', '1'))).toEqual([3, 4]);
+        expect(atomIndices(getResidueLoci(plugin, 'ref', 'Z', '2'))).toEqual([]);
+        expect(atomIndices(getResidueLoci(plugin, 'ref', 'Z', '1', 'B'))).toEqual([4]);
+        expect(atomIndices(getResidueLoci(plugin, 'ref', 'Z', '1', 'C'))).toEqual([]);
+        expect(atomIndices(getResiduesLoci(plugin, 'ref', 'Z', ['01', '1'], { '01': 'B', '1': 'C' }))).toEqual([4]);
+        expect(atomIndices(getResiduesLoci(plugin, 'ref', 'Z', ['01', '1'], { '01': 'B' }))).toEqual([3, 4]);
+    });
+
+    it('passes resolved loci to highlights and unions case-distinct chains', () => {
+        expect(atomIndices(getSubunitLoci(plugin, 'ref', ['E', 'e'])).sort()).toEqual([0, 1]);
+        highlightLociOnChain(plugin, 'ref', 'G', 'halo');
+        expect(atomIndices(select.mock.calls[0][0].loci)).toEqual([2]);
+        highlightLociOnResidues(plugin, 'ref', 'Z', ['1'], undefined, 'halo');
+        expect(atomIndices(select.mock.calls[1][0].loci)).toEqual([3, 4]);
+    });
+});
 
 describe('structure', () => {
     let plugin: PluginUIContext;

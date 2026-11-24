@@ -33,8 +33,15 @@ structure transforms and camera restoration.
 Recent findings from benchmark datasets:
 
 - 6XU6.cif -> 6XU8.cif, chain CU -> CU is currently stable with strong improvement.
-- 7WTT.cif -> 7WTZ.cif, chain e -> e currently improves only modestly and remains a known weak case.
+- 7WTT.cif -> 7WTZ.cif contains distinct `E` and `e` chains. After correcting
+  case-sensitive lookup, the `e` fit uses 20 pairs out of 55 moving C-alpha
+  anchors and measured 0.354 Angstrom RMSD. This limited coverage does not
+  establish general fit quality. Earlier 262-pair results used the wrong chain.
 - The current fit already includes both rotation and translation, so adding a second translation pass is not expected to fix weak fits by itself.
+- Multi-chain anchor fitting currently uses only the first selected chain pair;
+  the metric's chain ID list alone does not establish that later pairs contributed.
+  The e/E browser diagnostic records this limitation; it is not a quality gate
+  for a combined fit.
 - A robust outlier-trim re-fit experiment was evaluated and did not improve the 7WTT/7WTZ e-case.
 
 Recommended focused automated checks:
@@ -63,7 +70,7 @@ When alignment internals are changed:
 
 Next alignment investigation focus:
 
-- Improve correspondence quality for difficult chain pairs (for example, long-chain e -> e cases) rather than adding extra translation-only corrections.
+- Improve correspondence quality and coverage for difficult chain pairs rather than adding extra translation-only corrections.
 - Investigate residue-correspondence-aware pairing coverage in chain alignment tests, including gaps in automated checks for residue-key alignment behavior.
 - Keep both benchmark families active during changes:
   - Strong-case guardrail: 6XU6/6XU8 CU -> CU should remain stable.

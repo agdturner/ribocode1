@@ -4,8 +4,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-04-24
+ * @version 1.1.0
+ * @lastModified 2026-11-23
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { vi } from 'vitest';
@@ -22,9 +22,43 @@ describe('data.ts utility functions', () => {
     });
 
     describe('getAtomDataFromStructureUnits', () => {
+        it('distinguishes author IDs by case and prioritizes them over label aliases', () => {
+            const structure = {
+                units: [{
+                    kind: 0,
+                    model: {
+                        atomicHierarchy: {
+                            atoms: { type_symbol: { value: () => 'C' } },
+                            chains: {
+                                _rowCount: 3,
+                                auth_asym_id: { value: (i: number) => ['E', 'e', 'G'][i] },
+                                label_asym_id: { value: (i: number) => ['X', 'G', 'Y'][i] },
+                            },
+                            chainAtomSegments: { index: [0, 0, 1, 2] },
+                            residueAtomSegments: { index: [0, 1, 2, 3] },
+                        },
+                        atomicConformation: { x: [1, 2, 3, 4], y: [0, 0, 0, 0], z: [0, 0, 0, 0] },
+                    },
+                    elements: [0, 1, 2, 3],
+                }],
+            };
+            expect(dataUtils.getAtomDataFromStructureUnits(structure, 'E').xs).toEqual([1, 2]);
+            expect(dataUtils.getAtomDataFromStructureUnits(structure, 'e').xs).toEqual([3]);
+            expect(dataUtils.getAtomDataFromStructureUnits(structure, 'G').xs).toEqual([4]);
+            expect(dataUtils.getAtomDataFromStructureUnits(structure, 'X').xs).toEqual([1, 2]);
+        });
+
         it('returns empty arrays for undefined structure', () => {
             const result = dataUtils.getAtomDataFromStructureUnits(undefined);
             expect(result).toEqual({ symbolTypes: [], chainIds: [], xs: [], ys: [], zs: [] });
+        });
+
+        it('rejects a placeholder chain filter instead of returning all atoms', () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            const result = dataUtils.getAtomDataFromStructureUnits({ units: [{}] }, '.');
+            expect(result.xs).toEqual([]);
+            expect(warn).toHaveBeenCalledWith('[getAtomDataFromStructureUnits] Invalid chain ID:', '.');
+            warn.mockRestore();
         });
 
         it('extracts atom data from mock structure', () => {

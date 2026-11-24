@@ -4,17 +4,17 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-04-24
+ * @version 1.1.0
+ * @lastModified 2026-11-23
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { PluginUIContext } from 'molstar/lib/mol-plugin-ui/context';
-import { Structure, StructureElement, StructureSelection } from 'molstar/lib/mol-model/structure';
-import { QueryContext } from 'molstar/lib/mol-model/structure/query/context';
-import { MolScriptBuilder } from 'molstar/lib/mol-script/language/builder';
-import { compile } from 'molstar/lib/mol-script/runtime/query/base';
+import { Structure, StructureElement, Unit } from 'molstar/lib/mol-model/structure';
+import { UnitIndex } from 'molstar/lib/mol-model/structure/structure/element/util';
+import { OrderedSet } from 'molstar/lib/mol-data/int';
 import { Color } from 'molstar/lib/mol-util/color';
 import { setStructureOverpaint, clearStructureOverpaint } from 'molstar/lib/mol-plugin-state/helpers/structure-overpaint';
+import { resolveChainIndices } from './chain';
 
 const SUBUNIT_HIGHLIGHT_COLOR = Color(0x4C78A8);
 const CHAIN_HIGHLIGHT_COLOR = Color(0xF58518);
@@ -252,21 +252,45 @@ export function focusLociOnResidue(
 /**
  * Computes the loci for a given chain in a structure using Mol* APIs.
  */
+function chainLoci(
+    structure: Structure,
+    chainId: string,
+    residueCodes?: Map<string, Set<string> | null>
+): StructureElement.Loci {
+    const indicesByModel = new Map<Unit.Atomic['model'], Set<number>>();
+    const elements: StructureElement.Loci.Element[] = [];
+    for (const unit of structure.units) {
+        if (!Unit.isAtomic(unit)) continue;
+        let chainIndices = indicesByModel.get(unit.model);
+        if (!chainIndices) {
+            chainIndices = resolveChainIndices(unit.model.atomicHierarchy.chains, chainId);
+            indicesByModel.set(unit.model, chainIndices);
+        }
+        const indices: UnitIndex[] = [];
+        for (let i = 0; i < unit.elements.length; i++) {
+            const atom = unit.elements[i];
+            if (!chainIndices.has(unit.chainIndex[atom])) continue;
+            if (residueCodes) {
+                const residue = unit.residueIndex[atom];
+                const residues = unit.model.atomicHierarchy.residues;
+                const residueId = String(residues.auth_seq_id.value(residue));
+                if (!residueCodes.has(residueId)) continue;
+                const insCodes = residueCodes.get(residueId);
+                if (insCodes && !insCodes.has(residues.pdbx_PDB_ins_code.value(residue))) continue;
+            }
+            indices.push(i as UnitIndex);
+        }
+        if (indices.length) elements.push({ unit, indices: OrderedSet.ofSortedArray(indices) });
+    }
+    return StructureElement.Loci(structure, elements);
+}
+
 export function getChainLoci(plugin: PluginUIContext, structureRef: string, chainId: string) {
     const structureObj = plugin.managers.structure.hierarchy.current.structures.find(
         s => s.cell.transform.ref === structureRef
     )?.cell.obj?.data;
     if (!structureObj) return null;
-    const qb = MolScriptBuilder.struct.generator.atomGroups({
-        'chain-test': MolScriptBuilder.core.rel.eq([
-            MolScriptBuilder.struct.atomProperty.macromolecular.auth_asym_id(),
-            chainId
-        ])
-    });
-    const compiled = compile(qb);
-    const ctx = new QueryContext(structureObj);
-    const selection = compiled(ctx);
-    return StructureSelection.toLociWithSourceUnits(selection);
+    return chainLoci(structureObj, chainId);
 }
 
 /**
@@ -540,37 +564,11 @@ export function getResidueLoci(
     residueId: string,
     insCode?: string
 ) {
-    const structureObj = plugin.managers.structure.hierarchy.current.structures.find(
-        s => s.cell.transform.ref === structureRef
-    )?.cell.obj?.data;
-    if (!structureObj) return null;
-    // Build query with optional insertion code
-    const parsedResidueId = (typeof residueId === 'string' && !isNaN(Number(residueId))) ? Number(residueId) : residueId;
-    const tests: any = {
-        'chain-test': MolScriptBuilder.core.rel.eq([
-            MolScriptBuilder.struct.atomProperty.macromolecular.auth_asym_id(),
-            chainId
-        ]),
-        'residue-test': MolScriptBuilder.core.rel.eq([
-            MolScriptBuilder.struct.atomProperty.macromolecular.auth_seq_id(),
-            parsedResidueId
-        ])
-    };
-    if (insCode) {
-        tests['inscode-test'] = MolScriptBuilder.core.rel.eq([
-            MolScriptBuilder.struct.atomProperty.macromolecular.pdbx_PDB_ins_code(),
-            insCode
-        ]);
-    }
-    const qb = MolScriptBuilder.struct.generator.atomGroups(tests);
-    const compiled = compile(qb);
-    const ctx = new QueryContext(structureObj);
-    const selection = compiled(ctx);
-    return StructureSelection.toLociWithSourceUnits(selection);
+    return getResiduesLoci(plugin, structureRef, chainId, [residueId], { [residueId]: insCode });
 }
 
 /**
- * Computes a loci that spans all supplied residue IDs in a chain by unioning residue loci.
+ * Computes a loci that spans all supplied residue IDs in a chain.
  */
 export function getResiduesLoci(
     plugin: PluginUIContext,
@@ -580,20 +578,20 @@ export function getResiduesLoci(
     residueInsCodes?: Record<string, string | undefined>
 ) {
     if (!Array.isArray(residueIds) || residueIds.length === 0) return null;
-    const uniqueResidueIds = Array.from(new Set(residueIds.filter(Boolean)));
-    let mergedLoci: any = null;
-    for (const residueId of uniqueResidueIds) {
-        const loci = getResidueLoci(plugin, structureRef, chainId, residueId, residueInsCodes?.[residueId]);
-        if (!loci) continue;
-        if (!mergedLoci) {
-            mergedLoci = loci;
-            continue;
-        }
-        if (mergedLoci.kind === 'element-loci' && loci.kind === 'element-loci') {
-            mergedLoci = StructureElement.Loci.union(mergedLoci, loci);
-        }
+    const structureObj = plugin.managers.structure.hierarchy.current.structures.find(
+        s => s.cell.transform.ref === structureRef
+    )?.cell.obj?.data;
+    if (!structureObj) return null;
+    const residueCodes = new Map<string, Set<string> | null>();
+    for (const residueId of new Set(residueIds.filter(Boolean))) {
+        const key = !isNaN(Number(residueId)) ? String(Number(residueId)) : residueId;
+        const insCode = residueInsCodes?.[residueId];
+        if (!insCode) residueCodes.set(key, null);
+        else if (!residueCodes.has(key)) residueCodes.set(key, new Set([insCode]));
+        else residueCodes.get(key)?.add(insCode);
     }
-    return mergedLoci;
+    if (residueCodes.size === 0) return null;
+    return chainLoci(structureObj, chainId, residueCodes);
 }
 
 /**
