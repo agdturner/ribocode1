@@ -105,32 +105,28 @@ Console diagnostics use `[Experimental Initial Alignment]`; development test API
 `getExperimentalInitialAlignment()` reports the outcome. Parsing/fitting errors
 remain load errors, not unfitted successes. Session restoration bypasses this
 experiment; do not use Save/Load round trips to validate an experimental baseline.
-This option is not yet release-ready: full PR-suite qualification, a passing full
-Mol* library build and experimental session-baseline round trips remain outstanding.
-The production Vite/PWA bundle builds successfully, but that does not certify the
-full Mol* library build. The geometry source/runtime mismatch is resolved as described
-below. See the [ADR's current-status section](./decisions/ADR-0001-alignment-quality-gates.md) for validation results and known blockers.
+This option is not yet release-ready: experimental session-baseline round trips
+and broader qualification remain outstanding. The full Mol* library build,
+Ribocode type-check, production build and bounded-concurrency test runs have
+passed for the current pin; this does not establish that the default PR command
+passes in every environment. See the
+[ADR's validation update](./decisions/ADR-0001-alignment-quality-gates.md#validation-update-2026-11-24)
+for the scope and limitations.
 
-The source/runtime geometry mismatch was subsequently repaired on Mol* branch
-`fix/rigid-alignment-centroid-mapping`: all count branches now apply
-`R * (moving - movingCentroid) + referenceCentroid`, retaining the single-pair
-translation guard. Both source and regenerated library tests pass. The source changes
-are committed and pushed to `agdturner/molstar` at
-`2d4fd2c68fe4cdf600ebb38a84e9030bed4f8725`, and Ribocode's submodule pin now identifies
-that source. Fetching this SHA from the configured shared Mol* remote was verified.
-
-A full Mol* library build currently also encounters unrelated Express route-parameter
-type errors. The geometry dependency tree can be rebuilt without those server entry
-points using the root repository's TypeScript compiler:
+The earlier 5.4.2-based Mol* checkout had Express route-parameter type errors,
+and a geometry-only rebuild was used during investigation. That workaround was
+not a full library build. Ribocode now pins the shared 5.13.1-based Mol* commit
+`901cef218be8f231ebb749160e83d586be77ab34`, which carries forward the geometry
+fix originally committed as `2d4fd2c68fe4cdf600ebb38a84e9030bed4f8725`.
+Its mapping applies `R * (moving - movingCentroid) + referenceCentroid` and
+retains the single-pair translation guard. Build the full library after a
+submodule checkout or source change:
 
 ```sh
-node node_modules/typescript/bin/tsc packages/molstar/src/extensions/ribocode/utils/geometry.ts --target es2018 --module esnext --moduleResolution node --esModuleInterop --strict --skipLibCheck --rootDir packages/molstar/src --outDir packages/molstar/lib
-node node_modules/typescript/bin/tsc packages/molstar/src/extensions/ribocode/utils/geometry.ts --target es2018 --module commonjs --moduleResolution node --esModuleInterop --strict --skipLibCheck --rootDir packages/molstar/src --outDir packages/molstar/lib/commonjs
-npm run build:lib-extra --workspace=molstar
+npm run build:lib --workspace=molstar
 ```
 
-This focused rebuild validates geometry only; it is not evidence that the full
-Mol* library build passes. Generated library files are not committed.
+Generated library files are not committed.
 
 ```sh
 npm run test -- --run src/utils/experimentalInitialAlignment.test.ts

@@ -66,14 +66,19 @@ git -C packages/molstar remote add upstream https://github.com/ribocode-slola/mo
 git -C packages/molstar remote -v
 ```
 
-Start a feature branch from the shared fork's `master`; there's no need to update or push your personal `master`:
+For changes to the version currently pinned by Ribocode, start from the shared
+5.13.1-based branch; the shared fork's `master` is currently based on 5.4.2.
+There is no need to update or push your personal `master`:
 
 ```sh
 git -C packages/molstar fetch upstream
-git -C packages/molstar switch --no-track -c my-molstar-change upstream/master
+git -C packages/molstar switch --no-track -c my-molstar-change upstream/investigate/ribocode-on-5.13.1
 ```
 
-Commit your Mol* changes on the feature branch, push it with `git -C packages/molstar push -u origin my-molstar-change`, and open a PR into `ribocode-slola/molstar:master`.
+Commit your Mol* changes on the feature branch, push it with
+`git -C packages/molstar push -u origin my-molstar-change`, and agree the
+appropriate shared-fork target before opening a PR. Do not assume that `master`
+contains the version currently pinned by Ribocode.
 
 **To update Ribocode's pin after the Mol\* PR merges**, start a Ribocode feature branch. Fetch the shared Mol* fork, check out the intended merged Mol* commit in the submodule, rebuild its library, and run `npm run test:pr` from the Ribocode root. Stage `packages/molstar` to record the new pin, then submit it in a Ribocode PR. Do not pin a commit that exists only on a personal fork.
 
@@ -290,7 +295,27 @@ Testing guidance:
 
 ## Molstar
 
-Ribocode depends upon a customised version of [Mol*](https://github.com/molstar/molstar) - [Ribocode Mol*](https://github.com/ribocode-slola/molstar). This is currently Mol* Version 5.4.2 with some files added for Ribocode that might be generally useful for Mol*. These are being contributed via [Mol* Pull Request #1726](https://github.com/molstar/molstar/pull/1726), but if this does not happen, they will be folded back into Ribocode to make it easier to build on later versions of Mol*.
+Ribocode currently uses a customised [Mol*](https://github.com/molstar/molstar)
+5.13.1, pinned as a submodule to commit
+`901cef218be8f231ebb749160e83d586be77ab34` in the
+[Ribocode Mol* fork](https://github.com/ribocode-slola/molstar). The commit is
+available on its `investigate/ribocode-on-5.13.1` branch. Keep that branch
+available while Ribocode depends on the pin. The shared fork's `master` is
+currently based on 5.4.2, not the version Ribocode is using. The submodule
+gitlink, rather than a moving branch name, determines the actual version.
+
+Compared with the official Mol* 5.13.1 tag, this pin adds the Ribocode
+extension under `src/extensions/ribocode`, the `big.js` dependency and a
+TypeScript build setting; it does not change existing Mol* core source files.
+The extension includes the molecule loader and trajectory provider, alignment
+types, geometry and its regression tests. Its geometry includes the
+rigid-transform centroid fix needed by Ribocode.
+
+An earlier attempt to contribute the extension upstream is recorded in
+[Mol* PR #1726](https://github.com/molstar/molstar/pull/1726). Reviewers raised
+concerns about adding `big.js` to the library. Ribocode is retaining the
+customised setup for now; neither upstream acceptance nor a move out of the
+fork should be assumed.
 
 Important local wiring details:
 
@@ -298,6 +323,37 @@ Important local wiring details:
 - Ribocode imports from `molstar/lib/...`, so the local `packages/molstar/lib` tree must exist.
 - The Mol* repository keeps `lib/` out of Git; generate it locally with `npm run build:lib` in `packages/molstar`.
 - If you edit files under `packages/molstar/src`, rebuild Mol* (`npm run build:lib`) before re-testing Ribocode.
+
+### Possible future move to stock Mol*
+
+Moving the extension into Ribocode and using stock Mol* 5.13.1 appears feasible,
+but has not been implemented or validated. A trial should use an isolated branch
+and preserve the existing setup as a comparison:
+
+1. Move the loader, trajectory provider, alignment types, geometry, QCProt
+   helper and their tests into Ribocode; change the application's imports and
+   test mocks. Preserve the centroid fix and existing loading and alignment
+   behaviour.
+2. Replace the customised submodule with an explicitly pinned stock Mol*
+   dependency or checkout. Adjust the workspace, lockfile, TypeScript project
+   references, Vite alias and build instructions as appropriate. The extension
+   and other Ribocode code use `molstar/lib` APIs, so removing the fork would
+   not eliminate all coupling to Mol* internals.
+3. Keep `big.js` as a Ribocode dependency initially if retaining current
+   arithmetic. It is used in centroid and mean calculations and in a
+   rotation helper. Assess whether it is needed in each path before replacing
+   it: compare numerical accuracy, runtime and bundle size on representative
+   inputs. Extracting library code is not automatically simpler and would
+   require licence compliance and maintenance; alternatives such as native
+   numbers or compensated summation must be measured, not assumed equivalent.
+4. Validate clean installation, type-checking and builds, geometry and
+   integration tests, and forced-WebGL browser checks for loading, centring,
+   alignment, selection and session round trips. Compare actual transformed
+   coordinates and fit metrics with the current pin, including the cases in
+   the [alignment testing reference](./AlignmentTesting.md).
+
+This is a possible maintenance simplification, not a decision to promote the
+experimental alignment paths or to upgrade to Mol* 6.
 
 ## Highlighting and Selection Colouring
 
@@ -541,7 +597,13 @@ test('renders the component', () => {
 
 ### Running Tests
 
-Before requesting PR review, run `npm run test:pr` to run unit and integration tests once, then the browser E2E suite. Stop any dev server using port `5173` first so Playwright can start its own server. If the first suite fails, the E2E suite does not run.
+Before requesting PR review, run `npx tsc --noEmit --pretty false` and
+`npm run test:pr`. The latter runs unit and integration tests once, then the
+standard browser E2E suite; it does not run the TypeScript check or force
+WebGL. Stop any dev server using port `5173` first so Playwright can start its
+own server. If the first suite fails, the E2E suite does not run. For alignment
+or viewer changes, also run the relevant forced-WebGL checks in the
+[alignment testing reference](./AlignmentTesting.md).
 
 - To run the unit and integration suite once:
   ```sh
@@ -634,7 +696,7 @@ npx playwright install chromium
 **Note:** Playwright E2E tests and unit/integration tests (run with Vitest) should be run separately. E2E tests require a real browser and dev server, are slower, and have different dependencies and environments than fast, isolated unit/integration tests. Keeping them separate ensures clarity, speed, and easier debugging.
 
 **Summary:**
-- Run all unit/integration tests with `npm test`.
+- Run unit/integration tests once with `npm run test -- --run` (`npm test` starts watch mode).
 - Run all E2E tests in strict mode with `npm run test:e2e`.
 - Run all E2E tests while reusing an already-running dev server with `npm run test:e2e:reuse`.
 - Run WebGL-focused E2E checks with `npm run test:e2e:webgl` (or `npm run test:e2e:webgl:reuse`).
@@ -768,4 +830,4 @@ Start each new change from the updated `main` with `git switch -c my-change` and
 
 Before requesting review, run `git fetch upstream` from your feature branch. If `upstream/main` has moved in a way that could affect your work, or if the PR has conflicts, run `git merge upstream/main` and resolve any conflicts before testing. Merging is preferable on a shared branch because it does not rewrite history. If the merge changes the recorded Mol* commit, run `git submodule update --init --recursive` after making sure you have no uncommitted submodule work.
 
-Run `npm run test:pr` on the resulting branch, push it with `git push -u origin my-change`, and open a pull request from your fork's branch into `ribocode-slola/ribocode1:main`. Record the test results in the PR and, when possible, have another contributor review before merging. There is no need to merge every unrelated upstream change.
+Run the TypeScript, PR and relevant focused checks described in [Running Tests](#running-tests) on the resulting branch, push it with `git push -u origin my-change`, and open a pull request from your fork's branch into `ribocode-slola/ribocode1:main`. Record the test results in the PR and, when possible, have another contributor review before merging. There is no need to merge every unrelated upstream change.
