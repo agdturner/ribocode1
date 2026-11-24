@@ -1,11 +1,13 @@
+import { resolveChainIndices } from './chain';
+
 /**
  * Residue utility functions for Ribocode.
  * 
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-04-24
+ * @version 1.1.0
+ * @lastModified 2026-11-23
  * @see https://github.com/ribocode-slola/ribocode1
  */
 
@@ -103,18 +105,9 @@ export function getResidueInfo(
     const residues = model.atomicHierarchy.residues;
     const atoms = model.atomicHierarchy.atoms;
     // Find chain index for the requested chainId using either auth or label asym IDs.
-    let chainIdx: number | undefined = undefined;
-    const targetChainId = String(chainId || '').trim().toUpperCase();
-    for (let i = 0; i < (chains?._rowCount ?? 0); i++) {
-        const authId = readColumnValue(chains?.auth_asym_id, i).trim().toUpperCase();
-        const labelId = readColumnValue(chains?.label_asym_id, i).trim().toUpperCase();
-        if (authId === targetChainId || labelId === targetChainId) {
-            chainIdx = i;
-            break;
-        }
-    }
+    const chainIndices = resolveChainIndices(chains, chainId);
     //console.log('[getResidueInfo] chainIdx for chainId', chainId, ':', chainIdx);
-    if (chainIdx === undefined) {
+    if (chainIndices.size === 0) {
         console.warn('Chain ID not found in model.atomicHierarchy.chains:', chainId);
         return { residueLabels, residueToAtomIds };
     }
@@ -126,7 +119,7 @@ export function getResidueInfo(
         for (let i = 0; i < elements.length; i++) {
             const atomIdx = elements[i];
             const unitChainIdx = chainIndex?.[atomIdx] ?? chainIndex?.[i];
-            if (unitChainIdx !== chainIdx) continue;
+            if (!chainIndices.has(unitChainIdx)) continue;
             const resIdx = residueIndex?.[atomIdx] ?? residueIndex?.[i];
             if (!Number.isFinite(resIdx)) continue;
             // Get residue auth_seq_id

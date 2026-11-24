@@ -20,7 +20,8 @@ async function loadAlignedToAndAligned(page: import('@playwright/test').Page) {
   await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toBeVisible({ timeout: 60000 });
 
   await page.setInputFiles('#viewer-column-B-aligned-file-input', dataPath('6xu8.cif'));
-  await expect(page.locator('#viewer-column-B-toggle-visibility-btn').nth(1)).toBeVisible({ timeout: 60000 });
+  await expect(page.locator('#viewer-column-B-toggle-visibility-btn').nth(1))
+    .toHaveAttribute('aria-label', /^Hide\s+\S/, { timeout: 120000 });
 }
 
 test.beforeEach(async ({ page }) => {
@@ -30,7 +31,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('repeat align attempts for the same pair remain available', async ({ page }) => {
-  test.setTimeout(90000);
+  test.setTimeout(240000);
 
   await page.goto('http://localhost:5173/');
   await loadAlignedToAndAligned(page);

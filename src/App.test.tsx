@@ -11,7 +11,7 @@
  */
 import { vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import App, { buildAtomDataForResidueGroup, buildDimExclusionLoci, copyCameraZoomRadiusBetweenViewers, hasSelectionForDisplayDim, readClippingFromViewer, runWithTemporarySyncDisabled } from './App';
+import App, { buildAtomDataForResidueGroup, buildDimExclusionLoci, copyCameraZoomRadiusBetweenViewers, hasSelectionForDisplayDim, readClippingFromViewer, runWithTemporarySyncDisabled, updateFog } from './App';
 
 const makeZoomHandlerMock = vi.fn((config: any) => ({ handleButtonClick: vi.fn(), config }));
 
@@ -209,6 +209,23 @@ describe('App dim overlay exclusion loci', () => {
 });
 
 describe('App chain realign zoom helper', () => {
+  it('does not write a rounded clipping percentage back when only mirroring camera state', () => {
+    const setProps = vi.fn();
+    const plugin = {
+      canvas3d: {
+        props: { cameraClipping: { radius: 2, minNear: 1, far: true } },
+        setProps,
+        requestDraw: vi.fn(),
+      },
+    };
+
+    updateFog(plugin, null, false, 0, 100, 1, 2);
+
+    expect(setProps.mock.calls[0][0].cameraClipping).toEqual({ far: true, minNear: 1 });
+    updateFog(plugin, null, false, 0, 100, 1, 15);
+    expect(setProps.mock.calls[1][0].cameraClipping).toEqual({ far: true, minNear: 1, radius: 15 });
+  });
+
   it('copies source viewer camera snapshot (pan, orientation, zoom) to target viewer', () => {
     const sourceCamera = {
       getSnapshot: vi.fn(() => ({

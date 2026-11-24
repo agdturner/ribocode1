@@ -6,8 +6,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT. See LICENSE file for more info.
  *
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.2.0
- * @lastModified 2026-06-24
+ * @version 1.3.0
+ * @lastModified 2026-11-23
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -56,7 +56,7 @@ import { StateTransforms } from 'molstar/lib/mol-plugin-state/transforms';
 import { Mat4, Vec3 } from 'molstar/lib/mol-math/linear-algebra';
 import { StructureElement, StructureProperties, Unit } from 'molstar/lib/mol-model/structure';
 import { OrderedSet, SortedArray } from 'molstar/lib/mol-data/int';
-import { normalizeChainIdentifier } from './utils/chain';
+import { normalizeChainIdentifier, resolveChainIndices } from './utils/chain';
 import type { LoadedMolecule, ViewerKey, MoleculeMode } from './types/ribocode';
 import { A, B } from './constants/ribocode';
 import { makeFogSetters, makeClippingSetters, makeZoomHandler, makeChainHighlightToggleHandler, makeResidueHighlightToggleHandler, makeSubunitHighlightToggleHandler, makeChainInspectToggleHandler, makeResidueInspectToggleHandler, makeSubunitInspectToggleHandler } from './utils/viewerHelpers';
@@ -531,9 +531,17 @@ function buildAnchorAtomDataForChain(structure: any, chainId: string) {
 
     if (!structure || !chainId) return { symbolTypes, chainIds, xs, ys, zs, residueKeys };
 
-    const normalizedChainId = String(chainId).trim().toUpperCase();
     const units = structure?.data?.units ?? structure?.units ?? [];
     const seen = new Set<string>();
+    const indicesByModel = new Map<object, Set<number>>();
+    const selectedChainIndices = (model: any): Set<number> => {
+        let indices = indicesByModel.get(model);
+        if (!indices) {
+            indices = resolveChainIndices(model.atomicHierarchy.chains, chainId);
+            indicesByModel.set(model, indices);
+        }
+        return indices;
+    };
 
     const normalizeAnchorName = (raw: string): string => {
         const name = String(raw || '').trim().toUpperCase();
@@ -560,11 +568,8 @@ function buildAnchorAtomDataForChain(structure: any, chainId: string) {
                     loc.unit = unit;
                     loc.element = atomIdx;
 
-                    const authChainId = String(StructureProperties.chain.auth_asym_id(loc) ?? '');
-                    const labelChainId = String(StructureProperties.chain.label_asym_id(loc) ?? '');
-                    const authNorm = authChainId.trim().toUpperCase();
-                    const labelNorm = labelChainId.trim().toUpperCase();
-                    if (authNorm !== normalizedChainId && labelNorm !== normalizedChainId) continue;
+                    const chainIdx = unit.model.atomicHierarchy.chainAtomSegments.index[atomIdx];
+                    if (!selectedChainIndices(unit.model).has(chainIdx)) continue;
 
                     const labelAtomId = String(StructureProperties.atom.label_atom_id(loc) ?? '');
                     const authAtomId = String(StructureProperties.atom.auth_atom_id(loc) ?? '');
@@ -613,12 +618,9 @@ function buildAnchorAtomDataForChain(structure: any, chainId: string) {
         const elements = unit.elements ?? [];
         for (let i = 0; i < elements.length; i++) {
             const atomIdx = elements[i];
-            const chainIdx = unit?.chainIndex?.[i] ?? unit?.chainIndex?.[atomIdx];
-            const authChainId = getColumnStringValue(chains.auth_asym_id, chainIdx ?? -1);
-            const labelChainId = getColumnStringValue(chains.label_asym_id, chainIdx ?? -1);
-            const authNorm = String(authChainId).trim().toUpperCase();
-            const labelNorm = String(labelChainId).trim().toUpperCase();
-            if (authNorm !== normalizedChainId && labelNorm !== normalizedChainId) continue;
+            const chainIdx = model.atomicHierarchy.chainAtomSegments?.index?.[atomIdx]
+                ?? unit?.chainIndex?.[i] ?? unit?.chainIndex?.[atomIdx];
+            if (chainIdx === undefined || !selectedChainIndices(model).has(chainIdx)) continue;
 
             const labelAtomId = getColumnStringValue(atoms.label_atom_id, atomIdx);
             const authAtomId = getColumnStringValue(atoms.auth_atom_id, atomIdx);
@@ -858,6 +860,32 @@ export async function runWithTemporarySyncDisabled<T>(
     }
 }
 
+export function updateFog(pluginA: any, pluginB: any, enabled: boolean, near: number, far: number, clippingMinNear: number, clippingRadius: number) {
+    const safeMinNear = Math.max(0.1, Number(clippingMinNear));
+    const safeRadius = Math.max(0, Math.min(99, Number(clippingRadius)));
+    [pluginA, pluginB].forEach(plugin => {
+        if (!plugin?.canvas3d) return;
+        if (typeof plugin.canvas3d.setProps !== 'function') return;
+        const currentCamera = plugin.canvas3d.props?.camera ?? {};
+        const currentCameraClipping = plugin.canvas3d.props?.cameraClipping ?? {};
+        plugin.canvas3d.setProps({
+            camera: {
+                ...currentCamera,
+                fog: enabled,
+                fogNear: Number(near),
+                fogFar: Number(far),
+            },
+            cameraClipping: {
+                far: true,
+                minNear: safeMinNear,
+                // Mol* exposes a rounded percentage: writing it back changes the exact camera radius.
+                ...(safeRadius !== currentCameraClipping.radius ? { radius: safeRadius } : {}),
+            },
+        });
+        plugin.canvas3d.requestDraw?.();
+    });
+}
+
 function getSelectedSubunitChainIds(
     subunitToChainIds: Map<string, Set<string>>,
     selectedSubunit: string
@@ -1021,6 +1049,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const [alignedFile, setAlignedFile] = useState<any | null>(null);
     const [alignedFilename, setAlignedFilename] = useState<string | null>(null);
     const [alignedToFile, setAlignedToFile] = useState<any | null>(null);
+    const experimentalInitialAlignmentRef = useRef<import('./utils/experimentalInitialAlignment').ExperimentalInitialAlignmentResult | null>(null);
+    const experimentalReferenceFileRef = useRef<File | null>(null);
     const [alignedToFilename, setAlignedToFilename] = useState<string | null>(null);
     const [expectedAlignedToFilename, setExpectedAlignedToFilename] = useState<string | null>(null);
 
@@ -3101,6 +3131,39 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 viewerA: viewerA.ref.current?.canvas3d?.camera?.getSnapshot?.(),
                 viewerB: viewerB.ref.current?.canvas3d?.camera?.getSnapshot?.(),
             }),
+            getExperimentalInitialAlignment: () => experimentalInitialAlignmentRef.current,
+            getInitialAlignmentCoordinates: (viewerKey: ViewerKey, mode: typeof AlignedTo | typeof Aligned, chainId: string) => {
+                const plugin = viewerKey === B ? viewerB.ref.current : viewerA.ref.current;
+                const diagnostics = getStructureTransformDiagnostics();
+                const refs = viewerKey === B ? diagnostics.viewerB.resolvedRefs : diagnostics.viewerA.resolvedRefs;
+                const structureRef = mode === Aligned ? refs.aligned : refs.alignedTo;
+                const structure = plugin?.managers.structure.hierarchy.current.structures
+                    .find(entry => entry.cell.transform.ref === structureRef)?.cell.obj?.data;
+                if (!structure) throw new Error(`Initial alignment diagnostic: ${viewerKey}/${mode} is not loaded.`);
+
+                const xs: number[] = [];
+                const ys: number[] = [];
+                const zs: number[] = [];
+                const atomIds: number[] = [];
+                const units: Array<{ id: number; atomCount: number }> = [];
+                let phosphorusCount = 0;
+                for (const unit of structure.units) {
+                    if (!Unit.isAtomic(unit)) continue;
+                    units.push({ id: unit.id, atomCount: unit.elements.length });
+                    for (let i = 0; i < unit.elements.length; i++) {
+                        const element = unit.elements[i];
+                        atomIds.push(element);
+                        xs.push(unit.conformation.x(element));
+                        ys.push(unit.conformation.y(element));
+                        zs.push(unit.conformation.z(element));
+                        if (unit.model.atomicHierarchy.atoms.type_symbol.value(element) === 'P') phosphorusCount++;
+                    }
+                }
+                return {
+                    xs, ys, zs, atomIds, units, phosphorusCount,
+                    anchors: buildAnchorAtomDataForChain(structure, chainId),
+                };
+            },
             getStructureTransformDiagnostics,
             captureStructureTransformCheckpoint: (label: string) => {
                 const key = typeof label === 'string' && label.trim().length > 0 ? label.trim() : 'default';
@@ -3467,7 +3530,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         alignmentData?: any,
         sessionRepresentationsA: SessionRepresentationSpec[] = [],
         sessionRepresentationsB: SessionRepresentationSpec[] = [],
-        options?: { hideInRightViewerByDefault?: boolean }
+        options?: { hideInRightViewerByDefault?: boolean; restoreSession?: boolean }
     ): Promise<LoadedMolecule | undefined> => {
         const hideInRightViewerByDefault = options?.hideInRightViewerByDefault === true;
         void discoverUniprotAccessionsFromFile(file, mode);
@@ -3500,6 +3563,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             // Loading a new reference dataset establishes a new baseline; clear
             // any previously accumulated in-place realign cache state.
             realignTransformCacheRef.current = {};
+            experimentalInitialAlignmentRef.current = null;
+            experimentalReferenceFileRef.current = file;
             realignBaseTransformCacheRef.current = {};
             realignDiagnosticsCounterRef.current = {};
             lastChainRealignMetricsRef.current = null;
@@ -3594,9 +3659,27 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             persistedStructureTransformsRef.current = {};
             persistedStructureTransformsByModeRef.current = { viewerA: {}, viewerB: {} };
             structureTransformCheckpointsRef.current = {};
+            let alignData = alignmentData ?? viewerA.moleculeAlignedTo?.alignmentData;
+            if (import.meta.env.DEV && !options?.restoreSession
+                && new URLSearchParams(window.location.search).get('experimentalInitialAlignment') === '1') {
+                const referenceFile = experimentalReferenceFileRef.current;
+                if (!referenceFile) throw new Error('Experimental alignment requires the reference file.');
+                const { parseExperimentalAlignmentModel, fitExperimentalInitialAlignment } = await import('./utils/experimentalInitialAlignment');
+                const reference = await parseExperimentalAlignmentModel(referenceFile);
+                const moving = await parseExperimentalAlignmentModel(file);
+                const result = fitExperimentalInitialAlignment(reference, moving);
+                experimentalInitialAlignmentRef.current = result;
+                if (result.status === 'fitted') {
+                    alignData = result.alignmentData;
+                    console.info('[Experimental Initial Alignment]', result);
+                } else {
+                    alignData = undefined;
+                    console.warn('[Experimental Initial Alignment] Centered but unfitted:', result.reason);
+                    alert(`Experimental initial alignment was skipped: ${result.reason}\nBoth structures will remain centered but unfitted. Use manual alignment controls.`);
+                }
+            }
             setAlignedFile(file);
             setAlignedFilename(file.name);
-            const alignData = alignmentData ?? viewerA.moleculeAlignedTo?.alignmentData;
             let refAAligned: string | null = null;
             let refBAligned: string | null = null;
 
@@ -3764,33 +3847,6 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const [subunitInspectOnAAligned, setSubunitInspectOnAAligned] = useState(false);
     const [subunitInspectOnBAlignedTo, setSubunitInspectOnBAlignedTo] = useState(false);
     const [subunitInspectOnBAligned, setSubunitInspectOnBAligned] = useState(false);
-
-    const updateFog = useCallback((pluginARef: any, pluginBRef: any, enabled: boolean, near: number, far: number, clippingMinNear: number, clippingRadius: number) => {
-        const safeMinNear = Math.max(0.1, Number(clippingMinNear));
-        const safeRadius = Math.max(0, Math.min(99, Number(clippingRadius)));
-        [pluginARef, pluginBRef].forEach((pluginRef: any) => {
-            const plugin = pluginRef?.canvas3d ? pluginRef : pluginRef?.current;
-            if (!plugin?.canvas3d) return;
-            if (typeof plugin.canvas3d.setProps !== 'function') return;
-            const currentCamera = plugin.canvas3d.props?.camera ?? {};
-            const currentCameraClipping = plugin.canvas3d.props?.cameraClipping ?? {};
-            plugin.canvas3d.setProps({
-                camera: {
-                    ...currentCamera,
-                    fog: enabled,
-                    fogNear: Number(near),
-                    fogFar: Number(far),
-                },
-                cameraClipping: {
-                    ...currentCameraClipping,
-                    far: true,
-                    minNear: safeMinNear,
-                    radius: safeRadius,
-                },
-            });
-            plugin.canvas3d.requestDraw?.();
-        });
-    }, []);
 
     useEffect(() => {
         if (!viewerAReady || clippingAInitializedRef.current) return;
@@ -7805,7 +7861,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                             Aligned,
                             restoredAlignmentData,
                             alignedRepresentationsA,
-                            alignedRepresentationsB
+                            alignedRepresentationsB,
+                            { restoreSession: true }
                         );
                     }
                 }
@@ -7815,7 +7872,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     Aligned,
                     undefined,
                     alignedRepresentationsA,
-                    alignedRepresentationsB
+                    alignedRepresentationsB,
+                    { restoreSession: true }
                 );
                 loadedAny = true;
             }

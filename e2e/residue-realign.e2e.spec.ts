@@ -111,7 +111,10 @@ async function loadDatasets(page: Page, alignedTo: string, aligned: string) {
   await expect(page.locator('#viewer-column-B-aligned-load-btn')).toBeEnabled({ timeout: 30000 });
   await page.click('#viewer-column-B-aligned-load-btn');
   await page.setInputFiles('#viewer-column-B-aligned-file-input', dataPath(aligned));
-  await expect(page.locator('#viewer-column-B-toggle-visibility-btn').nth(1)).toBeVisible({ timeout: 60000 });
+  const alignedVisibility = page.locator('#viewer-column-B-toggle-visibility-btn').nth(1);
+  // A file's structure label can differ from its filename (for example AlphaFold models).
+  await expect(alignedVisibility).toHaveAttribute('aria-label', /^Hide\s+\S/, { timeout: 120000 });
+  await expect(alignedVisibility).toBeVisible();
 }
 
 async function openChainControls(page: Page) {
@@ -256,7 +259,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('Residue realign on all residues in chain CU is consistent with chain realign', async ({ page }) => {
-  test.setTimeout(120000);
+  // Two full ribosomes plus both realignment workflows took 176 seconds under software WebGL.
+  test.setTimeout(240000);
 
   await page.goto('http://localhost:5173/');
   await loadDatasets(page, '6XU6.cif', '6xu8.cif');
@@ -349,7 +353,8 @@ test('Align Residues on 7WTT chain w and AF-Q13895 chain A for auth 23..30', asy
 });
 
 test('residue realign restores A/B camera parity after prior chain realign', async ({ page }) => {
-  test.setTimeout(120000);
+  // This also loads two full ribosomes and runs both alignment workflows.
+  test.setTimeout(240000);
 
   await page.goto('http://localhost:5173/');
   await loadDatasets(page, '6XU6.cif', '6xu8.cif');
@@ -391,9 +396,13 @@ test('residue realign restores A/B camera parity after prior chain realign', asy
       && Number.isFinite(metrics.improvementRatio)
   );
 
-  await page.waitForTimeout(300);
-  const snapshots = await readCameraSnapshots(page);
-  if (snapshots.viewerA && snapshots.viewerB) {
-    expect(maxSnapshotDelta(snapshots.viewerA, snapshots.viewerB)).toBeLessThan(1e-4);
-  }
+  // Metrics are emitted before asynchronous structure transforms and camera restoration finish.
+  await expect(async () => {
+    const snapshots = await readCameraSnapshots(page);
+    if (!snapshots.viewerA || !snapshots.viewerB) {
+      throw new Error('Both camera snapshots are required to verify residue realignment parity.');
+    }
+    const raw = await page.evaluate(() => (window as any).__ribocodeTestApi?.getRawCameraSnapshots?.());
+    expect(maxSnapshotDelta(snapshots.viewerA, snapshots.viewerB), JSON.stringify({ snapshots, raw })).toBeLessThan(1e-4);
+  }).toPass({ timeout: 20000 });
 });

@@ -3,8 +3,8 @@
  *
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-10-13
+ * @version 1.1.0
+ * @lastModified 2026-11-23
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { test, expect } from '@playwright/test';
@@ -28,11 +28,11 @@ type ChainRealignMetrics = {
 async function loadAlignedToAndAligned(page: import('@playwright/test').Page) {
   await page.click('#viewer-column-A-alignedto-load-btn');
   await page.setInputFiles('#viewer-column-A-alignedto-file-input', dataPath('6XU6.cif'));
-  await expect(page.getByRole('button', { name: /Hide 6XU6/i })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: /Hide 6XU6/i })).toBeVisible({ timeout: 120000 });
 
   await page.click('#viewer-column-B-aligned-load-btn');
   await page.setInputFiles('#viewer-column-B-aligned-file-input', dataPath('6xu8.cif'));
-  await expect(page.getByRole('button', { name: /Hide 6XU8/i })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: /Hide 6XU8/i })).toBeVisible({ timeout: 120000 });
 }
 
 test.beforeEach(async ({ page }) => {
@@ -42,7 +42,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('Align Chains on CU reports stable performance metrics', async ({ page }) => {
-  test.setTimeout(120000);
+  test.setTimeout(240000);
 
   await page.goto('http://localhost:5173/');
   await loadAlignedToAndAligned(page);

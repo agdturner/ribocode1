@@ -4,7 +4,7 @@ A chronological version based list of changes.
 ## [v0.24.0]
 - Unify selection so selection using Ribocode Select and Zoom Controls and Select using Mol* viewer are effectively the same.
 - See [ribocode-slola/ribocode1#136](https://github.com/ribocode-slola/ribocode1/issues/136)
-- Current coverage: [selection browser tests](e2e/molstar-residue-selection.e2e.spec.ts) cover `AlignedTo` and `Aligned` residue picks and removals across both Mol* viewers, independent of camera sync. With both datasets loaded, selecting residues on `Aligned` chain CU leaves the existing `AlignedTo` chain CU selection intact. Deselecting the last residue leaves the chain in its slot.
+- Current coverage: [selection browser tests](https://github.com/ribocode-slola/ribocode1/blob/main/e2e/molstar-residue-selection.e2e.spec.ts) cover `AlignedTo` and `Aligned` residue picks and removals across both Mol* viewers, independent of camera sync. With both datasets loaded, selecting residues on `Aligned` chain CU leaves the existing `AlignedTo` chain CU selection intact. Deselecting the last residue leaves the chain in its slot.
 
 ## [v0.23.2]
 - Fixed clipping controls staying stale after native Mol* Reset Zoom, including after toggling Selection Mode.

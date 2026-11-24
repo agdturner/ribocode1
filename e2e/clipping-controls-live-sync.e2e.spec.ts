@@ -14,7 +14,7 @@ function dataPath(filename: string) {
 }
 
 test('Clip Radius stays consistent while clipping controls remain open after zoom', async ({ page }) => {
-  test.setTimeout(90000);
+  test.setTimeout(240000);
 
   await page.goto('http://localhost:5173/');
 
@@ -23,7 +23,8 @@ test('Clip Radius stays consistent while clipping controls remain open after zoo
   await expect(page.locator('#viewer-column-B-aligned-load-btn')).toBeEnabled({ timeout: 30000 });
 
   await page.setInputFiles('#viewer-column-B-aligned-file-input', dataPath('6xu8.cif'));
-  await expect(page.locator('#viewer-column-B-toggle-visibility-btn').nth(1)).toBeVisible({ timeout: 60000 });
+  await expect(page.locator('#viewer-column-B-toggle-visibility-btn').nth(1))
+    .toHaveAttribute('aria-label', /^Hide\s+\S/, { timeout: 120000 });
 
   await page.click('#viewer-column-B-clipping-controls-toggle-btn');
   const clipRadiusInput = page.locator('#viewer-column-B-aligned-clip-far-number');
@@ -48,5 +49,5 @@ test('Clip Radius stays consistent while clipping controls remain open after zoo
 
     const afterReopen = await clipRadiusInput.inputValue();
     expect(whileOpen).toBe(afterReopen);
-  }).toPass({ timeout: 5000 });
+  }).toPass({ timeout: 20000 });
 });
