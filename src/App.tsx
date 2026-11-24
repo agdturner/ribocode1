@@ -7,7 +7,7 @@
  *
  * @author Copilot, Andy Turner <agdturner@gmail.com>
  * @version 1.3.0
- * @lastModified 2026-11-23
+ * @lastModified 2026-11-24
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -48,6 +48,7 @@ import { loadMoleculeFileToViewer } from 'molstar/lib/extensions/ribocode/struct
 import { Asset } from 'molstar/lib/mol-util/assets';
 import { useViewerState } from './hooks/useViewerState';
 import { alignDatasetUsingChains } from 'molstar/lib/extensions/ribocode/utils/geometry';
+import { assertDistinctExperimentalChains, extractExperimentalAnchors, fitExperimentalMultiChain, hasLowResidueKeyCoverage, selectedExperimentalChainPairs, type ExperimentalChainReport } from './utils/experimentalMultiChainAlignment';
 import { Color } from 'molstar/lib/mol-util/color';
 import { ChainIdColorTheme, ChainIdColorThemeProvider } from 'molstar/lib/mol-theme/color/chain-id';
 import { PluginUIContext } from 'molstar/lib/mol-plugin-ui/context';
@@ -1986,6 +1987,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const [selectedChainIdAligned2, setSelectedChainIdAligned2] = useState<string>('');
     const [selectedChainIdAligned3, setSelectedChainIdAligned3] = useState<string>('');
     const [selectedChainIdsAlignedExtra, setSelectedChainIdsAlignedExtra] = useState<string[]>([]);
+    const [experimentalChainReport, setExperimentalChainReport] = useState<ExperimentalChainReport[] | null>(null);
+    const [experimentalChainError, setExperimentalChainError] = useState<string | null>(null);
+    const experimentalChainInFlightRef = useRef(false);
     const [chainFinderQueryAlignedTo, setChainFinderQueryAlignedTo] = useState('');
     const [chainFinderQueryAligned, setChainFinderQueryAligned] = useState('');
     // Residue state (custom hook)
@@ -3163,6 +3167,20 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     xs, ys, zs, atomIds, units, phosphorusCount,
                     anchors: buildAnchorAtomDataForChain(structure, chainId),
                 };
+            },
+            getExperimentalVisibleAnchors: (viewerKey: ViewerKey, mode: typeof AlignedTo | typeof Aligned, chainId: string) => {
+                const plugin = viewerKey === B ? viewerB.ref.current : viewerA.ref.current;
+                const diagnostics = getStructureTransformDiagnostics();
+                const refs = viewerKey === B ? diagnostics.viewerB.resolvedRefs : diagnostics.viewerA.resolvedRefs;
+                const ref = mode === Aligned ? refs.aligned : refs.alignedTo;
+                if (!plugin || !ref) throw new Error('Experimental alignment diagnostic: structure is not loaded.');
+                const transformed = plugin.state.data.selectQ(q =>
+                    q.byRef(ref).subtree().withTransformer(StateTransforms.Model.TransformStructureConformation)
+                );
+                const structure = transformed[transformed.length - 1]?.obj?.data
+                    ?? plugin.managers.structure.hierarchy.current.structures.find(entry => entry.cell.transform.ref === ref)?.cell.obj?.data;
+                if (!structure) throw new Error('Experimental alignment diagnostic: structure is unavailable.');
+                return extractExperimentalAnchors(structure, chainId);
             },
             getStructureTransformDiagnostics,
             captureStructureTransformCheckpoint: (label: string) => {
@@ -6314,12 +6332,16 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const lastChainRealignMetricsRef = useRef<ChainRealignMetrics | null>(null);
     const lastResidueRealignMetricsRef = useRef<ResidueRealignMetrics | null>(null);
     const lastResidueRealignDebugRef = useRef<ResidueRealignDebugStatus>({ phase: 'idle', timestamp: Date.now() });
+    const experimentalMultiChain = typeof window !== 'undefined'
+        && new URLSearchParams(window.location.search).get('experimentalMultiChainAlignment') === '1';
 
     useEffect(() => {
         realignTransformCacheRef.current = {};
         realignBaseTransformCacheRef.current = {};
         realignDiagnosticsCounterRef.current = {};
         lastChainRealignMetricsRef.current = null;
+        setExperimentalChainReport(null);
+        setExperimentalChainError(null);
         lastResidueRealignMetricsRef.current = null;
         lastResidueRealignDebugRef.current = { phase: 'idle', timestamp: Date.now() };
         persistedStructureTransformsRef.current = {};
@@ -6419,15 +6441,22 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
 
     // Realign handler using selected chains
     const handleRealignToChains = () => {
-        if (realignmentExists) return;
+        if ((realignmentExists && !experimentalMultiChain) || (experimentalMultiChain && experimentalChainInFlightRef.current)) return;
+        if (experimentalMultiChain) {
+            setExperimentalChainReport(null);
+            setExperimentalChainError(null);
+            lastChainRealignMetricsRef.current = null;
+        }
         const pluginA = viewerA.ref.current;
         if (!pluginA) {
             console.warn('Viewer A not initialized.');
+            if (experimentalMultiChain) setExperimentalChainError('Viewer A is not initialized.');
             return;
         }
         // Step 1: Extract atom data for selected chains in both structures
         if (!structureRefAAlignedTo || !selectedChainIdAlignedTo) {
             console.warn('Viewer A, structure, or chain not selected.');
+            if (experimentalMultiChain) setExperimentalChainError('Select a reference structure and chain.');
             return;
         }
         // Get objects
@@ -6437,6 +6466,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         if (ENABLE_REALIGN_DIAGNOSTICS) console.info('structureAlignedTo:', structureAlignedTo);
         if (!viewerA.moleculeAlignedTo) {
             console.warn('Viewer A moleculeAlignedTo not available.');
+            if (experimentalMultiChain) setExperimentalChainError('The reference molecule is not available.');
             return;
         }
         const structureAligned = pluginA.managers.structure.hierarchy.current.structures.find(
@@ -6445,6 +6475,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         if (ENABLE_REALIGN_DIAGNOSTICS) console.info('structureAligned:', structureAligned);
         if (!structureAlignedTo || !structureAligned) {
             console.warn('Could not find structure objects for selected refs.');
+            if (experimentalMultiChain) setExperimentalChainError('The selected structure objects are not available.');
             return;
         }
         // Get model from first unit in structure object
@@ -6452,6 +6483,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         const modelAligned = structureAligned?.units?.[0]?.model;
         if (!modelAlignedTo || !modelAligned) {
             console.warn('Could not find models in structures.');
+            if (experimentalMultiChain) setExperimentalChainError('The selected structures have no models.');
             return;
         }
         const selectedChainPairs = [
@@ -6461,6 +6493,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
 
         if (selectedChainPairs.length === 0) {
             console.warn('No valid chain pair selected for realignment.');
+            if (experimentalMultiChain) setExperimentalChainError('Select a chain in the first slot on both sides.');
             return;
         }
 
@@ -6516,10 +6549,25 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 alignedToFiniteAtomCount: alignedToSummary.finiteAtomCount,
                 alignedFiniteAtomCount: alignedSummary.finiteAtomCount,
             });
+            if (experimentalMultiChain) setExperimentalChainError('One or both selections contain no finite atom coordinates.');
             return;
         }
 
         try {
+            let experimental: ReturnType<typeof fitExperimentalMultiChain> | null = null;
+            if (experimentalMultiChain) {
+                const pairs = selectedExperimentalChainPairs(
+                    [selectedChainIdAlignedTo, selectedChainIdAlignedTo2, selectedChainIdAlignedTo3, ...selectedChainIdsAlignedToExtra],
+                    [selectedChainIdAligned, selectedChainIdAligned2, selectedChainIdAligned3, ...selectedChainIdsAlignedExtra]
+                );
+                assertDistinctExperimentalChains(structureAlignedTo, pairs.map(pair => pair.referenceChain));
+                assertDistinctExperimentalChains(structureAligned, pairs.map(pair => pair.movingChain));
+                experimental = fitExperimentalMultiChain(pairs.map(pair => ({
+                    ...pair,
+                    reference: extractExperimentalAnchors(structureAlignedTo, pair.referenceChain),
+                    moving: extractExperimentalAnchors(structureAligned, pair.movingChain),
+                })));
+            }
             const anchorDataAligned = buildAnchorAtomDataForChain(structureAligned, selectedChainIdAligned);
             const anchorDataAlignedTo = buildAnchorAtomDataForChain(structureAlignedTo, selectedChainIdAlignedTo);
 
@@ -6558,8 +6606,15 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 : undefined;
 
             const useAnchorFitting = !!selectedAnchorType && !!anchorPairData && anchorPairData.pairing.pairCount >= 10;
-            const fitMoving = useAnchorFitting ? anchorPairData.movingFit : atomDataAligned;
-            const fitReference = useAnchorFitting ? anchorPairData.referenceFit : atomDataAlignedTo;
+            const experimentalAtomData = (side: 'moving' | 'reference') => {
+                const atoms = experimental!.pairs.map(pair => pair[side]);
+                return {
+                    symbolTypes: atoms.map(atom => atom.type), chainIds: atoms.map(() => ''),
+                    xs: atoms.map(atom => atom.x), ys: atoms.map(atom => atom.y), zs: atoms.map(atom => atom.z),
+                };
+            };
+            const fitMoving = experimental ? experimentalAtomData('moving') : useAnchorFitting ? anchorPairData.movingFit : atomDataAligned;
+            const fitReference = experimental ? experimentalAtomData('reference') : useAnchorFitting ? anchorPairData.referenceFit : atomDataAlignedTo;
 
             if (!useAnchorFitting && ENABLE_REALIGN_DIAGNOSTICS) {
                 console.warn('[Re-align][Anchor] No suitable anchor pairing found (need >=10 paired anchors). Falling back to element-data fitting.', {
@@ -6589,7 +6644,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     selectedAtomTypes
                 );
 
-            const selectedAtomTypesForChainRealign = chainSelector.selector;
+            const selectedAtomTypesForChainRealign = experimental
+                ? Object.fromEntries(fitMoving.symbolTypes.map(type => [type, true]))
+                : chainSelector.selector;
             if (ENABLE_REALIGN_DIAGNOSTICS) {
                 console.info('[Re-align][Atom selector]', {
                     mode: chainSelector.mode,
@@ -6608,7 +6665,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             const fitMovingChainIds = new Array(fitMoving.chainIds.length).fill(mergedAlignedChainId);
             const fitReferenceChainIds = new Array(fitReference.chainIds.length).fill(mergedAlignedToChainId);
 
-            const result = alignDatasetUsingChains(
+            const result = experimental?.result ?? alignDatasetUsingChains(
                 selectedAtomTypesForChainRealign,
                 mergedAlignedChainId,
                 fitMoving.symbolTypes,
@@ -6671,16 +6728,17 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 }
             }
 
-            lastChainRealignMetricsRef.current = {
+            const chainMetrics: ChainRealignMetrics = {
                 timestamp: Date.now(),
-                alignedToChainId: selectedChainPairs.map(pair => pair.alignedTo).join(', '),
-                alignedChainId: selectedChainPairs.map(pair => pair.aligned).join(', '),
+                alignedToChainId: experimental ? experimental.reports.map(pair => pair.referenceChain).join(', ') : selectedChainPairs.map(pair => pair.alignedTo).join(', '),
+                alignedChainId: experimental ? experimental.reports.map(pair => pair.movingChain).join(', ') : selectedChainPairs.map(pair => pair.aligned).join(', '),
                 atomPairCount,
                 rmsd: pairwiseRmsd,
                 meanPairDistanceBefore,
                 meanPairDistanceAfter,
                 improvementRatio,
             };
+            if (!experimental) lastChainRealignMetricsRef.current = chainMetrics;
 
             if (ENABLE_REALIGN_DIAGNOSTICS) {
                 console.info('[Re-align][Fit quality]', {
@@ -6762,10 +6820,12 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 rotMat: result.rotmat
             };
             // Load aligned structure in Viewers A and B.
+            if (experimental) experimentalChainInFlightRef.current = true;
             (async () => {
                 const pluginA = viewerA.ref.current;
                 if (!pluginA) {
                     console.warn('Viewer A not initialized.');
+                    if (experimental) throw new Error('Viewer A is not initialized.');
                     return;
                 }
 
@@ -6775,10 +6835,15 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                         if (appliedInPlace) {
                             // Match right-viewer viewpoint to left-viewer viewpoint.
                             copyCameraZoomRadius(viewerA.ref, viewerB.ref);
+                            if (experimental) {
+                                lastChainRealignMetricsRef.current = chainMetrics;
+                                setExperimentalChainReport(experimental.reports);
+                            }
                             if (ENABLE_REALIGN_DIAGNOSTICS) console.info('[Re-align] Applied in-place transform to existing aligned structures.');
                             return;
                         }
                     } catch (inPlaceErr) {
+                        if (experimental) throw inPlaceErr;
                         console.warn('[Re-align] In-place transform failed; falling back to reload-based realign.', inPlaceErr);
                     }
 
@@ -6788,17 +6853,31 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     const pluginB = viewerB.ref.current;
                     if (!pluginB) {
                         console.warn('Viewer B not initialized.');
+                        if (experimental) throw new Error('Viewer B is not initialized.');
                         return;
                     }
                     pluginB.canvas3d?.requestDraw?.();
                     // Keep viewpoint parity in fallback mode as well.
                     copyCameraZoomRadius(viewerA.ref, viewerB.ref);
+                    if (experimental) {
+                        lastChainRealignMetricsRef.current = chainMetrics;
+                        setExperimentalChainReport(experimental.reports);
+                    }
                     if (ENABLE_REALIGN_DIAGNOSTICS) console.info('[Re-align] Applied reload-based fallback realign.');
+                }).finally(() => {
+                    if (experimental) experimentalChainInFlightRef.current = false;
                 });
-            })();
+            })().catch(err => {
+                console.error('Chain realignment failed:', err);
+                if (experimental) {
+                    setExperimentalChainError(`Applying the fit failed and may have partially changed the viewers. Reload the structures before retrying. ${err instanceof Error ? err.message : String(err)}`);
+                    lastChainRealignMetricsRef.current = null;
+                }
+            });
             if (ENABLE_REALIGN_DIAGNOSTICS) console.info('Realignment applied to Viewer A and B models.');
         } catch (err) {
             console.error('Alignment error:', err);
+            if (experimentalMultiChain) setExperimentalChainError(err instanceof Error ? err.message : String(err));
         }
     };
 
@@ -8535,7 +8614,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                         selectedChainIdAlignedTo={selectedChainIdAlignedTo}
                         selectedChainIdAligned={selectedChainIdAligned}
                         chainRealignSummary={chainRealignSummary}
-                        realignmentExists={realignmentExists}
+                        realignmentExists={experimentalMultiChain ? false : realignmentExists}
                         handleRealignToChains={handleRealignToChains}
                         canRealignToResidues={canRealignToResidues}
                         residueRealignmentExists={residueRealignmentExists}
@@ -8547,6 +8626,36 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                         canRealignToSubunits={canRealignToSubunits}
                         handleRealignToSubunits={handleRealignToSubunits}
                     />
+                    {experimentalMultiChain && (
+                        <section aria-label="Experimental multi-chain alignment report" role="status">
+                            <h3>Experimental multi-chain alignment</h3>
+                            {!experimentalChainReport && !experimentalChainError &&
+                                <p>Experimental mode is active. Select chain pairs and use Align Chains to fit them.</p>}
+                            {experimentalChainError && <p>Experimental fit error: {experimentalChainError}</p>}
+                            {experimentalChainReport && <>
+                                <p>Equal weight per anchor pair. Shared residue keys do not establish sequence correspondence;
+                                    even mismatched chains can pass the minimum match count. Inspect coverage and RMSD.
+                                    This report describes the last fit, not necessarily the current selection.</p>
+                                {experimentalChainReport.some(row => row.unknownInsertionPairs > 0) &&
+                                    <p><strong>Warning:</strong> Unknown insertion codes were treated as blank. These matches may be incorrect; inspect the structures before relying on this fit.</p>}
+                                {experimentalChainReport.some(row => row.correspondence === 'protein-sequence') &&
+                                    <p><strong>Warning:</strong> Sequence-derived matches are experimental; agreement between forward and reverse alignments does not prove unique or biological correspondence. Inspect coverage and fit quality, especially in repetitive or divergent regions.</p>}
+                                <table>
+                                    <thead><tr><th>Reference</th><th>Moving</th><th>Anchor</th><th>Correspondence</th><th>Matched / reference observed</th><th>Matched / moving observed</th><th>Pairs with unknown insertion code</th><th>Shared RMSD (Å)</th><th>Individual RMSD (Å)</th></tr></thead>
+                                    <tbody>{experimentalChainReport.map((row, i) => <tr key={i}>
+                                        <td>{row.referenceChain}</td><td>{row.movingChain}</td><td>{row.anchorType}</td>
+                                        <td>{row.correspondence === 'protein-sequence' ? `Protein sequence (${(100 * (row.sequenceIdentity ?? 0)).toFixed(1)}% identity)` : 'Residue key'}
+                                            {hasLowResidueKeyCoverage(row) && <strong> — Warning: residue-key coverage below 50% on at least one side; inspect this fit.</strong>}
+                                        </td>
+                                        <td>{row.pairs} / {row.referenceAnchors} ({(100 * row.pairs / row.referenceAnchors).toFixed(1)}%)</td>
+                                        <td>{row.pairs} / {row.movingAnchors} ({(100 * row.pairs / row.movingAnchors).toFixed(1)}%)</td>
+                                        <td>{row.unknownInsertionPairs}</td>
+                                        <td>{row.sharedFitRmsd.toFixed(3)}</td><td>{row.individualFitRmsd.toFixed(3)}</td>
+                                    </tr>)}</tbody>
+                                </table>
+                            </>}
+                        </section>
+                    )}
                     <TwoColumnsContainer
                         idPrefix="main-two-columns"
                         left={

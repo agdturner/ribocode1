@@ -4,6 +4,63 @@
 - Date: 2026-10-13
 - Decision Makers: Ribocode maintainers
 
+## Multi-chain fitting handoff (2026-11-24)
+
+PR #170 was merged into shared `main`. Local `main` was fast-forwarded to merge
+commit `a5aa56bb2d918d73d799d9da045b7fe3a8dfc063`; the current work branch
+`investigate/multi-chain-fitting` starts there. The fork's `main` has not been
+updated. Ribocode pins Mol* commit `901cef218be8f231ebb749160e83d586be77ab34`,
+which is reachable from the shared Mol* `investigate/ribocode-on-5.13.1` branch.
+Keep that branch available while Ribocode depends on it.
+
+The **developer-only multi-chain fitting experiment** is implemented behind
+`?experimentalMultiChainAlignment=1`. Production alignment remains unchanged.
+The agreed design:
+
+- Pair selected chains by slot, including fixed and dynamic slots. Block the
+  experimental fit with an explicit explanation if either side of an occupied
+  slot is missing or ambiguous; never silently omit a selected pair.
+- Prefer at least 10 unambiguous shared residue-key anchors per pair. If these
+  are insufficient, use the explicitly reported protein sequence fallback subject
+  to the safeguards in the testing reference. Never substitute ordered pairing.
+  Neither shared keys nor sequence alignment prove biological correspondence.
+- Fit one shared transform with equal weight per matched anchor pair. Do not
+  automatically exclude displaced chains. Show a persistent in-page report
+  with each pair's matched and observed anchor counts, coverage, shared-fit
+  RMSD and individual-fit RMSD so users can assess trade-offs.
+
+The default path in `src/App.tsx` still collects only the first two chain slots;
+its anchor path uses only the first pair and its fallback can pair residues by
+order. The experiment instead matches author residue number, insertion code and
+component, excludes duplicate keys and counts unmatched observed anchors in
+coverage. Unknown insertion codes are treated as blank, with an explicit report
+warning and count, to allow the 7WTT/7WTZ fixtures to be investigated. This is
+an assumption, not evidence that the codes are actually blank. The 6XU6/6xu8
+CU pair instead needs the sequence fallback: its 55 identical observed residues
+have no shared author numbers. See the
+[alignment testing reference](../AlignmentTesting.md#developer-only-multi-chain-fit)
+for use and limitations.
+
+Focused tests cover the e/E and T/F/K fixtures, incomplete slots, duplicate
+keys, multiple anchor types and degenerate fits. Browser checks cover the
+persistent report and failure behavior. The real 6XU6/6xu8 CU/CP combination
+also exercises sequence and residue-key correspondence in one shared fit.
+CP's atom-site insertion codes are unknown even though its sequence-scheme
+records have no insertion code; the warning remains appropriate.
+
+Deliberately mismatched CP/CO passes the current ten-key rule with only 14
+matches and an individual RMSD of approximately 20.135 Angstrom. Conversely,
+CP/CU is rejected by the sequence trace safeguard. Acceptance does not validate
+correspondence. The experimental report warns per row when residue-key
+coverage is below 50% on either side but still applies the fit; exactly 50%
+does not warn. This also warns for the previously studied low-coverage e/e
+pair without excluding it. Stricter quality criteria remain an
+open policy decision; the experiment must not be presented as production-ready.
+Broader
+structure validation, experimental initial-alignment session round trips and a
+production correspondence/weighting policy remain outstanding before release
+qualification; this handoff does not establish 0.25.0 readiness.
+
 ## Validation update (2026-11-24)
 
 - Ribocode now pins the shared Mol* 5.13.1-based branch at commit
