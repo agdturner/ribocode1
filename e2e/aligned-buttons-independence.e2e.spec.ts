@@ -16,7 +16,7 @@ function dataPath(filename: string) {
 test('Aligned and AlignedTo buttons update independently', async ({ page }) => {
   test.setTimeout(90000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
 
   // Column A: Only Load AlignedTo loader should be present
   const alignedToBtnA = page.locator('#viewer-column-A-alignedto-load-btn');

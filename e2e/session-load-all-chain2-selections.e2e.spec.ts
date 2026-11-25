@@ -219,7 +219,7 @@ async function loadAllFromSessionFile(page: Page, sessionFilePath: string) {
 test('Save All and Load All restores Chain 1 and Chain 2 chain and residue selections in both columns', async ({ page }) => {
   test.setTimeout(150000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await loadAlignedToAndAligned(page);
 
   const selectedChains = await setupSelections(page);

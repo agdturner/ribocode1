@@ -16,7 +16,7 @@ function dataPath(filename: string) {
 test('Clip Radius stays consistent while clipping controls remain open after zoom', async ({ page }) => {
   test.setTimeout(240000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
 
   await page.click('#viewer-column-A-alignedto-load-btn');
   await page.setInputFiles('#viewer-column-A-alignedto-file-input', dataPath('4ug0.cif'));

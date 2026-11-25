@@ -41,7 +41,7 @@ test.describe('Session Save/Load E2E', () => {
   test('can load, save, and reload session with real data', async ({ page }) => {
     test.setTimeout(60000);
 
-    await page.goto('http://localhost:5173/');
+    await page.goto('/');
     await waitForSessionMenuReady(page);
 
     await page.click('#viewer-column-A-alignedto-load-btn');

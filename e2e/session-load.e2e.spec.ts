@@ -14,7 +14,7 @@ test('Session load prompts for required files and loads data', async ({ page }) 
   test.setTimeout(60000);
 
   // 1. Go to the app
-  await page.goto('http://localhost:5173/'); // Adjust if your dev server runs elsewhere
+  await page.goto('/');
   await waitForSessionMenuReady(page);
 
   await loadSessionAndRequiredFiles(page, 'test-session.json');
@@ -33,7 +33,7 @@ test('Session load prompts for required files and loads data', async ({ page }) 
 test('Session load restores saved cartoon representations', async ({ page }) => {
   test.setTimeout(60000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await waitForSessionMenuReady(page);
 
   await loadSessionAndRequiredFiles(page, 'test-session.json');

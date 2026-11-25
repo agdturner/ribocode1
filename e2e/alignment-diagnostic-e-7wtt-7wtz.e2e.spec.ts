@@ -43,7 +43,7 @@ test.beforeEach(async ({ page }) => {
 test('diagnostic: Align Chains on e reports metrics', async ({ page }) => {
   test.setTimeout(240000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await loadAlignedToAndAligned(page);
 
   const anchorDiagnostics = await page.evaluate(() => {

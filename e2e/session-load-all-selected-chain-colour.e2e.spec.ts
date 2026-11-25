@@ -13,7 +13,7 @@ import { promises as fs } from 'fs';
 import { dataPath } from './helpers/session-load';
 
 async function loadAlignedToDataset(page: Page) {
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await page.click('#viewer-column-A-alignedto-load-btn');
   await page.setInputFiles('#viewer-column-A-alignedto-file-input', dataPath('4ug0.cif'));
   await expect(page.locator('#viewer-column-A-alignedto-filename-label')).toBeVisible({ timeout: 45000 });

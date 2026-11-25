@@ -114,7 +114,7 @@ test('session load keeps viewer B camera snapshot stable when sync is restored',
     radius: 95,
   };
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await loadSessionAndRequiredFiles(page, 'test-session-sync-camera.json');
 
   await expect(page.locator('#viewer-column-A-molstar-container')).toBeVisible();

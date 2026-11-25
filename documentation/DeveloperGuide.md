@@ -721,6 +721,9 @@ filesystem can avoid some issues associated with Windows-mounted filesystems.
 - Run WebGL-focused E2E checks with `npm run test:e2e:webgl` (or `npm run test:e2e:webgl:reuse`).
 
 Playwright is configured with a `webServer` entry and starts `npm run dev` on port `5173`.
+Tests navigate relative to Playwright's `baseURL`; if using an alternative
+configuration and port, update both `baseURL` and `webServer` together so tests
+run against the intended server.
 - `npm run test:e2e` uses strict mode (`reuseExistingServer: false`) and fails if `5173` is already in use.
 - `npm run test:e2e:reuse` sets `PW_E2E_REUSE_SERVER=1` and reuses an existing dev server on `5173`.
 - `npm run test:e2e:webgl` sets `PW_E2E_FORCE_WEBGL=1` and runs WebGL-gated specs in single-worker mode with WebGL launch flags.

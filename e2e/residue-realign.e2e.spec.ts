@@ -262,7 +262,7 @@ test('Residue realign on all residues in chain CU is consistent with chain reali
   // Two full ribosomes plus both realignment workflows took 176 seconds under software WebGL.
   test.setTimeout(240000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await loadDatasets(page, '6XU6.cif', '6xu8.cif');
   await openChainControls(page);
 
@@ -316,7 +316,7 @@ test('Residue realign on all residues in chain CU is consistent with chain reali
 test('Align Residues on 7WTT chain w and AF-Q13895 chain A for auth 23..30', async ({ page }) => {
   test.setTimeout(150000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await loadDatasets(page, '7WTT.cif', 'AF-Q13895-F1-model_v6.cif');
   await openChainControls(page);
 
@@ -356,7 +356,7 @@ test('residue realign restores A/B camera parity after prior chain realign', asy
   // This also loads two full ribosomes and runs both alignment workflows.
   test.setTimeout(240000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await loadDatasets(page, '6XU6.cif', '6xu8.cif');
   await openChainControls(page);
 

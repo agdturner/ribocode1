@@ -98,7 +98,7 @@ test.beforeEach(async ({ page }) => {
 test('initial load uses stable aligned transform baseline after hard cache flush', async ({ page }) => {
   test.setTimeout(120000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await hardResetBrowserState(page);
   await page.reload();
 

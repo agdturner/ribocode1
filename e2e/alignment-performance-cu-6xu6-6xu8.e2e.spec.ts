@@ -44,7 +44,7 @@ test.beforeEach(async ({ page }) => {
 test('Align Chains on CU reports stable performance metrics', async ({ page }) => {
   test.setTimeout(240000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await loadAlignedToAndAligned(page);
 
   await page.click('#viewer-column-A-select-zoom-controls-toggle-btn');

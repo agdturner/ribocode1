@@ -99,7 +99,7 @@ async function loadAllFromSessionFile(page: Page, sessionFilePath: string) {
 test('Save All/Load All restores dynamic Select 4 chain selections in both columns', async ({ page }) => {
   test.setTimeout(180000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await loadAlignedToAndAligned(page);
 
   await ensureSelectZoomControlsOpen(page, 'A');
@@ -177,7 +177,7 @@ test('Save All/Load All restores dynamic Select 4 chain selections in both colum
 test('Save All/Load All preserves Select 4 clear cascade so Select 5 is hidden', async ({ page }) => {
   test.setTimeout(180000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await loadAlignedToAndAligned(page);
 
   await ensureSelectZoomControlsOpen(page, 'A');

@@ -154,7 +154,7 @@ test.beforeEach(async ({ page }) => {
 test('Load All keeps viewer B camera stable after Align Chains + Save All round-trip', async ({ page }) => {
   test.setTimeout(120000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await loadAlignedToAndAligned(page);
   await openChainControls(page);
 
