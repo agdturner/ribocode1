@@ -690,6 +690,25 @@ Install the Chromium browser used by the configured E2E suite:
 npx playwright install chromium
 ```
 
+The package versions and lockfile determine the required browser revision.
+Check the installed package and the expected browser paths with:
+
+```sh
+npx playwright --version
+npx playwright install chromium --dry-run
+```
+
+The dry run does not verify that those browsers are installed or executable.
+The normal headless E2E suite uses the corresponding Chromium headless shell;
+an existing full Chrome binary alone may not be sufficient. Install with the
+project's own Playwright version after updating dependencies. If a download
+stalls or fails, capture the install output and check network, proxy and
+certificate settings; see the official
+[browser download guidance](https://playwright.dev/docs/browsers#install-behind-a-firewall-or-a-proxy).
+Updating Playwright changes the expected browser revision but does not itself
+fix a download or system-dependency problem. On WSL, a checkout in the Linux
+filesystem can avoid some issues associated with Windows-mounted filesystems.
+
 
 ### Running E2E Tests
 

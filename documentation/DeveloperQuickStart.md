@@ -1,6 +1,10 @@
 # Developer Quick Start
 
-You will need [Git](https://git-scm.com/) to clone the repository and [Node](https://nodejs.org/) version 24.11.0 or later.
+You will need [Git](https://git-scm.com/) to clone the repository and [Node](https://nodejs.org/) version 24.11.0 or later. The recommended development version is Node 26.10.0 (bundled npm 11.19.1); Node 24.11.0 remains usable. With [nvm](https://github.com/nvm-sh/nvm), run `nvm install` and `nvm use` from the repository root to use the version in `.nvmrc`.
+
+Node 26 may require the operating system's `libatomic` runtime on Linux; if
+Node reports that `libatomic.so.1` is missing, install the appropriate runtime
+package for your distribution before retrying.
 
 Fork [Ribocode](https://github.com/ribocode-slola/ribocode1).
 
@@ -37,6 +41,10 @@ npx playwright install chromium
 npx tsc --noEmit --pretty false
 npm run test:pr
 ```
+
+Playwright uses its own version-specific browser binaries, not necessarily
+the system Chrome or another browser already in its cache. If installation
+stalls, see [browser installation troubleshooting](./DeveloperGuide.md#installing-playwright).
 
 `test:pr` runs the unit/integration suite once and then the standard Playwright
 suite; it does not run the TypeScript check above. For a smaller change, run
