@@ -16,7 +16,7 @@ function dataPath(filename: string) {
 test('Load Aligned button in Column B remains after loading AlignedTo in Column A', async ({ page }) => {
   test.setTimeout(90000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
 
   // Find and click the Load AlignedTo button in column A, then upload file
   const alignedToBtnA = page.locator('#viewer-column-A-alignedto-load-btn');

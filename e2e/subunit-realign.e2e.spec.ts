@@ -59,7 +59,7 @@ test.beforeEach(async ({ page }) => {
 test('Align Subunits button enables and remains available for repeated pairs', async ({ page }) => {
   test.setTimeout(120000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
   await loadAlignedToAndAligned(page);
 
   await page.click('#viewer-column-A-select-zoom-controls-toggle-btn');
@@ -99,7 +99,7 @@ test('Align Subunits button enables and remains available for repeated pairs', a
 test('6XU6/6xu8 subunit buckets do not swap Large/Small categories', async ({ page }) => {
   test.setTimeout(90000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
 
   await page.click('#viewer-column-A-alignedto-load-btn');
   await page.setInputFiles('#viewer-column-A-alignedto-file-input', dataPath('6XU6.cif'));

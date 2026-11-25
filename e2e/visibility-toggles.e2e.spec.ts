@@ -16,7 +16,7 @@ function dataPath(filename: string) {
 test('Visibility toggles work for Aligned and AlignedTo in both columns', async ({ page }) => {
   test.setTimeout(90000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
 
   // Load AlignedTo in column A
   const alignedToBtnA = page.locator('#viewer-column-A-alignedto-load-btn');

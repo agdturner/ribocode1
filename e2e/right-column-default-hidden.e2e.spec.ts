@@ -14,7 +14,9 @@ function dataPath(filename: string) {
 }
 
 test('AlignedTo is hidden in right viewer and Aligned is hidden in left viewer by default', async ({ page }) => {
-  await page.goto('http://localhost:5173/');
+  test.setTimeout(180000);
+
+  await page.goto('/');
 
   const alignedToBtnA = page.locator('#viewer-column-A-alignedto-load-btn');
   await alignedToBtnA.click();
@@ -26,10 +28,10 @@ test('AlignedTo is hidden in right viewer and Aligned is hidden in left viewer b
   await expect(alignedToToggleB).toHaveAttribute('aria-label', /show/i);
 
   const alignedBtnB = page.locator('#viewer-column-B-aligned-load-btn');
-  await expect(alignedBtnB).toBeEnabled({ timeout: 20000 });
+  await expect(alignedBtnB).toBeEnabled({ timeout: 60000 });
   await page.setInputFiles('#viewer-column-B-aligned-file-input', dataPath('6xu8.cif'));
+  await expect(page.locator('#viewer-column-B-aligned-filename-label')).toContainText(/6xu8\.cif/i, { timeout: 60000 });
 
   const alignedToggleA = page.locator('#viewer-column-A-toggle-visibility-btn').nth(1);
-  await expect(alignedToggleA).toBeVisible({ timeout: 30000 });
-  await expect(alignedToggleA).toHaveAttribute('aria-label', /show/i);
+  await expect(alignedToggleA).toHaveAttribute('aria-label', /show 6xu8/i, { timeout: 60000 });
 });

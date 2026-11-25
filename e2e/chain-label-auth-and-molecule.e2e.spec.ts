@@ -16,7 +16,7 @@ function dataPath(filename: string) {
 test('Select Chain labels include auth code and molecule name for 6XU6', async ({ page }) => {
   test.setTimeout(90000);
 
-  await page.goto('http://localhost:5173/');
+  await page.goto('/');
 
   await page.locator('#viewer-column-A-alignedto-load-btn').click();
   await page.locator('#viewer-column-A-alignedto-file-input').setInputFiles(dataPath('6XU6.cif'));
