@@ -140,8 +140,143 @@ therefore not a correspondence-quality check; inspect the report and do not
 rely on a fit merely because it was accepted. This known limitation needs a
 separate policy decision before any production use.
 
+#### Curated correspondence safeguard check
+
+The offline `correspondenceSafeguardsDiagnostic.test.ts` exercises a small,
+hand-selected set of protein and RNA chain pairs from the two existing fixture
+pairs. "Plausible" means matching molecule descriptions, except CU where the
+descriptions are L22-like and L22; it is not independently established
+biological ground truth. "Mismatch" means deliberately selecting chains with
+different descriptions. This is not a representative sample or an estimate of
+error rates. RMSDs are individual fits in Angstrom; an independent Mol* RMSD
+minimizer verifies the reported values for the same selected anchor pairs, not
+the correctness of those correspondences.
+
+| Structures | Reference / moving | Classification | Matches / observed reference, moving | Low-coverage warning | Individual RMSD |
+|---|---|---|---|---|---:|
+| 6XU6 / 6xu8 | CP / CP | Plausible L17 | 185 / 185, 185 | No | 1.841 |
+| 6XU6 / 6xu8 | CO / CO | Plausible L13a | 205 / 205, 205 | No | 0.982 |
+| 6XU6 / 6xu8 | CU / CU | Plausible L22-like / L22, sequence | 55 / 96, 99 | Not applicable | 2.850 |
+| 6XU6 / 6xu8 | A7 / A7 | Plausible 5S RNA | 119 / 119, 119 | No | 1.364 |
+| 6XU6 / 6xu8 | A8 / A8 | Plausible 5.8S RNA | 122 / 122, 122 | No | 1.203 |
+| 6XU6 / 6xu8 | A9 / A9 | Plausible 2S RNA | 29 / 29, 29 | No | 0.830 |
+| 6XU6 / 6xu8 | B2 / B2 | Plausible 18S RNA | 1935 / 1935, 1935 | No | 2.875 |
+| 6XU6 / 6xu8 | CP / CO | Mismatch L17 / L13a | 14 / 185, 205 | Yes | 20.135 |
+| 6XU6 / 6xu8 | A7 / A8 | Mismatch 5S / 5.8S RNA | 29 / 119, 122 | Yes | 38.938 |
+| 6XU6 / 6xu8 | B2 / A5 | Mismatch 18S / 28S RNA | 478 / 1935, 3701 | Yes | 85.342 |
+| 7WTT / 7WTZ | e / e | Plausible S30 | 20 / 20, 55 | Yes | 0.354 |
+| 7WTT / 7WTZ | E / E | Plausible S4 | 262 / 262, 262 | No | 0.316 |
+| 7WTT / 7WTZ | T / T | Plausible S19 | 144 / 144, 144 | No | 0.701 |
+| 7WTT / 7WTZ | F / F | Plausible S5 | 189 / 189, 189 | No | 0.821 |
+| 7WTT / 7WTZ | 2 / 2 | Plausible 18S RNA | 1566 / 1575, 1623 | No | 10.840 |
+| 7WTT / 7WTZ | T / F | Mismatch S19 / S5 | 11 / 144, 189 | Yes | 14.975 |
+
+All table rows use residue keys except CU, which uses the protein sequence
+fallback. The three other selected mismatches were rejected: 6XU6/6xu8 CP/CU
+and 7WTT/7WTZ e/E because forward and reverse protein traces disagreed; and
+6XU6/6xu8 A8/A9 because too few residue keys matched and no qualifying protein
+fallback was available. This last result does not imply RNA sequence alignment
+was attempted.
+
+Thus, in this limited set, all four accepted mismatches received the low-coverage
+warning, but the plausible e/e pair did too. The 7WTT/7WTZ 18S pair shows that
+high key coverage can still produce a large RMSD without a low-coverage warning;
+the cause is not established, and the warning is not a general fit-quality
+test. The 50% warning remains advisory: these observations do not justify an
+automatic rejection or a new RMSD threshold without further evaluation.
+
+#### 7WTT/7WTZ 18S correspondence and residuals
+
+The offline `rna18sAlignmentDiagnostic.test.ts` compares chain 2's P atoms
+using the experimental residue-key pairs and a separately computed sequence
+alignment. The latter aligns the observed P-bearing residues ordered by label
+sequence ID using Mol*'s default alignment scoring, and retains only identical
+known RNA codes. It is not an alignment of the full deposited sequence. The
+diagnostic rejects duplicate P sequence positions and residue keys; its
+coordinates are checked against the experimental matched anchors. Unknown
+insertion codes are treated as blank as in the experiment.
+
+| Measurement | Result |
+|---|---:|
+| Observed P anchors, reference / moving | 1575 / 1623 |
+| Residue-key pairs and independent fit RMSD | 1566; 10.840 Angstrom |
+| Sequence alignment: identical known pairs / aligned positions | 1567 / 1568 |
+| Sequence-pair independent fit RMSD | 11.109 Angstrom |
+| Pair overlap, key / forward sequence | 1558 |
+| Pair overlap, forward / reverse sequence | 1561 of 1567 each |
+
+The reference has one P-bearing residue with unknown RNA code; the moving
+chain has none. The differing forward and reverse traces demonstrate ambiguity
+in this sequence calculation. Neither a sequence alignment nor matching
+molecule descriptions prove biological correspondence. The large overlap and
+similar fits indicate that the high RMSD is not simply explained by the choice
+between these two pairing methods; they do not establish its cause.
+
+Under the independent all-key-pair fit, median, 90th and 95th percentile
+residuals are 3.635, 7.109 and 12.864 Angstrom; the maximum is 102.029
+Angstrom. Of the 1566 pairs, 335 exceed 5 Angstrom, 111 exceed 10 Angstrom
+and 27 exceed 20 Angstrom. These distances are descriptive, not policy
+thresholds. Reference label positions 1301-1400 contain 78 matched anchors,
+with 44.133 Angstrom window RMSD and 82.6% of the total squared residual.
+Positions 1363-1377 are a consecutive run over 20 Angstrom, with the largest
+residual at label/author position 1365 in both structures. Unobserved residues
+are absent from these statistics.
+
+As an exploratory in-sample calculation, select the 90% of key pairs with the
+smallest residuals under the all-pair fit, then fit that subset once. Its
+training RMSD is 2.835 Angstrom from the fitted transform (2.837 as reported
+by the minimizer), but the RMSD of *all* original key pairs under
+that subset fit is 11.103 Angstrom. This illustrates concentration of error,
+not independent validation or a proposed exclusion rule. The independent Mol*
+minimizer's RMSDs and residuals recomputed from its transform agree within
+0.002 Angstrom (the minimizer uses a float32 matrix); it also agrees with the
+experiment's fit for the same key pairs. Further structural inspection of the
+high-deviation region is needed before attributing the result to conformation,
+modelling, or correspondence.
+
+#### Exploratory local fits
+
+The same diagnostic fits selected windows of reference label positions using
+the residue-key P pairs. Window boundaries were chosen for illustration, not
+by a systematic search: 1301-1400 was identified by its large global-fit
+residual, and 1363-1377 is the consecutive high-residual run within it. Other
+windows provide comparisons. Missing or unmatched positions are not included.
+The local RMSD is measured on the *same* pairs used to fit that window; the
+outside RMSD is measured on all remaining key pairs, not used in that local
+fit. Each row has a different outside set, so outside values are best compared
+with the global fit on the same row.
+
+| Reference label window | Pairs | Window RMSD: local / global fit (Å) | Outside RMSD: local / global fit (Å) | Relative rotation |
+|---|---:|---:|---:|---:|
+| 101-200 | 91 | 0.724 / 3.416 | 12.634 / 11.138 | 3.9° |
+| 601-700 | 76 | 3.110 / 4.937 | 12.016 / 11.057 | 2.7° |
+| 901-1000 | 100 | 0.903 / 4.359 | 12.954 / 11.146 | 4.3° |
+| 1301-1400 | 78 | 23.031 / 44.133 | 131.303 / 4.645 | 82.2° |
+| 1363-1377 | 15 | 1.452 / 86.457 | 186.807 / 6.809 | 152.2° |
+| 1401-1500 | 59 | 2.722 / 13.539 | 33.752 / 10.721 | 25.8° |
+| 1701-1800 | 89 | 2.188 / 4.392 | 12.577 / 11.110 | 3.8° |
+
+Relative rotation is between each local transform and the all-key-pair
+transform, not a measured molecular hinge angle. At the centroid of all
+moving matched P anchors, the 1363-1377 local transform places that point
+153.352 Å from its global-fit position; this defined point avoids interpreting
+a raw translation vector that depends on the coordinate origin. The local
+fit's RMSD is independently checked against the experimental fitter. All 15
+core pairs are also present in both sequence traces, though that does not
+prove they are biologically correct.
+
+The 15-pair region can be aligned locally despite its large global-fit
+deviation, but doing so produces a very poor fit to the remaining chain.
+Conversely, the larger 1301-1400 window does not itself fit well as one rigid
+unit. This is compatible with local rearrangement, but neither a small local
+training RMSD nor this comparison alone proves flexibility, tangling,
+modelling error, or a particular biological mechanism. No automatic fit or
+rejection policy follows from these selected examples.
+
 ```sh
 npm test -- --run src/utils/experimentalMultiChainAlignment.test.ts
+npm test -- --run src/utils/correspondenceSafeguardsDiagnostic.test.ts
+npm test -- --run src/utils/rna18sAlignmentDiagnostic.test.ts
 PW_E2E_FORCE_WEBGL=1 npx playwright test e2e/experimental-multi-chain-alignment.e2e.spec.ts --workers=1
 ```
 
