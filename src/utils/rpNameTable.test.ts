@@ -4,8 +4,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-06-22
+ * @version 1.1.0
+ * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { parseRpNameTable, parseRpNameTableBySpecies, buildEntityToUniprotMap, buildChainToUniprotMap, inferSpeciesKeyFromModel } from './rpNameTable';
@@ -187,6 +187,16 @@ describe('inferSpeciesKeyFromModel', () => {
 });
 
 describe('buildEntityToUniprotMap', () => {
+    it('excludes non-UniProt databases and invalid accession values', () => {
+        const model = { sourceData: { data: { db: { struct_ref: {
+            _rowCount: 4,
+            entity_id: { value: (i: number) => ['1', '2', '3', '4'][i] },
+            db_name: { value: (i: number) => ['UNP', 'GB', 'UNIPROT', '?'][i] },
+            pdbx_db_accession: { value: (i: number) => ['P61247', 'P08865', 'NR_133545.1', 'Q9V3G1'][i] },
+        } } } } };
+        expect([...buildEntityToUniprotMap(model)]).toEqual([['1', 'P61247'], ['4', 'Q9V3G1']]);
+    });
+
     it('returns an empty map when model is null', () => {
         expect(buildEntityToUniprotMap(null).size).toBe(0);
     });
@@ -272,6 +282,23 @@ describe('buildEntityToUniprotMap', () => {
 });
 
 describe('buildChainToUniprotMap', () => {
+    it('checks reference databases and rejects invalid accessions', () => {
+        const model = { sourceData: { data: { db: {
+            struct_ref: {
+                _rowCount: 2,
+                id: { value: (i: number) => ['1', '2'][i] },
+                db_name: { value: (i: number) => ['UNP', 'GB'][i] },
+            },
+            struct_ref_seq: {
+                _rowCount: 4,
+                ref_id: { value: (i: number) => ['1', '2', '2', '?'][i] },
+                pdbx_strand_id: { value: (i: number) => ['A', 'B', 'C', 'D'][i] },
+                pdbx_db_accession: { value: (i: number) => ['P61247', 'P08865', 'NR_133545.1', 'Q9V3G1'][i] },
+            },
+        } } } };
+        expect([...buildChainToUniprotMap(model)]).toEqual([['A', 'P61247'], ['D', 'Q9V3G1']]);
+    });
+
     it('returns an empty map when struct_ref_seq is absent', () => {
         const model = { sourceData: { data: { db: {} } } };
         expect(buildChainToUniprotMap(model).size).toBe(0);

@@ -4,15 +4,26 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * Version: 1.1.0
- * Last modified: 2026-07-23
+ * @version 1.2.0
+ * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
 export type UniProtGeneNameCache = Record<string, string | null>;
 
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
-const UNIPROT_ACCESSION_PATTERN = /\b(?:[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9](?:[A-Z][A-Z0-9]{2}[0-9]){1,2})\b/g;
+const UNIPROT_ACCESSION_PATTERN_SOURCE = '(?:[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9](?:[A-Z][A-Z0-9]{2}[0-9]){1,2})';
+const UNIPROT_ACCESSION_PATTERN = new RegExp(`\\b${UNIPROT_ACCESSION_PATTERN_SOURCE}\\b`, 'g');
+const UNIPROT_ACCESSION_EXACT_PATTERN = new RegExp(`^${UNIPROT_ACCESSION_PATTERN_SOURCE}$`);
+
+export function isUniProtAccession(value: string): boolean {
+    return UNIPROT_ACCESSION_EXACT_PATTERN.test(value);
+}
+
+export function isUniProtDatabaseOrUnknown(value: unknown): boolean {
+    const name = String(value ?? '').trim().toUpperCase();
+    return !name || name === '?' || name === '.' || name === 'UNP' || name === 'UNIPROT';
+}
 
 /**
  * Normalize a CIF token by trimming whitespace and converting empty or placeholder values to undefined.
@@ -49,13 +60,13 @@ function tokenizeCifLine(line: string): string[] {
     let i = 0;
     while (i < line.length) {
         while (i < line.length && /\s/.test(line[i])) i++;
-        if (i >= line.length) break;
+        if (i >= line.length || line[i] === '#') break;
 
         const quote = line[i];
         if (quote === '"' || quote === '\'') {
             i++;
             const start = i;
-            while (i < line.length && line[i] !== quote) i++;
+            while (i < line.length && !(line[i] === quote && (i + 1 === line.length || /\s/.test(line[i + 1])))) i++;
             tokens.push(line.slice(start, i));
             if (i < line.length && line[i] === quote) i++;
             continue;
@@ -95,25 +106,39 @@ function parseLoopRows(cifText: string, categoryPrefix: string): { tags: string[
         if (tags.length === 0) continue;
 
         const rows: string[][] = [];
+        let tokens: string[] = [];
         while (j < lines.length) {
             const rowLineRaw = lines[j];
             const rowLine = rowLineRaw.trim();
 
-            if (!rowLine) {
+            if (!rowLine || rowLine.startsWith('#')) {
                 j++;
                 continue;
             }
 
-            if (rowLine === '#' || rowLine === 'loop_' || rowLine.startsWith('_') || rowLine.startsWith('data_')) {
+            if (rowLine === 'loop_' || rowLine === 'stop_' || rowLine.startsWith('_') || rowLine.startsWith('data_') || rowLine.startsWith('save_') || rowLine === 'global_') {
                 break;
             }
 
-            // Semicolon multiline values are not expected for struct_ref/struct_ref_seq in supported inputs.
-            if (rowLine.startsWith(';')) {
-                break;
+            if (rowLineRaw.startsWith(';')) {
+                const multiline = [rowLineRaw.slice(1)];
+                j++;
+                while (j < lines.length && !lines[j].startsWith(';')) {
+                    multiline.push(lines[j]);
+                    j++;
+                }
+                if (j === lines.length) {
+                    throw new Error(`Unterminated multiline value in ${categoryPrefix} CIF loop`);
+                }
+                tokens.push(multiline.join('\n'));
+            } else {
+                tokens.push(...tokenizeCifLine(rowLineRaw));
             }
 
-            rows.push(tokenizeCifLine(rowLineRaw));
+            while (tokens.length >= tags.length) {
+                rows.push(tokens.slice(0, tags.length));
+                tokens = tokens.slice(tags.length);
+            }
             j++;
         }
 
@@ -133,20 +158,21 @@ export function parseChainToUniProtFromCifText(cifText: string): Map<string, str
     const chainToUniProt = new Map<string, string>();
 
     const structRefLoop = parseLoopRows(cifText, '_struct_ref');
-    const refIdToUniProt = new Map<string, string>();
+    const refIdToUniProt = new Map<string, { allowed: boolean; accession?: string }>();
     if (structRefLoop) {
         const idIdx = structRefLoop.tags.indexOf('_struct_ref.id');
         const dbNameIdx = structRefLoop.tags.indexOf('_struct_ref.db_name');
         const accessionIdx = structRefLoop.tags.indexOf('_struct_ref.pdbx_db_accession');
 
-        if (idIdx >= 0 && accessionIdx >= 0) {
+        if (idIdx >= 0) {
             for (const row of structRefLoop.rows) {
-                const dbName = (row[dbNameIdx] || '').trim().toUpperCase();
-                if (dbNameIdx >= 0 && dbName && dbName !== 'UNP' && dbName !== 'UNIPROT') continue;
                 const refId = normalizeCifToken(row[idIdx]);
-                const accession = normalizeCifToken(row[accessionIdx]);
-                if (refId && accession) {
-                    refIdToUniProt.set(refId, accession);
+                const accession = accessionIdx >= 0 ? normalizeCifToken(row[accessionIdx]) : undefined;
+                if (refId) {
+                    refIdToUniProt.set(refId, {
+                        allowed: isUniProtDatabaseOrUnknown(row[dbNameIdx]),
+                        accession: accession && isUniProtAccession(accession) ? accession : undefined,
+                    });
                 }
             }
         }
@@ -167,7 +193,11 @@ export function parseChainToUniProtFromCifText(cifText: string): Map<string, str
 
         const accessionDirect = accessionIdx >= 0 ? normalizeCifToken(row[accessionIdx]) : undefined;
         const refId = refIdIdx >= 0 ? normalizeCifToken(row[refIdIdx]) : undefined;
-        const accession = accessionDirect || (refId ? refIdToUniProt.get(refId) : undefined);
+        const reference = refId ? refIdToUniProt.get(refId) : undefined;
+        if (reference && !reference.allowed) continue;
+        const accession = accessionDirect && isUniProtAccession(accessionDirect)
+            ? accessionDirect
+            : reference?.accession;
         if (!accession) continue;
 
         for (const chainId of splitCifChainIds(strandField)) {
