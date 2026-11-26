@@ -632,6 +632,11 @@ highlights from checked residues. If the structure is unavailable or
 incompatible, restoration logs a warning instead of broadening the selection.
 Residue selection IDs distinguish author numbers and insertion codes, including
 blank codes, so that mirroring and the residue controls do not conflate them.
+Additional chain slots retain residue selections by dataset and chain ID.
+Session exports associate each additional chain ID with its residue IDs, including
+empty selections; sessions without that optional data use the normal default
+selection. Changing or removing a slot cascades to later slots and clears their
+residue state and tracked native markers.
 
 ### Round-Trip Guarantees
 

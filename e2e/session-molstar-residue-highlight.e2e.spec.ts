@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT.
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
+ * @version 1.1.0
  * @lastModified 2026-11-26
  */
 import { expect, test } from '@playwright/test';
@@ -12,6 +12,76 @@ import { nativeClippingLaunchOptions } from './helpers/native-clipping';
 
 test.use({ launchOptions: nativeClippingLaunchOptions });
 test.describe.configure({ timeout: 240000 });
+
+test('Mol* picks synchronize with an additional chain slot and are cleared when it is removed', async ({ page }) => {
+  const viewer = page.locator('#viewer-column-A');
+  const prefix = 'viewer-column-A-alignedto';
+  const marker = /msp-sequence-residue-selected/;
+  await page.addInitScript(() => Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true }));
+  await page.goto('/');
+  await viewer.locator(`#${prefix}-file-input`).setInputFiles(path.resolve(__dirname, '../data/input/6XU6.cif'));
+  await expect(viewer.getByRole('button', { name: 'Hide 6XU6', exact: true })).toBeVisible({ timeout: 90000 });
+  await viewer.getByRole('button', { name: 'Show Select and Zoom Controls' }).click();
+  await viewer.getByRole('button', { name: 'Show Chain Controls' }).click();
+  await viewer.locator(`#${prefix}-select-chain-controls-toggle-btn`).click();
+  await viewer.locator('[data-testid^="viewer-column-A-chain-table-row-"]:not([data-testid$="-CU"])').first().click();
+  for (const slot of [2, 3]) {
+    await viewer.locator(`#${prefix}-select-chain${slot}-controls-toggle-btn`).click();
+    await viewer.locator(`[data-testid^="${prefix}-chain${slot}-chain-table-row-"]:not([data-testid$="-CU"])`).first().click();
+  }
+  await viewer.locator(`#${prefix}-select-chain4-controls-toggle-btn`).click();
+  const chain4Row = viewer.getByTestId(`${prefix}-chain4-chain-table-row-CU`);
+  await chain4Row.click();
+  await viewer.locator(`#${prefix}-residue4-controls-toggle-btn`).click();
+  const select = viewer.locator(`#${prefix}-residue4-select`);
+  await expect.poll(() => select.locator('option').count(), { timeout: 30000 }).toBeGreaterThan(1);
+
+  await viewer.getByRole('button', { name: 'Show Advanced Mol* Controls' }).click();
+  const sequence = viewer.getByTestId('viewer-column-A-advanced-molstar-controls-panel').locator('.msp-sequence');
+  await sequence.getByTitle(/^\[Entity\]/).selectOption('0|78');
+  await expect(sequence.getByTitle(/^\[Chain\]/)).toHaveAttribute('title', /\bZB\b.*\bauth CU\b/);
+  const phe = sequence.locator('[data-seqid="0"]').filter({ hasText: 'F' });
+  const next = sequence.locator('[data-seqid="1"]');
+  await viewer.getByRole('button', { name: 'Toggle Selection Mode' }).click();
+  await phe.click();
+  await expect(phe).toHaveClass(marker);
+  await expect(select.locator('option:checked')).toHaveText(['PHE 1 [auth 194]']);
+  const firstTwo = await select.locator('option').evaluateAll(options =>
+    options.slice(0, 2).map(option => (option as HTMLOptionElement).value));
+  await select.selectOption(firstTwo);
+  await expect(next).toHaveClass(marker);
+  await viewer.locator(`#${prefix}-clear-chain4-selection-btn`).click();
+  await expect(phe).not.toHaveClass(marker);
+  await expect(next).not.toHaveClass(marker);
+
+  if (!await chain4Row.isVisible()) await viewer.locator(`#${prefix}-select-chain4-controls-toggle-btn`).click();
+  await chain4Row.click();
+  const reopened = viewer.locator(`#${prefix}-residue4-select`);
+  if (!await reopened.isVisible()) await viewer.locator(`#${prefix}-residue4-controls-toggle-btn`).click();
+  await expect.poll(() => reopened.locator('option').count(), { timeout: 30000 }).toBeGreaterThan(1);
+  await expect.poll(() => reopened.locator('option:checked').count(), { timeout: 30000 })
+    .toBe(await reopened.locator('option').count());
+  await reopened.selectOption(firstTwo);
+  await page.click('#session-menu-btn');
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('#session-menu-dropdown .session-menu-item:text-is("Save")').click();
+  const sessionPath = await (await downloadPromise).path();
+  expect(sessionPath).toBeTruthy();
+
+  await page.reload();
+  await page.locator('#session-menu-file-input').setInputFiles(sessionPath!);
+  await expect(page.getByText('Load Session: Select Required Files')).toBeVisible();
+  await page.locator('[data-testid^="session-load-modal-file-input-"]').setInputFiles(path.resolve(__dirname, '../data/input/6XU6.cif'));
+  await page.getByTestId('session-load-modal-load-btn').click();
+  await expect(viewer.getByRole('button', { name: 'Hide 6XU6', exact: true })).toBeVisible({ timeout: 90000 });
+  await viewer.getByRole('button', { name: 'Show Select and Zoom Controls' }).click();
+  await viewer.getByRole('button', { name: 'Show Chain Controls' }).click();
+  await expect(viewer.locator(`#${prefix}-selected-chain4-label`)).toContainText('CU', { timeout: 30000 });
+  await viewer.locator(`#${prefix}-select-chain4-controls-toggle-btn`).click();
+  await viewer.locator(`#${prefix}-residue4-controls-toggle-btn`).click();
+  await expect.poll(() => viewer.locator(`#${prefix}-residue4-select option:checked`).evaluateAll(options =>
+    options.map(option => (option as HTMLOptionElement).value)), { timeout: 30000 }).toEqual(firstTwo);
+});
 
 test('Save All and Load All restore a Mol* residue selection and highlight', async ({ page }) => {
   const viewer = page.locator('#viewer-column-A');

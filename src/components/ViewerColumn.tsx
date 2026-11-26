@@ -4,12 +4,13 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.0.1
- * @lastModified 2026-06-11
+ * @version 1.1.0
+ * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import React from 'react';
 import LoadDataRow, { SelectZoomControls } from './LoadMolecule';
+import type { AdditionalResidueControls } from './LoadMolecule';
 import MoleculeUI from './Molecule';
 import RealignedMoleculeList from './RealignedMoleculeList';
 import MolstarContainer from './MolstarContainer';
@@ -106,6 +107,7 @@ export interface LoadDataRowPropsInput {
 	clearSelectedChainId3?: () => void;
 	additionalSelectedChainIds?: string[];
 	setAdditionalSelectedChainIds?: (ids: string[]) => void;
+	additionalResidueControls?: AdditionalResidueControls[];
 	chainZoomLabel: string;
 	chainZoomLabel2?: string;
 	chainZoomLabel3?: string;
@@ -298,6 +300,7 @@ export function getLoadDataRowProps({
 	clearSelectedChainId3,
 	additionalSelectedChainIds,
 	setAdditionalSelectedChainIds,
+	additionalResidueControls,
 	chainZoomLabel,
 	chainZoomLabel2,
 	chainZoomLabel3,
@@ -604,6 +607,7 @@ export function getLoadDataRowProps({
 		onClearChainId3: clearSelectedChainId3,
 		additionalSelectedChainIds,
 		onAdditionalSelectedChainIdsChange: setAdditionalSelectedChainIds,
+		additionalResidueControls,
 		chainZoomLabel,
 		chainZoomLabel2,
 		chainZoomLabel3,
@@ -1283,6 +1287,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   onClearChainId3={activeLoadProps.onClearChainId3}
 						   additionalSelectedChainIds={activeLoadProps.additionalSelectedChainIds}
 						   onAdditionalSelectedChainIdsChange={activeLoadProps.onAdditionalSelectedChainIdsChange}
+						   additionalResidueControls={activeLoadProps.additionalResidueControls}
 						   chainSelectDisabled={activeLoadProps.chainSelectDisabled}
 						   chainZoomLabel={activeLoadProps.chainZoomLabel}
 						   chainZoomLabel2={activeLoadProps.chainZoomLabel2}

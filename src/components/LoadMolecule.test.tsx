@@ -4,8 +4,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-04-24
+ * @version 1.1.0
+ * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { vi } from 'vitest';
@@ -989,6 +989,59 @@ describe('LoadDataRow', () => {
         fireEvent.click(document.getElementById('test-viewer-a-select-chain4-controls-toggle-btn') as HTMLButtonElement);
         fireEvent.click(document.querySelector('[data-testid="test-viewer-a-chain4-chain-table-row-D"]') as HTMLTableRowElement);
         expect(onAdditionalSelectedChainIdsChange).toHaveBeenCalledWith(['D']);
+    });
+
+    it.each([
+        { slot: 4, extraChains: ['D'] },
+        { slot: 5, extraChains: ['D', 'E'] },
+    ])('provides residue controls for a selected chain in Select $slot', ({ slot, extraChains }) => {
+        const onSelectResidueIds = vi.fn();
+        const onZoom = vi.fn();
+        const onHighlight = vi.fn();
+        const onInspect = vi.fn();
+        render(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                selectedChainId="A"
+                selectedChainId2="B"
+                selectedChainId3="C"
+                chainInfo={{ chainLabels: new Map([['A', 'Chain A'], ['B', 'Chain B'], ['C', 'Chain C'], ['D', 'Chain D'], ['E', 'Chain E']]) }}
+                additionalSelectedChainIds={extraChains}
+                onAdditionalSelectedChainIdsChange={vi.fn()}
+                additionalResidueControls={extraChains.map(() => ({
+                    residueInfo: baseProps.residueInfo,
+                    selectedResidueIds: ['1'],
+                    onSelectResidueIds,
+                    commonResidueIds: ['1'],
+                    onZoom,
+                    onHighlight,
+                    highlightOn: false,
+                    onInspect,
+                    inspectOn: false,
+                    visible: true,
+                }))}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Show Chain Controls'));
+        fireEvent.click(document.getElementById(`test-viewer-a-select-chain${slot}-controls-toggle-btn`) as HTMLButtonElement);
+        const residueToggle = document.getElementById(`test-viewer-a-residue${slot}-controls-toggle-btn`);
+        expect(residueToggle).toBeEnabled();
+        fireEvent.click(residueToggle as HTMLButtonElement);
+        expect(document.getElementById(`test-viewer-a-residue${slot}-select`)).toBeInTheDocument();
+        fireEvent.click(document.getElementById(`test-viewer-a-residue${slot}-clear-selection-btn`) as HTMLButtonElement);
+        expect(onSelectResidueIds).toHaveBeenCalledWith([]);
+        fireEvent.click(document.getElementById(`test-viewer-a-residue${slot}-select-all-btn`) as HTMLButtonElement);
+        expect(onSelectResidueIds).toHaveBeenCalledWith(['1']);
+        fireEvent.click(document.getElementById(`test-viewer-a-residue${slot}-select-common-btn`) as HTMLButtonElement);
+        expect(onSelectResidueIds).toHaveBeenCalledWith(['1']);
+        fireEvent.click(document.getElementById(`test-viewer-a-zoom-residue${slot}-btn`) as HTMLButtonElement);
+        fireEvent.click(document.getElementById(`test-viewer-a-highlight-residue${slot}-btn`) as HTMLButtonElement);
+        fireEvent.click(document.getElementById(`test-viewer-a-inspect-residue${slot}-btn`) as HTMLButtonElement);
+        expect(onZoom).toHaveBeenCalledTimes(1);
+        expect(onHighlight).toHaveBeenCalledTimes(1);
+        expect(onInspect).toHaveBeenCalledTimes(1);
     });
 
     it('recursively shows Select 5 after Select 4 is populated', () => {
