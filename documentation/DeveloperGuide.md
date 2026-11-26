@@ -625,6 +625,16 @@ current session tests and implementation when changing session behavior.
 | Persisted but restore has caveats | Camera/clipping/fog only restore when corresponding dataset/plugin state is available. If required files are missing or loaded later, those values may restore partially. Legacy `selectionDisplay` payloads (single mode) are restored to both modes as a compatibility fallback. Inspect/highlight restoration depends on chain/residue IDs being present in the loaded structures. |
 | Not persisted (known gaps) | Per-representation style parameters beyond `type`/`colorTheme`/`visible` (for example opacity sliders and other representation params), transient panel open/closed UI state, temporary diagnostics (realignment debug/status history), and ephemeral in-progress interaction state. |
 
+Native Mol* residue highlights are saved separately from checked residues and
+the shared highlight toggle, with their dataset, source viewer, chain and
+residue IDs, and exact Mol* unit indices. On session load the structure hash,
+units and indices are checked before reconstructing the source selection and
+mirroring its markers. Sessions without this optional field do not infer native
+highlights from checked residues. If the structure is unavailable or
+incompatible, restoration logs a warning instead of broadening the selection.
+Mirroring to the other viewer still uses residue IDs and may include residues
+sharing an author number with different insertion codes.
+
 ### Round-Trip Guarantees
 
 - Save -> load restores practical analysis context for the common paired-viewer workflow:

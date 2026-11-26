@@ -4,14 +4,14 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.1.0
- * @lastModified 2026-11-23
+ * @version 1.2.0
+ * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { PluginUIContext } from 'molstar/lib/mol-plugin-ui/context';
 import { Structure, StructureElement, Unit } from 'molstar/lib/mol-model/structure';
 import { UnitIndex } from 'molstar/lib/mol-model/structure/structure/element/util';
-import { OrderedSet } from 'molstar/lib/mol-data/int';
+import { OrderedSet, SortedArray } from 'molstar/lib/mol-data/int';
 import { Color } from 'molstar/lib/mol-util/color';
 import { setStructureOverpaint, clearStructureOverpaint } from 'molstar/lib/mol-plugin-state/helpers/structure-overpaint';
 import { resolveChainIndices } from './chain';
@@ -565,6 +565,50 @@ export function getResidueLoci(
     insCode?: string
 ) {
     return getResiduesLoci(plugin, structureRef, chainId, [residueId], { [residueId]: insCode });
+}
+
+export interface SerializableResidueLoci {
+    structureHash: number;
+    units: Array<{ id: number; indices: number[] }>;
+}
+
+export function serializeResidueLoci(loci: StructureElement.Loci): SerializableResidueLoci {
+    return {
+        structureHash: loci.structure.hashCode,
+        units: loci.elements.map(({ unit, indices }) => ({
+            id: unit.id,
+            indices: Array.from({ length: OrderedSet.size(indices) }, (_, i) => OrderedSet.getAt(indices, i)),
+        })),
+    };
+}
+
+export function restoreResidueLoci(
+    plugin: PluginUIContext,
+    structureRef: string,
+    saved: SerializableResidueLoci
+): StructureElement.Loci | null {
+    const structure = plugin.managers.structure.hierarchy.current.structures.find(
+        s => s.cell.transform.ref === structureRef
+    )?.cell.obj?.data;
+    if (!structure || !saved || !Number.isInteger(saved.structureHash)
+        || saved.structureHash !== structure.hashCode || !Array.isArray(saved.units) || !saved.units.length) return null;
+    const elements: StructureElement.Loci['elements'][number][] = [];
+    const seen = new Set<number>();
+    for (const entry of saved.units) {
+        if (!entry || !Number.isInteger(entry.id) || seen.has(entry.id)
+            || !structure.unitMap.has(entry.id) || !Array.isArray(entry.indices) || !entry.indices.length) return null;
+        const unit = structure.unitMap.get(entry.id);
+        let previous = -1;
+        const indices: UnitIndex[] = [];
+        for (const index of entry.indices) {
+            if (!Number.isInteger(index) || index <= previous || index >= unit.elements.length) return null;
+            indices.push(index as UnitIndex);
+            previous = index;
+        }
+        seen.add(entry.id);
+        elements.push({ unit, indices: SortedArray.ofSortedArray(indices) });
+    }
+    return StructureElement.Loci(structure, elements);
 }
 
 /**

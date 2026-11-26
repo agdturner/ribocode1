@@ -436,6 +436,11 @@ Users can save and load a session via the `Session` menu. A `Load` rather than a
 
 Session `uiState` persists `Residue Zoom` settings, per-dataset `Include UniProt accession in labels` settings, highlight toggle states, and selection display preferences (`Highlight display`, `Dim unselected`, and `Strength`), so visual behavior is restored consistently when a session is loaded.
 
+Residue highlights created by Mol* selections are also saved and restored when
+the corresponding dataset is loaded. If a residue highlight was turned off
+before saving, its checked residue selection remains but its marker stays off.
+Older sessions saved before this feature do not contain Mol* highlight state.
+
 The `Session` > `Save All` saves all the data and all the UI state into a single file so that this can be shared and reloaded using `Session` > `Load All`.
 
 ## Troubleshooting Before Reporting Issues

@@ -4,8 +4,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-04-24
+ * @version 1.1.0
+ * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
@@ -14,7 +14,7 @@ import { CIF } from 'molstar/lib/mol-io/reader/cif';
 import { trajectoryFromMmCIF } from 'molstar/lib/mol-model-formats/structure/mmcif';
 import { Structure, StructureElement } from 'molstar/lib/mol-model/structure';
 import { OrderedSet } from 'molstar/lib/mol-data/int';
-import { getStructureRepresentations, focusLociOnChain, focusLociOnResidue, getChainLoci, getResidueLoci, getResiduesLoci, getSubunitLoci, highlightLociOnChain, highlightLociOnResidues } from './structure';
+import { getStructureRepresentations, focusLociOnChain, focusLociOnResidue, getChainLoci, getResidueLoci, getResiduesLoci, getSubunitLoci, highlightLociOnChain, highlightLociOnResidues, restoreResidueLoci, serializeResidueLoci } from './structure';
 
 // Static mock for a valid Loci object
 const lociObj = { kind: 'element-loci', structure: {}, elements: [] } as any;
@@ -105,6 +105,16 @@ ${rows.join('\n')}
         expect(atomIndices(getResidueLoci(plugin, 'ref', 'Z', '1', 'C'))).toEqual([]);
         expect(atomIndices(getResiduesLoci(plugin, 'ref', 'Z', ['01', '1'], { '01': 'B', '1': 'C' }))).toEqual([4]);
         expect(atomIndices(getResiduesLoci(plugin, 'ref', 'Z', ['01', '1'], { '01': 'B' }))).toEqual([3, 4]);
+    });
+
+    it('round-trips exact loci without expanding insertion codes and rejects incompatible data', () => {
+        const loci = getResidueLoci(plugin, 'ref', 'Z', '1', 'B');
+        if (!loci) throw new Error('Expected a structure loci');
+        const saved = JSON.parse(JSON.stringify(serializeResidueLoci(loci)));
+        expect(atomIndices(restoreResidueLoci(plugin, 'ref', saved))).toEqual([4]);
+        expect(restoreResidueLoci(plugin, 'ref', { ...saved, structureHash: saved.structureHash + 1 })).toBeNull();
+        expect(restoreResidueLoci(plugin, 'ref', { ...saved, units: [{ ...saved.units[0], indices: [-1] }] })).toBeNull();
+        expect(restoreResidueLoci(plugin, 'ref', { ...saved, units: [{ ...saved.units[0], indices: [999999] }] })).toBeNull();
     });
 
     it('passes resolved loci to highlights and unions case-distinct chains', () => {
