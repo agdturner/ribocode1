@@ -4,7 +4,7 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.2.0
+ * @version 1.3.0
  * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
@@ -15,6 +15,7 @@ import { OrderedSet, SortedArray } from 'molstar/lib/mol-data/int';
 import { Color } from 'molstar/lib/mol-util/color';
 import { setStructureOverpaint, clearStructureOverpaint } from 'molstar/lib/mol-plugin-state/helpers/structure-overpaint';
 import { resolveChainIndices } from './chain';
+import { parseResidueSelectionId } from './residue';
 
 const SUBUNIT_HIGHLIGHT_COLOR = Color(0x4C78A8);
 const CHAIN_HIGHLIGHT_COLOR = Color(0xF58518);
@@ -276,7 +277,9 @@ function chainLoci(
                 const residueId = String(residues.auth_seq_id.value(residue));
                 if (!residueCodes.has(residueId)) continue;
                 const insCodes = residueCodes.get(residueId);
-                if (insCodes && !insCodes.has(residues.pdbx_PDB_ins_code.value(residue))) continue;
+                const rawCode = residues.pdbx_PDB_ins_code.value(residue);
+                const code = rawCode === '.' || rawCode === '?' ? '' : rawCode;
+                if (insCodes && !insCodes.has(code)) continue;
             }
             indices.push(i as UnitIndex);
         }
@@ -628,9 +631,10 @@ export function getResiduesLoci(
     if (!structureObj) return null;
     const residueCodes = new Map<string, Set<string> | null>();
     for (const residueId of new Set(residueIds.filter(Boolean))) {
-        const key = !isNaN(Number(residueId)) ? String(Number(residueId)) : residueId;
-        const insCode = residueInsCodes?.[residueId];
-        if (!insCode) residueCodes.set(key, null);
+        const parsed = parseResidueSelectionId(residueId);
+        const key = !isNaN(Number(parsed.authSeqId)) ? String(Number(parsed.authSeqId)) : parsed.authSeqId;
+        const insCode = parsed.insertionCode ?? residueInsCodes?.[residueId];
+        if (insCode === undefined) residueCodes.set(key, null);
         else if (!residueCodes.has(key)) residueCodes.set(key, new Set([insCode]));
         else residueCodes.get(key)?.add(insCode);
     }

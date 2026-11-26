@@ -630,8 +630,8 @@ units and indices are checked before reconstructing the source selection and
 mirroring its markers. Sessions without this optional field do not infer native
 highlights from checked residues. If the structure is unavailable or
 incompatible, restoration logs a warning instead of broadening the selection.
-Mirroring to the other viewer still uses residue IDs and may include residues
-sharing an author number with different insertion codes.
+Residue selection IDs distinguish author numbers and insertion codes, including
+blank codes, so that mirroring and the residue controls do not conflate them.
 
 ### Round-Trip Guarantees
 

@@ -1,6 +1,15 @@
 # Change Log
 A chronological version based list of changes.
 
+## [Unreleased]
+
+- Distinguish residues with the same author number but different insertion codes in residue controls and mirrored Mol* highlights, including session save/load round trips.
+- Restore native Mol* residue highlights when loading sessions, independently of checked residues and shared highlight controls. See [ribocode-slola/ribocode1#178](https://github.com/ribocode-slola/ribocode1/issues/178).
+- Filter non-UniProt structure references from UniProt lookups and improve discovery of UniProt accessions in both looped and singleton CIF references.
+- Correct case-sensitive chain identification in selection and alignment, and prevent camera radius drift after realignment.
+- Add developer-only alignment diagnostics and an opt-in experimental multi-chain fit; the default alignment behavior remains unchanged.
+- Update Node, Playwright and other development dependencies, and improve Mol* setup, source metadata and test troubleshooting guidance.
+
 ## [v0.24.0]
 - Unify selection so selection using Ribocode Select and Zoom Controls and Select using Mol* viewer are effectively the same.
 - See [ribocode-slola/ribocode1#136](https://github.com/ribocode-slola/ribocode1/issues/136)

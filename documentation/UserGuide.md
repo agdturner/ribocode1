@@ -440,6 +440,8 @@ Residue highlights created by Mol* selections are also saved and restored when
 the corresponding dataset is loaded. If a residue highlight was turned off
 before saving, its checked residue selection remains but its marker stays off.
 Older sessions saved before this feature do not contain Mol* highlight state.
+Residues sharing an author number but having different insertion codes are
+listed and mirrored separately.
 
 The `Session` > `Save All` saves all the data and all the UI state into a single file so that this can be shared and reloaded using `Session` > `Load All`.
 
