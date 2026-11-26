@@ -23,6 +23,7 @@ Welcome to the Ribocode Developer Guide!
   - [Docs-only Deployment](#docs-only-deployment)
 - [Deployment](#deployment)
 - [Versioning](#versioning)
+  - [Source-file metadata](#source-file-metadata)
   - [Release checklist](#release-checklist)
 - [Roadmap](#roadmap)
 - [Session Fidelity Inventory (v0.17.x)](#session-fidelity-inventory-v017x)
@@ -44,8 +45,8 @@ Welcome to the Ribocode Developer Guide!
 
 
 ## Setup
-Follow the [Developer Quick Start Guide](./DeveloperQuickStart.md)
 
+Follow the [Developer Quick Start Guide](./DeveloperQuickStart.md)
 
 ### Mol* Submodule Workflow
 
@@ -472,6 +473,23 @@ The fork and shared repository have separate `gh-pages` branches. Choose the des
 ## Versioning
 
 Ribocode versioning is driven by `package.json` and `package-lock.json`.
+
+### Source-file metadata
+
+The `@version` in a project-authored source file's header tracks that file, not
+the application release. New source files, including tests, start at `1.0.0`.
+When modifying a file, update its `@lastModified` date to the date of the change
+in `YYYY-MM-DD` format and increment its version according to the scope:
+
+- **Patch:** a minor fix or small update, for example `1.0.0` to `1.0.1`.
+- **Minor:** a more substantive change, for example `1.0.1` to `1.1.0`.
+- **Major:** a complete rewrite, for example `1.1.0` to `2.0.0`.
+
+Reset the patch number when incrementing the minor number, and reset both minor
+and patch numbers when incrementing the major number. If an existing
+project-authored source file lacks these fields, add them when modifying it.
+Do not treat file versions as application release versions or modify
+third-party or generated files solely to add metadata.
 
 ### Recommended bump commands
 

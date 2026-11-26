@@ -1,5 +1,12 @@
 /**
  * Offline 18S correspondence and residual diagnostic; not a production fit.
+ *
+ * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
+ *
+ * @author Andy Turner <agdturner@gmail.com>
+ * @version 1.0.0
+ * @lastModified 2026-11-26
+ * @see https://github.com/ribocode-slola/ribocode1
  */
 import { describe, expect, it } from 'vitest';
 import fs from 'fs';

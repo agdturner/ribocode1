@@ -3,8 +3,8 @@
  *
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.1.0
- * @lastModified 2026-11-23
+ * @version 1.1.1
+ * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { test, expect } from '@playwright/test';
