@@ -9,8 +9,8 @@ export const repTypeSelectIdSuffix = 'representation-type';
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-04-24
+ * @version 1.1.0
+ * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import React from 'react';
@@ -19,6 +19,19 @@ import ResidueSelectButton from './buttons/select/Residue';
 import SubunitSelectButton from './buttons/select/Subunit';
 import { allowedRepresentationTypes, AllowedRepresentationType } from '../types/ribocode';
 import { ResidueLabelInfo } from '../utils/residue';
+
+export interface AdditionalResidueControls {
+    residueInfo: { residueLabels: Map<string, ResidueLabelInfo>; residueToAtomIds: Record<string, string[]> };
+    selectedResidueIds: string[];
+    onSelectResidueIds: (ids: string[]) => void;
+    commonResidueIds: string[];
+    onZoom: () => void;
+    onHighlight: () => void;
+    highlightOn: boolean;
+    onInspect: () => void;
+    inspectOn: boolean;
+    visible: boolean;
+}
 
 const RESIDUE_DEFAULT_PALETTE = [
     '#4E79A7', '#F28E2B', '#E15759', '#76B7B2', '#59A14F',
@@ -219,14 +232,14 @@ const getChainInspectTooltip = (slot: 'Select 1' | 'Select 2' | 'Select 3', disa
             ? `${slot} chain inspect is On. Click to turn it Off.`
             : `${slot} chain inspect is Off. Click to turn it On.`;
 
-const getResidueSelectTooltip = (slot: 'Select 1' | 'Select 2' | 'Select 3', disabled: boolean): string =>
+const getResidueSelectTooltip = (slot: string, disabled: boolean): string =>
     disabled
         ? `Disabled until a chain is selected for ${slot}.`
         : `Select one or more residues for ${slot}.`;
 
 const getResidueBulkSelectTooltip = (
     action: 'all' | 'clear' | 'invert' | 'shared',
-    slot: 'Select 1' | 'Select 2' | 'Select 3',
+    slot: string,
     disabled: boolean
 ): string => {
     if (disabled) {
@@ -244,7 +257,7 @@ const getResidueBulkSelectTooltip = (
 const getResidueTypeToggleTooltip = (
     actionLabel: 'Add' | 'Remove',
     type: string,
-    slot: 'Select 1' | 'Select 2' | 'Select 3',
+    slot: string,
     disabled: boolean
 ): string =>
     disabled
@@ -252,7 +265,7 @@ const getResidueTypeToggleTooltip = (
         : `${actionLabel} all ${type} residues in ${slot}.`;
 
 const getResidueTypeDetailsTooltip = (
-    slot: 'Select 1' | 'Select 2' | 'Select 3',
+    slot: string,
     type: string,
     expanded: boolean,
     disabled: boolean,
@@ -263,19 +276,19 @@ const getResidueTypeDetailsTooltip = (
             ? `Hide ${type} residue details for ${slot}.`
             : `Show ${type} residue details for ${slot}.`;
 
-const getResidueZoomTooltip = (slot: 'Select 1' | 'Select 2' | 'Select 3', disabled: boolean, label: string): string =>
+const getResidueZoomTooltip = (slot: string, disabled: boolean, label: string): string =>
     disabled
         ? `Disabled until ${slot} has a zoomable residue selection.`
         : `Zoom to the current ${slot} residue selection (${label}).`;
 
-const getResidueHighlightTooltip = (slot: 'Select 1' | 'Select 2' | 'Select 3', disabled: boolean, on: boolean): string =>
+const getResidueHighlightTooltip = (slot: string, disabled: boolean, on: boolean): string =>
     disabled
         ? `Disabled until ${slot} residue highlighting is available.`
         : on
             ? `${slot} residue highlight is On. Click to turn it Off.`
             : `${slot} residue highlight is Off. Click to turn it On.`;
 
-const getResidueInspectTooltip = (slot: 'Select 1' | 'Select 2' | 'Select 3', disabled: boolean, on: boolean): string =>
+const getResidueInspectTooltip = (slot: string, disabled: boolean, on: boolean): string =>
     disabled
         ? `Disabled until ${slot} residue inspection is available.`
         : on
@@ -402,6 +415,7 @@ interface LoadDataRowProps {
     onSelectChainId3?: (id: string) => void;
     additionalSelectedChainIds?: string[];
     onAdditionalSelectedChainIdsChange?: (ids: string[]) => void;
+    additionalResidueControls?: AdditionalResidueControls[];
     chainSelectDisabled: boolean;
     chainZoomLabel: string;
     chainZoomLabel2?: string;
@@ -553,6 +567,7 @@ interface LoadDataRowProps {
         onSelectChainId3?: (id: string) => void;
         additionalSelectedChainIds?: string[];
         onAdditionalSelectedChainIdsChange?: (ids: string[]) => void;
+        additionalResidueControls?: AdditionalResidueControls[];
         onClearChainId2?: () => void;
         onClearChainId3?: () => void;
         chainSelectDisabled: boolean;
@@ -697,6 +712,7 @@ interface LoadDataRowProps {
         onClearChainId3 = () => {},
         additionalSelectedChainIds = EMPTY_CHAIN_SELECTIONS,
         onAdditionalSelectedChainIdsChange,
+        additionalResidueControls = [],
         chainSelectDisabled,
         chainZoomLabel,
         chainZoomLabel2 = '',
@@ -840,6 +856,7 @@ interface LoadDataRowProps {
             return visibility;
         }, [additionalSelectedChainIds, additionalSlotCount, selectedChainId3]);
         const [showAdditionalChainControlsBySlot, setShowAdditionalChainControlsBySlot] = React.useState<Record<number, boolean>>({});
+        const [showAdditionalResidueControlsBySlot, setShowAdditionalResidueControlsBySlot] = React.useState<Record<number, boolean>>({});
 
         const setAdditionalSelectionAt = React.useCallback((slotIndex: number, chainId: string) => {
             const current = additionalSelectedChainIds.slice(0, additionalSlotCount);
@@ -992,34 +1009,6 @@ interface LoadDataRowProps {
                 .map(([type, residueIds]) => ({ type, residueIds, count: residueIds.length }))
                 .sort((a, b) => a.type.localeCompare(b.type));
         }, [orderedResidueIds3, residueInfo3]);
-        const orderedSelectionFromSet = React.useCallback((set: Set<string>): string[] => {
-            const ordered: string[] = [];
-            for (const residueId of orderedResidueIds) {
-                if (set.has(residueId)) ordered.push(residueId);
-            }
-            return ordered;
-        }, [orderedResidueIds]);
-
-        const orderedSelectionFromSet2 = React.useCallback((set: Set<string>): string[] => {
-            const ordered: string[] = [];
-            for (const residueId of orderedResidueIds2) {
-                if (set.has(residueId)) ordered.push(residueId);
-            }
-            return ordered;
-        }, [orderedResidueIds2]);
-        const orderedSelectionFromSet3 = React.useCallback((set: Set<string>): string[] => {
-            const ordered: string[] = [];
-            for (const residueId of orderedResidueIds3) {
-                if (set.has(residueId)) ordered.push(residueId);
-            }
-            return ordered;
-        }, [orderedResidueIds3]);
-        const orderSelectionForSlot = React.useCallback((slot: '' | '2' | '3', set: Set<string>): string[] => {
-            if (slot === '2') return orderedSelectionFromSet2(set);
-            if (slot === '3') return orderedSelectionFromSet3(set);
-            return orderedSelectionFromSet(set);
-        }, [orderedSelectionFromSet, orderedSelectionFromSet2, orderedSelectionFromSet3]);
-
         const renderResidueControls = ({
             slot,
             residueInfoSlot,
@@ -1040,7 +1029,7 @@ interface LoadDataRowProps {
             selectedChainIdSlot,
             showSharedButton,
         }: {
-            slot: '' | '2' | '3';
+            slot: string;
             residueInfoSlot: { residueLabels: Map<string, ResidueLabelInfo> };
             selectedResidueIdsSlot: string[];
             onSelectResidueIdsSlot: (ids: string[]) => void;
@@ -1060,7 +1049,7 @@ interface LoadDataRowProps {
             showSharedButton: boolean;
         }) => (
             (() => {
-                const slotLabel: 'Select 1' | 'Select 2' | 'Select 3' = slot === '2' ? 'Select 2' : slot === '3' ? 'Select 3' : 'Select 1';
+                const slotLabel = `Select ${slot || '1'}`;
                 return (
             <>
                 <div className="load-data-control-row" style={{ marginLeft: 36 }}>
@@ -1150,7 +1139,7 @@ interface LoadDataRowProps {
                                             } else {
                                                 residueIds.forEach(id => nextSet.add(id));
                                             }
-                                            onSelectResidueIdsSlot(orderSelectionForSlot(slot, nextSet));
+                                            onSelectResidueIdsSlot(orderedResidueIdsSlot.filter(id => nextSet.has(id)));
                                         }}
                                     >
                                         {actionLabel}
@@ -1192,7 +1181,7 @@ interface LoadDataRowProps {
                                                                 } else {
                                                                     nextSet.add(residueId);
                                                                 }
-                                                                onSelectResidueIdsSlot(orderSelectionForSlot(slot, nextSet));
+                                                                onSelectResidueIdsSlot(orderedResidueIdsSlot.filter(id => nextSet.has(id)));
                                                             }}
                                                         />
                                                         <span>{residueLabel}</span>
@@ -1809,6 +1798,18 @@ interface LoadDataRowProps {
                                 ? (chainInfo.chainLabels.get(currentSelection) ?? currentSelection)
                                 : 'None';
                             const isExpanded = Boolean(showAdditionalChainControlsBySlot[additionalSlotIndex]);
+                            const residue = additionalResidueControls[additionalSlotIndex];
+                            const showResidues = Boolean(showAdditionalResidueControlsBySlot[additionalSlotIndex]);
+                            const orderedIds = residue ? [...residue.residueInfo.residueLabels.entries()]
+                                .sort(([, a], [, b]) => a.seqNumber - b.seqNumber || a.insCode.localeCompare(b.insCode))
+                                .map(([id]) => id) : [];
+                            const buckets = new Map<string, string[]>();
+                            for (const id of orderedIds) {
+                                const type = String(residue?.residueInfo.residueLabels.get(id)?.compId || '?').trim().toUpperCase() || '?';
+                                const ids = buckets.get(type) ?? [];
+                                ids.push(id);
+                                buckets.set(type, ids);
+                            }
                             return (
                                 <React.Fragment key={`additional-select-slot-${slotNumber}`}>
                                     <div className="load-data-control-row" id={`${idPrefix}-selected-chain${slotNumber}-label`} style={{ marginLeft: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1848,6 +1849,36 @@ interface LoadDataRowProps {
                                                     idPrefix={`${idPrefix}-chain${slotNumber}`}
                                                 />
                                             )}
+                                            <button
+                                                type="button"
+                                                className="msp-btn msp-form-control"
+                                                id={`${idPrefix}-residue${slotNumber}-controls-toggle-btn`}
+                                                disabled={!currentSelection}
+                                                onClick={() => setShowAdditionalResidueControlsBySlot(prev => ({ ...prev, [additionalSlotIndex]: !prev[additionalSlotIndex] }))}
+                                                title={getControlsToggleTitle('residue', showResidues, !currentSelection ? `Select a chain in Select ${slotNumber} to enable residue controls.` : undefined)}
+                                            >
+                                                {showResidues ? 'Hide Residue Controls' : 'Show Residue Controls'}
+                                            </button>
+                                            {showResidues && residue && renderResidueControls({
+                                                slot: String(slotNumber),
+                                                residueInfoSlot: residue.residueInfo,
+                                                selectedResidueIdsSlot: residue.selectedResidueIds,
+                                                onSelectResidueIdsSlot: residue.onSelectResidueIds,
+                                                residueCommonIdsSlot: residue.commonResidueIds,
+                                                orderedResidueIdsSlot: orderedIds,
+                                                residueTypeBucketsSlot: [...buckets.entries()].map(([type, residueIds]) => ({ type, residueIds, count: residueIds.length })).sort((a, b) => a.type.localeCompare(b.type)),
+                                                zoomLabel: residue.selectedResidueIds.length > 1 ? `${residue.selectedResidueIds.length} residues` : residue.residueInfo.residueLabels.get(residue.selectedResidueIds[0])?.name ?? '',
+                                                onZoom: residue.onZoom,
+                                                zoomDisabled: !residue.visible || !residue.selectedResidueIds.length,
+                                                onHighlight: residue.onHighlight,
+                                                highlightOn: residue.highlightOn,
+                                                highlightDisabled: !residue.visible || (!residue.selectedResidueIds.length && !residue.highlightOn),
+                                                onInspect: residue.onInspect,
+                                                inspectOn: residue.inspectOn,
+                                                inspectDisabled: !residue.visible || (!residue.selectedResidueIds.length && !residue.inspectOn),
+                                                selectedChainIdSlot: currentSelection,
+                                                showSharedButton: true,
+                                            })}
                                         </div>
                                     )}
                                 </React.Fragment>
@@ -1984,6 +2015,7 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     onSelectChainId3,
     additionalSelectedChainIds,
     onAdditionalSelectedChainIdsChange,
+    additionalResidueControls,
     chainSelectDisabled,
     chainZoomLabel,
     chainZoomLabel2,
@@ -2515,6 +2547,7 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                         onSelectChainId3={onSelectChainId3}
                         additionalSelectedChainIds={additionalSelectedChainIds}
                         onAdditionalSelectedChainIdsChange={onAdditionalSelectedChainIdsChange}
+                        additionalResidueControls={additionalResidueControls}
                         chainSelectDisabled={chainSelectDisabled}
                         chainZoomLabel={chainZoomLabel}
                         chainZoomLabel2={chainZoomLabel2}

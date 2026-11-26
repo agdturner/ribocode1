@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT.
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
+ * @version 1.1.0
  * @lastModified 2026-11-26
  */
 import { expect, test } from '@playwright/test';
@@ -56,6 +56,62 @@ ATOM 3 C CA . SER A 1 3 B 6 0 0 1 10 194 A 1
 
 test.use({ launchOptions: nativeClippingLaunchOptions });
 test.describe.configure({ timeout: 120000 });
+
+test('additional slot preserves distinct insertion codes and Mol* markers', async ({ page }) => {
+  const fourChains = cif.replace('A 1\nloop_\n_atom_site', 'A 1\nB 1\nC 1\nD 1\nloop_\n_atom_site')
+    + 'ATOM 4 C CA . GLY B 1 1 ? 0 3 0 1 10 1 B 1\n'
+    + 'ATOM 5 C CA . GLY C 1 1 ? 0 6 0 1 10 1 C 1\n'
+    + 'ATOM 6 C CA . GLY D 1 1 ? 0 9 0 1 10 1 D 1\n';
+  const left = page.locator('#viewer-column-A');
+  const prefix = 'viewer-column-A-alignedto';
+  await page.addInitScript(() => Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true }));
+  await page.goto('/');
+  await left.locator(`#${prefix}-file-input`).setInputFiles({
+    name: 'four-chains.cif', mimeType: 'chemical/x-cif', buffer: Buffer.from(fourChains),
+  });
+  await expect(left.getByRole('button', { name: /Hide insertions/i })).toBeVisible({ timeout: 90000 });
+  await left.getByRole('button', { name: 'Show Select and Zoom Controls' }).click();
+  await left.getByRole('button', { name: 'Show Chain Controls' }).click();
+  await left.locator(`#${prefix}-select-chain-controls-toggle-btn`).click();
+  await left.getByTestId('viewer-column-A-chain-table-row-B').click();
+  for (const [slot, chain] of [[2, 'C'], [3, 'D'], [4, 'A']] as const) {
+    await left.locator(`#${prefix}-select-chain${slot}-controls-toggle-btn`).click();
+    await left.getByTestId(`${prefix}-chain${slot}-chain-table-row-${chain}`).click();
+  }
+  await left.locator(`#${prefix}-residue4-controls-toggle-btn`).click();
+  const select = left.locator(`#${prefix}-residue4-select`);
+  await expect(select.locator('option')).toHaveCount(3);
+  await left.getByRole('button', { name: 'Show Advanced Mol* Controls' }).click();
+  const sequence = left.getByTestId('viewer-column-A-advanced-molstar-controls-panel').locator('.msp-sequence');
+  await expect(sequence.getByTitle(/^\[Chain\]/)).toHaveAttribute('title', /\bA\b/);
+  await left.getByRole('button', { name: 'Toggle Selection Mode' }).click();
+  await sequence.locator('[data-seqid="1"]').filter({ hasText: 'A' }).click();
+  await expect(select.locator('option:checked')).toHaveText(['ALA 2A [auth 194]']);
+  await select.selectOption(['194', '194:B']);
+  await expect(select.locator('option:checked')).toHaveText(['GLY 1 [auth 194]', 'SER 3B [auth 194]']);
+  await expect(sequence.locator('[data-seqid="0"]').filter({ hasText: 'G' })).toHaveClass(/msp-sequence-residue-selected/);
+  await expect(sequence.locator('[data-seqid="1"]').filter({ hasText: 'A' })).not.toHaveClass(/msp-sequence-residue-selected/);
+  await expect(sequence.locator('[data-seqid="2"]').filter({ hasText: 'S' })).toHaveClass(/msp-sequence-residue-selected/);
+  const inspect = left.locator(`#${prefix}-inspect-residue4-btn`);
+  await inspect.click();
+  await expect(inspect).toHaveAttribute('aria-pressed', 'true');
+
+  await page.click('#session-menu-btn');
+  const download = page.waitForEvent('download');
+  await page.locator('#session-menu-dropdown .session-menu-item:text-is("Save All")').click();
+  const sessionPath = await (await download).path();
+  expect(sessionPath).toBeTruthy();
+  await page.reload();
+  await page.locator('#session-menu-file-input-all').setInputFiles(sessionPath!);
+  await expect(left.getByRole('button', { name: /Hide insertions/i })).toBeVisible({ timeout: 90000 });
+  await left.getByRole('button', { name: 'Show Select and Zoom Controls' }).click();
+  await left.getByRole('button', { name: 'Show Chain Controls' }).click();
+  await expect(left.locator(`#${prefix}-selected-chain4-label`)).toContainText('A');
+  await left.locator(`#${prefix}-select-chain4-controls-toggle-btn`).click();
+  await left.locator(`#${prefix}-residue4-controls-toggle-btn`).click();
+  await expect(select.locator('option:checked')).toHaveText(['GLY 1 [auth 194]', 'SER 3B [auth 194]']);
+  await expect(inspect).toHaveAttribute('aria-pressed', 'true');
+});
 
 test('mirrors distinct insertion codes and restores them across a session', async ({ page }) => {
   const left = page.locator('#viewer-column-A');

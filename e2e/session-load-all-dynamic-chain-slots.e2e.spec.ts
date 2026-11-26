@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.0.1
+ * @version 1.1.0
  * @lastModified 2026-11-26
  */
 import { test, expect, type Page } from '@playwright/test';
@@ -96,7 +96,7 @@ async function loadAllFromSessionFile(page: Page, sessionFilePath: string) {
   await expect(page.locator('#viewer-column-B-molstar-container')).toBeVisible({ timeout: 60000 });
 }
 
-test('Save All/Load All restores dynamic Select 4 chain selections in both columns', async ({ page }) => {
+test('Save All/Load All restores dynamic chain and residue selections in both columns', async ({ page }) => {
   test.setTimeout(180000);
 
   await page.goto('/');
@@ -162,6 +162,30 @@ test('Save All/Load All restores dynamic Select 4 chain selections in both colum
   await expect(page.locator('#viewer-column-A-alignedto-selected-chain4-label')).toContainText(chain4A, { timeout: 15000 });
   await expect(page.locator('#viewer-column-B-aligned-selected-chain4-label')).toContainText(chain4B, { timeout: 15000 });
 
+  const chain5: string[] = [];
+  for (const [viewer, mode] of [['A', 'alignedto'], ['B', 'aligned']] as const) {
+    const prefix = `viewer-column-${viewer}-${mode}`;
+    await ensureSectionOpen(page, `#${prefix}-select-chain5-controls-toggle-btn`, `[data-testid^="${prefix}-chain5-chain-table-row-"]`);
+    chain5.push(await selectFirstRowAndGetChainId(page, `${prefix}-chain5-chain-table-row-`));
+  }
+
+  const selectedResidues = new Map<string, string[]>();
+  for (const [viewer, mode] of [['A', 'alignedto'], ['B', 'aligned']] as const) {
+    for (const slot of [4, 5]) {
+      const prefix = `viewer-column-${viewer}-${mode}`;
+      const residueToggle = page.locator(`#${prefix}-residue${slot}-controls-toggle-btn`);
+      await expect(residueToggle).toBeVisible({ timeout: 10000 });
+      await residueToggle.click();
+      const select = page.locator(`#${prefix}-residue${slot}-select`);
+      await expect.poll(() => select.locator('option').count(), { timeout: 30000 }).toBeGreaterThan(1);
+      const values = viewer === 'B' && slot === 5 ? [] : await select.locator('option').evaluateAll(options =>
+        options.slice(0, 2).map(option => (option as HTMLOptionElement).value));
+      await select.selectOption(values);
+      await expect(select.locator('option:checked')).toHaveCount(values.length);
+      selectedResidues.set(`${viewer}-${slot}`, values);
+    }
+  }
+
   const sessionFilePath = await saveAllAndDownloadSession(page);
   await loadAllFromSessionFile(page, sessionFilePath);
 
@@ -172,6 +196,20 @@ test('Save All/Load All restores dynamic Select 4 chain selections in both colum
 
   await expect(page.locator('#viewer-column-A-alignedto-selected-chain4-label')).toContainText(chain4A, { timeout: 20000 });
   await expect(page.locator('#viewer-column-B-aligned-selected-chain4-label')).toContainText(chain4B, { timeout: 20000 });
+  for (const [index, [viewer, mode]] of ([['A', 'alignedto'], ['B', 'aligned']] as const).entries()) {
+    const prefix = `viewer-column-${viewer}-${mode}`;
+    await expect(page.locator(`#${prefix}-selected-chain5-label`)).toContainText(chain5[index], { timeout: 20000 });
+    for (const slot of [4, 5]) {
+      const chainToggle = page.locator(`#${prefix}-select-chain${slot}-controls-toggle-btn`);
+      const residueToggle = page.locator(`#${prefix}-residue${slot}-controls-toggle-btn`);
+      if (!await residueToggle.isVisible()) await chainToggle.click();
+      const select = page.locator(`#${prefix}-residue${slot}-select`);
+      if (!await select.isVisible()) await residueToggle.click();
+      await expect.poll(() => select.locator('option:checked').evaluateAll(options =>
+        options.map(option => (option as HTMLOptionElement).value)), { timeout: 30000 })
+        .toEqual(selectedResidues.get(`${viewer}-${slot}`));
+    }
+  }
 });
 
 test('Save All/Load All preserves Select 4 clear cascade so Select 5 is hidden', async ({ page }) => {

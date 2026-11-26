@@ -3,6 +3,7 @@ A chronological version based list of changes.
 
 ## [Unreleased]
 
+- Add independent residue controls for every selected chain, including Select 4 and later, with Mol* selection synchronization and session persistence. See [ribocode-slola/ribocode1#183](https://github.com/ribocode-slola/ribocode1/issues/183).
 - Distinguish residues with the same author number but different insertion codes in residue controls and mirrored Mol* highlights, including session save/load round trips.
 - Restore native Mol* residue highlights when loading sessions, independently of checked residues and shared highlight controls. See [ribocode-slola/ribocode1#178](https://github.com/ribocode-slola/ribocode1/issues/178).
 - Filter non-UniProt structure references from UniProt lookups and improve discovery of UniProt accessions in both looped and singleton CIF references.

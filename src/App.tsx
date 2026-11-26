@@ -6,7 +6,7 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT. See LICENSE file for more info.
  *
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.5.0
+ * @version 1.6.0
  * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
@@ -58,7 +58,8 @@ import { Mat4, Vec3 } from 'molstar/lib/mol-math/linear-algebra';
 import { StructureElement, StructureProperties, Unit } from 'molstar/lib/mol-model/structure';
 import { OrderedSet, SortedArray } from 'molstar/lib/mol-data/int';
 import { normalizeChainIdentifier, resolveChainIndices } from './utils/chain';
-import { residueSelectionId } from './utils/residue';
+import { getResidueInfo, residueSelectionId } from './utils/residue';
+import type { AdditionalResidueControls } from './components/LoadMolecule';
 import type { LoadedMolecule, ViewerKey, MoleculeMode } from './types/ribocode';
 import { A, B } from './constants/ribocode';
 import { makeFogSetters, makeClippingSetters, makeZoomHandler, makeChainHighlightToggleHandler, makeResidueHighlightToggleHandler, makeSubunitHighlightToggleHandler, makeChainInspectToggleHandler, makeResidueInspectToggleHandler, makeSubunitInspectToggleHandler } from './utils/viewerHelpers';
@@ -154,6 +155,7 @@ interface SessionUiState {
             chainId2?: string;
             chainId3?: string;
             chainIdsExtra?: string[];
+            residueIdsExtra?: Array<{ chainId: string; residueIds: string[] }>;
             residueId?: string;
             residueId2?: string;
             residueId3?: string;
@@ -167,6 +169,7 @@ interface SessionUiState {
             chainId2?: string;
             chainId3?: string;
             chainIdsExtra?: string[];
+            residueIdsExtra?: Array<{ chainId: string; residueIds: string[] }>;
             residueId?: string;
             residueId2?: string;
             residueId3?: string;
@@ -199,11 +202,13 @@ interface SessionUiState {
             alignedTo?: {
                 chain?: boolean;
                 residue?: boolean;
+                residueChainId?: string;
                 subunit?: boolean;
             };
             aligned?: {
                 chain?: boolean;
                 residue?: boolean;
+                residueChainId?: string;
                 subunit?: boolean;
             };
         };
@@ -211,11 +216,13 @@ interface SessionUiState {
             alignedTo?: {
                 chain?: boolean;
                 residue?: boolean;
+                residueChainId?: string;
                 subunit?: boolean;
             };
             aligned?: {
                 chain?: boolean;
                 residue?: boolean;
+                residueChainId?: string;
                 subunit?: boolean;
             };
         };
@@ -1980,6 +1987,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const [selectedChainIdAlignedTo2, setSelectedChainIdAlignedTo2] = useState<string>('');
     const [selectedChainIdAlignedTo3, setSelectedChainIdAlignedTo3] = useState<string>('');
     const [selectedChainIdsAlignedToExtra, setSelectedChainIdsAlignedToExtra] = useState<string[]>([]);
+    const [extraResiduesAlignedTo, setExtraResiduesAlignedTo] = useState<Map<string, string[]>>(() => new Map());
     const {
         chainInfo: chainInfoAligned,
         setChainInfo: setChainInfoAligned,
@@ -1989,6 +1997,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const [selectedChainIdAligned2, setSelectedChainIdAligned2] = useState<string>('');
     const [selectedChainIdAligned3, setSelectedChainIdAligned3] = useState<string>('');
     const [selectedChainIdsAlignedExtra, setSelectedChainIdsAlignedExtra] = useState<string[]>([]);
+    const [extraResiduesAligned, setExtraResiduesAligned] = useState<Map<string, string[]>>(() => new Map());
     const [experimentalChainReport, setExperimentalChainReport] = useState<ExperimentalChainReport[] | null>(null);
     const [experimentalChainError, setExperimentalChainError] = useState<string | null>(null);
     const experimentalChainInFlightRef = useRef(false);
@@ -3605,6 +3614,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 console.error('Failed to load molecule into viewer A.');
                 return undefined;
             }
+            if (!options?.restoreSession && !pendingSessionSelectionsRef.current?.alignedTo) setExtraResiduesAlignedTo(new Map());
             viewerA.setMoleculeAlignedTo((prev: any) => ({
                 label: viewerAMoleculeAlignedTo.label,
                 name: viewerAMoleculeAlignedTo.name,
@@ -3713,6 +3723,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 );
             }
             if (viewerAMoleculeAligned) {
+                if (!options?.restoreSession && !pendingSessionSelectionsRef.current?.aligned) setExtraResiduesAligned(new Map());
                 viewerA.setMoleculeAligned((prev: any) => ({
                     label: viewerAMoleculeAligned.label,
                     name: viewerAMoleculeAligned.name,
@@ -4098,6 +4109,70 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     const structureRefAAligned: string | null = molstarA.structureRefs[Aligned];
     const structureRefBAlignedTo: string | null = molstarB.structureRefs[AlignedTo];
     const structureRefBAligned: string | null = molstarB.structureRefs[Aligned];
+
+    const extraResidueInfoAlignedTo = useMemo(() => {
+        const structure = viewerA.ref.current?.managers.structure.hierarchy.current.structures.find(
+            item => item.cell.transform.ref === structureRefAAlignedTo
+        )?.cell.obj?.data;
+        return selectedChainIdsAlignedToExtra.map(chain => structure ? getResidueInfo(structure, chain) : null);
+    }, [viewerA.ref, structureRefAAlignedTo, selectedChainIdsAlignedToExtra]);
+    const extraResidueInfoAligned = useMemo(() => {
+        const structure = viewerB.ref.current?.managers.structure.hierarchy.current.structures.find(
+            item => item.cell.transform.ref === structureRefBAligned
+        )?.cell.obj?.data;
+        return selectedChainIdsAlignedExtra.map(chain => structure ? getResidueInfo(structure, chain) : null);
+    }, [viewerB.ref, structureRefBAligned, selectedChainIdsAlignedExtra]);
+    const extraSelection = (
+        selections: Map<string, string[]>,
+        chain: string,
+        info: ReturnType<typeof getResidueInfo> | null | undefined
+    ) => selections.get(chain) ?? (info ? [...info.residueLabels.keys()] : []);
+    const updateExtraResidues = (
+        setSelections: React.Dispatch<React.SetStateAction<Map<string, string[]>>>,
+        chain: string,
+        ids: string[]
+    ) => setSelections(current => new Map(current).set(chain, ids));
+
+    useEffect(() => {
+        const keep = new Set(selectedChainIdsAlignedToExtra);
+        setExtraResiduesAlignedTo(current => {
+            if ([...current.keys()].every(id => keep.has(id))) return current;
+            return new Map([...current].filter(([id]) => keep.has(id)));
+        });
+    }, [selectedChainIdsAlignedToExtra]);
+    useEffect(() => {
+        const keep = new Set(selectedChainIdsAlignedExtra);
+        setExtraResiduesAligned(current => {
+            if ([...current.keys()].every(id => keep.has(id))) return current;
+            return new Map([...current].filter(([id]) => keep.has(id)));
+        });
+    }, [selectedChainIdsAlignedExtra]);
+    const previousExtraChains = useRef({ alignedTo: selectedChainIdsAlignedToExtra, aligned: selectedChainIdsAlignedExtra });
+    useEffect(() => {
+        const previous = previousExtraChains.current;
+        previousExtraChains.current = { alignedTo: selectedChainIdsAlignedToExtra, aligned: selectedChainIdsAlignedExtra };
+        const removed = [
+            ...previous.alignedTo.filter(id => ![selectedChainIdAlignedTo, selectedChainIdAlignedTo2, selectedChainIdAlignedTo3, ...selectedChainIdsAlignedToExtra].includes(id))
+                .map(id => nativeHighlightKey('AlignedTo', id)),
+            ...previous.aligned.filter(id => ![selectedChainIdAligned, selectedChainIdAligned2, selectedChainIdAligned3, ...selectedChainIdsAlignedExtra].includes(id))
+                .map(id => nativeHighlightKey('Aligned', id)),
+        ];
+        const stale = removed.map(key => [key, nativeResidueHighlights.get(key)] as const)
+            .filter((entry): entry is readonly [string, NativeResidueHighlight] => !!entry[1]);
+        for (const [, highlight] of stale) {
+            const plugin = (highlight.viewer === 'A' ? viewerA.ref : viewerB.ref).current;
+            if (plugin) withRibocodeSelection(plugin, () => {
+                plugin.managers.interactivity.lociSelects.deselect({ loci: highlight.loci }, false);
+            });
+        }
+        if (stale.length) setNativeResidueHighlights(current => {
+            const next = new Map(current);
+            for (const [key, highlight] of stale) if (next.get(key) === highlight) next.delete(key);
+            return next;
+        });
+    }, [selectedChainIdAlignedTo, selectedChainIdAlignedTo2, selectedChainIdAlignedTo3, selectedChainIdsAlignedToExtra,
+        selectedChainIdAligned, selectedChainIdAligned2, selectedChainIdAligned3, selectedChainIdsAlignedExtra,
+        nativeResidueHighlights, viewerA.ref, viewerB.ref]);
     
     // Representation type state.
     const [representationTypeAlignedTo, setRepresentationTypeAlignedTo] = useState<AllowedRepresentationType>('spacefill');
@@ -4195,7 +4270,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             setResidues: (ids: string[]) => void;
         };
         const subscribe = (dataset: ColorThemeMode, viewer: 'A' | 'B', plugin: PluginUIContext | null,
-            structureRef: string | null, slots: Slot[], extraChains: string[]) => {
+            structureRef: string | null, slots: Slot[]) => {
             const selection = plugin?.managers.structure.selection;
             const events = selection?.events?.loci;
             if (!plugin || !structureRef || !selection || !events?.add) return;
@@ -4219,7 +4294,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 const updates = new Map<string, NativeResidueHighlight>();
                 for (const chainId of getChainResidues(loci).keys()) {
                     const chain = byChain.get(chainId);
-                    if (!chain || extraChains.includes(chainId)) continue;
+                    if (!chain) continue;
                     const existing = next.findIndex(slot => slot.chainId === chainId);
                     const index = existing >= 0 ? existing : next.findIndex(slot => !slot.chainId);
                     if (index < 0) continue;
@@ -4281,17 +4356,25 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             { chainId: selectedChainIdAlignedTo, residueIds: selectedResidueIdsAlignedTo, setChain: setSelectedChainIdAlignedTo, setResidues: setSelectedResidueIdsAlignedTo },
             { chainId: selectedChainIdAlignedTo2, residueIds: selectedResidueIdsAlignedTo2, setChain: setSelectedChainIdAlignedTo2, setResidues: setSelectedResidueIdsAlignedTo2 },
             { chainId: selectedChainIdAlignedTo3, residueIds: selectedResidueIdsAlignedTo3, setChain: setSelectedChainIdAlignedTo3, setResidues: setSelectedResidueIdsAlignedTo3 },
+            ...selectedChainIdsAlignedToExtra.map((chainId, index) => ({
+                chainId, residueIds: extraSelection(extraResiduesAlignedTo, chainId, extraResidueInfoAlignedTo[index]),
+                setChain: () => {}, setResidues: (ids: string[]) => updateExtraResidues(setExtraResiduesAlignedTo, chainId, ids),
+            })),
         ];
         const alignedSlots: Slot[] = [
             { chainId: selectedChainIdAligned, residueIds: selectedResidueIdsAligned, setChain: setSelectedChainIdAligned, setResidues: setSelectedResidueIdsAligned },
             { chainId: selectedChainIdAligned2, residueIds: selectedResidueIdsAligned2, setChain: setSelectedChainIdAligned2, setResidues: setSelectedResidueIdsAligned2 },
             { chainId: selectedChainIdAligned3, residueIds: selectedResidueIdsAligned3, setChain: setSelectedChainIdAligned3, setResidues: setSelectedResidueIdsAligned3 },
+            ...selectedChainIdsAlignedExtra.map((chainId, index) => ({
+                chainId, residueIds: extraSelection(extraResiduesAligned, chainId, extraResidueInfoAligned[index]),
+                setChain: () => {}, setResidues: (ids: string[]) => updateExtraResidues(setExtraResiduesAligned, chainId, ids),
+            })),
         ];
         const subscriptions = [
-            subscribe('AlignedTo', 'A', viewerA.ref.current, structureRefAAlignedTo, alignedToSlots, selectedChainIdsAlignedToExtra),
-            subscribe('AlignedTo', 'B', viewerB.ref.current, structureRefBAlignedTo, alignedToSlots, selectedChainIdsAlignedToExtra),
-            subscribe('Aligned', 'A', viewerA.ref.current, structureRefAAligned, alignedSlots, selectedChainIdsAlignedExtra),
-            subscribe('Aligned', 'B', viewerB.ref.current, structureRefBAligned, alignedSlots, selectedChainIdsAlignedExtra),
+            subscribe('AlignedTo', 'A', viewerA.ref.current, structureRefAAlignedTo, alignedToSlots),
+            subscribe('AlignedTo', 'B', viewerB.ref.current, structureRefBAlignedTo, alignedToSlots),
+            subscribe('Aligned', 'A', viewerA.ref.current, structureRefAAligned, alignedSlots),
+            subscribe('Aligned', 'B', viewerB.ref.current, structureRefBAligned, alignedSlots),
         ];
         return () => subscriptions.forEach(unsubscribe => unsubscribe?.());
     }, [viewerA.ref, viewerB.ref, structureRefAAlignedTo, structureRefBAlignedTo, structureRefAAligned, structureRefBAligned,
@@ -4299,6 +4382,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         selectedResidueIdsAlignedTo, selectedResidueIdsAlignedTo2, selectedResidueIdsAlignedTo3, nativeResidueHighlights,
         selectedChainIdAligned, selectedChainIdAligned2, selectedChainIdAligned3, selectedChainIdsAlignedExtra,
         selectedResidueIdsAligned, selectedResidueIdsAligned2, selectedResidueIdsAligned3,
+        extraResiduesAlignedTo, extraResiduesAligned, extraResidueInfoAlignedTo, extraResidueInfoAligned,
         setSelectedChainIdAlignedTo, setSelectedResidueIdsAlignedTo, setSelectedResidueIdsAlignedTo2, setSelectedResidueIdsAlignedTo3,
         setSelectedChainIdAligned, setSelectedResidueIdsAligned, setSelectedResidueIdsAligned2, setSelectedResidueIdsAligned3]);
 
@@ -5506,6 +5590,81 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         syncResidueInsCodes: selectedResidueInsCodesAligned3,
     });
 
+    const extraInspectTarget = useRef<Partial<Record<'AAlignedTo' | 'AAligned' | 'BAlignedTo' | 'BAligned', string>>>({});
+    const makeAdditionalResidueControls = (dataset: ColorThemeMode, viewer: 'A' | 'B'): AdditionalResidueControls[] => {
+        const alignedTo = dataset === 'AlignedTo';
+        const chains = alignedTo ? selectedChainIdsAlignedToExtra : selectedChainIdsAlignedExtra;
+        const infos = alignedTo ? extraResidueInfoAlignedTo : extraResidueInfoAligned;
+        const otherInfos = alignedTo ? extraResidueInfoAligned : extraResidueInfoAlignedTo;
+        const selections = alignedTo ? extraResiduesAlignedTo : extraResiduesAligned;
+        const setSelections = alignedTo ? setExtraResiduesAlignedTo : setExtraResiduesAligned;
+        const pluginRef = viewer === 'A' ? viewerA.ref : viewerB.ref;
+        const otherPluginRef = viewer === 'A' ? viewerB.ref : viewerA.ref;
+        const structureRef = alignedTo
+            ? (viewer === 'A' ? structureRefAAlignedTo : structureRefBAlignedTo)
+            : (viewer === 'A' ? structureRefAAligned : structureRefBAligned);
+        const otherStructureRef = alignedTo
+            ? (viewer === 'A' ? structureRefBAlignedTo : structureRefAAlignedTo)
+            : (viewer === 'A' ? structureRefBAligned : structureRefAAligned);
+        const visible = alignedTo
+            ? (viewer === 'A' ? viewerA.isMoleculeAlignedToVisible : viewerB.isMoleculeAlignedToVisible)
+            : (viewer === 'A' ? viewerA.isMoleculeAlignedVisible : viewerB.isMoleculeAlignedVisible);
+        const isHighlighted = alignedTo ? residueHighlightOnAlignedTo : residueHighlightOnAligned;
+        const setIsHighlighted = alignedTo ? setResidueHighlightOnAlignedTo : setResidueHighlightOnAligned;
+        const isInspecting = alignedTo
+            ? (viewer === 'A' ? residueInspectOnAAlignedTo : residueInspectOnBAlignedTo)
+            : (viewer === 'A' ? residueInspectOnAAligned : residueInspectOnBAligned);
+        const setIsInspecting = alignedTo
+            ? (viewer === 'A' ? setResidueInspectOnAAlignedTo : setResidueInspectOnBAlignedTo)
+            : (viewer === 'A' ? setResidueInspectOnAAligned : setResidueInspectOnBAligned);
+
+        return chains.map((chainId, index) => {
+            const info = infos[index] ?? { residueLabels: new Map(), residueToAtomIds: {} };
+            const ids = extraSelection(selections, chainId, infos[index]);
+            const insCodes = Object.fromEntries(ids.map(id => [id, info.residueLabels.get(id)?.insCode]));
+            const shared = [...info.residueLabels.keys()].filter(id => otherInfos[index]?.residueLabels.has(id));
+            const highlight = makeResidueHighlightToggleHandler({
+                pluginRef, structureRef, chainId, residueIds: ids, residueInsCodes: insCodes,
+                isHighlighted, setIsHighlighted, sync: syncEnabled, syncPluginRef: otherPluginRef,
+                syncStructureRef: otherStructureRef, syncChainId: chainId, syncResidueIds: ids,
+                syncResidueInsCodes: insCodes,
+            });
+            const native = makeNativeResidueControls(dataset, chainId, ids,
+                next => updateExtraResidues(setSelections, chainId, next), info.residueLabels, highlight.handleButtonClick);
+            const zoom = makeZoomHandler({
+                pluginRef, structureRef, property: 'residue-test', chainId, residueId: ids[0] ?? '',
+                residueIds: ids, residueInsCodes: insCodes, insCode: info.residueLabels.get(ids[0])?.insCode,
+                sync: syncEnabled, syncPluginRef: otherPluginRef, syncStructureRef: otherStructureRef,
+                syncChainId: chainId, syncResidueId: ids[0] ?? '', syncResidueIds: ids,
+                syncResidueInsCodes: insCodes, syncInsCode: info.residueLabels.get(ids[0])?.insCode,
+                zoomExtraRadius: viewer === 'A' ? zoomExtraRadiusA : zoomExtraRadiusB,
+                zoomMinRadius: viewer === 'A' ? zoomMinRadiusA : zoomMinRadiusB,
+                onAfterZoom: () => syncClippingFromMolstarAfterZoom(viewer === 'A' ? A : B, syncEnabled),
+            });
+            const inspect = makeResidueInspectToggleHandler({
+                pluginRef, structureRef, chainId, residueIds: ids, residueInsCodes: insCodes,
+                isInspecting, setIsInspecting, sync: true, syncPluginRef: otherPluginRef,
+                syncStructureRef: otherStructureRef, syncChainId: chainId, syncResidueIds: ids,
+                syncResidueInsCodes: insCodes,
+                shouldSync: () => alignedTo
+                    ? (viewer === 'A' ? inspectSyncVisibilityRef.current.viewerBAlignedToVisible : inspectSyncVisibilityRef.current.viewerAAlignedToVisible)
+                    : (viewer === 'A' ? inspectSyncVisibilityRef.current.viewerBAlignedVisible : inspectSyncVisibilityRef.current.viewerAAlignedVisible),
+            });
+            return {
+                residueInfo: info, selectedResidueIds: ids, onSelectResidueIds: native.select,
+                commonResidueIds: shared, onZoom: zoom.handleButtonClick,
+                onHighlight: native.toggle, highlightOn: visible && native.on,
+                onInspect: () => {
+                    const key = `${viewer}${dataset}` as const;
+                    if (isInspecting) delete extraInspectTarget.current[key];
+                    else extraInspectTarget.current[key] = chainId;
+                    inspect.handleButtonClick();
+                },
+                inspectOn: visible && isInspecting, visible,
+            };
+        });
+    };
+
     const makeCombinedToggleHandler = (
         primary: { handleButtonClick: () => void },
         secondary: { handleButtonClick: () => void },
@@ -5825,6 +5984,20 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 displaySettings: selectionDisplayByMode.Aligned,
             },
         ];
+        for (const [modeKey, chains, infos, selections, subunitChainIds, structureRef, residueOn] of [
+            ['AlignedTo', selectedChainIdsAlignedToExtra, extraResidueInfoAlignedTo, extraResiduesAlignedTo, selectedSubunitChainIdsAlignedTo, structureRefAAlignedTo, residueHighlightOnAlignedTo],
+            ['Aligned', selectedChainIdsAlignedExtra, extraResidueInfoAligned, extraResiduesAligned, selectedSubunitChainIdsAligned, structureRefAAligned, residueHighlightOnAligned],
+        ] as const) {
+            chains.forEach((chainId, index) => {
+                const ids = extraSelection(selections, chainId, infos[index]);
+                datasetConfigs.push({
+                    structureRef, modeKey, colorMode: colorModeByMode[modeKey], chainId, residueIds: ids,
+                    residueInsCodes: Object.fromEntries(ids.map(id => [id, infos[index]?.residueLabels.get(id)?.insCode])),
+                    subunitChainIds, chainOn: false, residueOn, subunitOn: false,
+                    displaySettings: selectionDisplayByMode[modeKey],
+                });
+            });
+        }
 
         const pluginA = viewerA.ref.current;
         const pluginB = viewerB.ref.current;
@@ -5861,6 +6034,12 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         selectedResidueIdsAligned,
         selectedResidueIdsAligned2,
         selectedResidueIdsAligned3,
+        selectedChainIdsAlignedToExtra,
+        selectedChainIdsAlignedExtra,
+        extraResiduesAlignedTo,
+        extraResiduesAligned,
+        extraResidueInfoAlignedTo,
+        extraResidueInfoAligned,
         selectedResidueInsCodesAlignedTo,
         selectedResidueInsCodesAlignedTo2,
         selectedResidueInsCodesAlignedTo3,
@@ -5931,12 +6110,29 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             structureRef: string | null;
             isVisible: boolean;
             chainId: string;
+            residueChainId?: string;
             residueIds: string[];
             residueInsCodes?: Record<string, string | undefined>;
             subunitChainIds: string[];
             chainOn: boolean;
             residueOn: boolean;
             subunitOn: boolean;
+        };
+
+        const residueTarget = (viewer: 'A' | 'B', dataset: ColorThemeMode, active: boolean) => {
+            const key = `${viewer}${dataset}` as const;
+            if (!active) delete extraInspectTarget.current[key];
+            const chainId = extraInspectTarget.current[key];
+            const chains = dataset === 'AlignedTo' ? selectedChainIdsAlignedToExtra : selectedChainIdsAlignedExtra;
+            const infos = dataset === 'AlignedTo' ? extraResidueInfoAlignedTo : extraResidueInfoAligned;
+            const selections = dataset === 'AlignedTo' ? extraResiduesAlignedTo : extraResiduesAligned;
+            const index = chainId ? chains.indexOf(chainId) : -1;
+            if (!chainId || index < 0) return null;
+            const ids = extraSelection(selections, chainId, infos[index]);
+            return {
+                residueChainId: chainId, residueIds: ids,
+                residueInsCodes: Object.fromEntries(ids.map(id => [id, infos[index]?.residueLabels.get(id)?.insCode])),
+            };
         };
 
         const applyInspectForPlugin = (
@@ -5958,11 +6154,11 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     inspectLociOnChain(plugin, config.structureRef, config.chainId);
                 }
 
-                if (config.residueOn && config.chainId && config.residueIds.length > 0) {
+                if (config.residueOn && (config.residueChainId || config.chainId) && config.residueIds.length > 0) {
                     inspectLociOnResidues(
                         plugin,
                         config.structureRef,
-                        config.chainId,
+                        config.residueChainId || config.chainId,
                         config.residueIds,
                         config.residueInsCodes
                     );
@@ -5977,6 +6173,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 chainId: selectedChainIdAlignedTo,
                 residueIds: selectedResidueIdsAlignedTo,
                 residueInsCodes: selectedResidueInsCodesAlignedTo,
+                ...residueTarget('A', 'AlignedTo', residueInspectOnAAlignedTo),
                 subunitChainIds: selectedSubunitChainIdsAlignedTo,
                 chainOn: chainInspectOnAAlignedTo,
                 residueOn: residueInspectOnAAlignedTo,
@@ -5988,6 +6185,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 chainId: selectedChainIdAligned,
                 residueIds: selectedResidueIdsAligned,
                 residueInsCodes: selectedResidueInsCodesAligned,
+                ...residueTarget('A', 'Aligned', residueInspectOnAAligned),
                 subunitChainIds: selectedSubunitChainIdsAligned,
                 chainOn: chainInspectOnAAligned,
                 residueOn: residueInspectOnAAligned,
@@ -6002,6 +6200,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 chainId: selectedChainIdAlignedTo,
                 residueIds: selectedResidueIdsAlignedTo,
                 residueInsCodes: selectedResidueInsCodesAlignedTo,
+                ...residueTarget('B', 'AlignedTo', residueInspectOnBAlignedTo),
                 subunitChainIds: selectedSubunitChainIdsAlignedTo,
                 chainOn: chainInspectOnBAlignedTo,
                 residueOn: residueInspectOnBAlignedTo,
@@ -6013,6 +6212,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 chainId: selectedChainIdAligned,
                 residueIds: selectedResidueIdsAligned,
                 residueInsCodes: selectedResidueInsCodesAligned,
+                ...residueTarget('B', 'Aligned', residueInspectOnBAligned),
                 subunitChainIds: selectedSubunitChainIdsAligned,
                 chainOn: chainInspectOnBAligned,
                 residueOn: residueInspectOnBAligned,
@@ -6038,6 +6238,12 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         selectedResidueIdsAligned,
         selectedResidueInsCodesAlignedTo,
         selectedResidueInsCodesAligned,
+        selectedChainIdsAlignedToExtra,
+        selectedChainIdsAlignedExtra,
+        extraResiduesAlignedTo,
+        extraResiduesAligned,
+        extraResidueInfoAlignedTo,
+        extraResidueInfoAligned,
         selectedSubunitChainIdsAlignedTo,
         selectedSubunitChainIdsAligned,
         structureRefAAlignedTo,
@@ -7524,6 +7730,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     chainId2: selectedChainIdAlignedTo2,
                     chainId3: selectedChainIdAlignedTo3,
                     chainIdsExtra: selectedChainIdsAlignedToExtra,
+                    residueIdsExtra: selectedChainIdsAlignedToExtra.map((chainId, index) => ({
+                        chainId, residueIds: extraSelection(extraResiduesAlignedTo, chainId, extraResidueInfoAlignedTo[index]),
+                    })),
                     residueId: selectedResidueIdAlignedTo,
                     residueId2: selectedResidueIdAlignedTo2,
                     residueId3: selectedResidueIdAlignedTo3,
@@ -7537,6 +7746,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     chainId2: selectedChainIdAligned2,
                     chainId3: selectedChainIdAligned3,
                     chainIdsExtra: selectedChainIdsAlignedExtra,
+                    residueIdsExtra: selectedChainIdsAlignedExtra.map((chainId, index) => ({
+                        chainId, residueIds: extraSelection(extraResiduesAligned, chainId, extraResidueInfoAligned[index]),
+                    })),
                     residueId: selectedResidueIdAligned,
                     residueId2: selectedResidueIdAligned2,
                     residueId3: selectedResidueIdAligned3,
@@ -7565,11 +7777,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     alignedTo: {
                         chain: chainInspectOnAAlignedTo,
                         residue: residueInspectOnAAlignedTo,
+                        residueChainId: extraInspectTarget.current.AAlignedTo,
                         subunit: subunitInspectOnAAlignedTo,
                     },
                     aligned: {
                         chain: chainInspectOnAAligned,
                         residue: residueInspectOnAAligned,
+                        residueChainId: extraInspectTarget.current.AAligned,
                         subunit: subunitInspectOnAAligned,
                     },
                 },
@@ -7577,11 +7791,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     alignedTo: {
                         chain: chainInspectOnBAlignedTo,
                         residue: residueInspectOnBAlignedTo,
+                        residueChainId: extraInspectTarget.current.BAlignedTo,
                         subunit: subunitInspectOnBAlignedTo,
                     },
                     aligned: {
                         chain: chainInspectOnBAligned,
                         residue: residueInspectOnBAligned,
+                        residueChainId: extraInspectTarget.current.BAligned,
                         subunit: subunitInspectOnBAligned,
                     },
                 },
@@ -7726,6 +7942,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                         chainId2: selectedChainIdAlignedTo2,
                         chainId3: selectedChainIdAlignedTo3,
                         chainIdsExtra: selectedChainIdsAlignedToExtra,
+                        residueIdsExtra: selectedChainIdsAlignedToExtra.map((chainId, index) => ({
+                            chainId, residueIds: extraSelection(extraResiduesAlignedTo, chainId, extraResidueInfoAlignedTo[index]),
+                        })),
                         residueId: selectedResidueIdAlignedTo,
                         residueId2: selectedResidueIdAlignedTo2,
                         residueId3: selectedResidueIdAlignedTo3,
@@ -7739,6 +7958,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                         chainId2: selectedChainIdAligned2,
                         chainId3: selectedChainIdAligned3,
                         chainIdsExtra: selectedChainIdsAlignedExtra,
+                        residueIdsExtra: selectedChainIdsAlignedExtra.map((chainId, index) => ({
+                            chainId, residueIds: extraSelection(extraResiduesAligned, chainId, extraResidueInfoAligned[index]),
+                        })),
                         residueId: selectedResidueIdAligned,
                         residueId2: selectedResidueIdAligned2,
                         residueId3: selectedResidueIdAligned3,
@@ -7767,11 +7989,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                         alignedTo: {
                             chain: chainInspectOnAAlignedTo,
                             residue: residueInspectOnAAlignedTo,
+                            residueChainId: extraInspectTarget.current.AAlignedTo,
                             subunit: subunitInspectOnAAlignedTo,
                         },
                         aligned: {
                             chain: chainInspectOnAAligned,
                             residue: residueInspectOnAAligned,
+                            residueChainId: extraInspectTarget.current.AAligned,
                             subunit: subunitInspectOnAAligned,
                         },
                     },
@@ -7779,11 +8003,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                         alignedTo: {
                             chain: chainInspectOnBAlignedTo,
                             residue: residueInspectOnBAlignedTo,
+                            residueChainId: extraInspectTarget.current.BAlignedTo,
                             subunit: subunitInspectOnBAlignedTo,
                         },
                         aligned: {
                             chain: chainInspectOnBAligned,
                             residue: residueInspectOnBAligned,
+                            residueChainId: extraInspectTarget.current.BAligned,
                             subunit: subunitInspectOnBAligned,
                         },
                     },
@@ -8066,6 +8292,24 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             if (clippingUiB && Number.isFinite(clippingUiB.minNear) && Number.isFinite(clippingUiB.clipRadius)) {
                 setClippingB({ minNear: clippingUiB.minNear, clipRadius: clippingUiB.clipRadius });
             }
+            const restoreExtraResidues = (selection: NonNullable<SessionUiState['selections']>['alignedTo']) => {
+                if (selection?.residueIdsExtra === undefined) return new Map<string, string[]>();
+                if (!Array.isArray(selection.residueIdsExtra) || !Array.isArray(selection.chainIdsExtra)) {
+                    throw new Error('Invalid additional-chain residue selections in session.');
+                }
+                const result = new Map<string, string[]>();
+                for (const entry of selection.residueIdsExtra) {
+                    if (!entry || typeof entry.chainId !== 'string' || !selection.chainIdsExtra.includes(entry.chainId)
+                        || result.has(entry.chainId) || !Array.isArray(entry.residueIds)
+                        || !entry.residueIds.every(id => typeof id === 'string')) {
+                        throw new Error('Invalid additional-chain residue selections in session.');
+                    }
+                    result.set(entry.chainId, entry.residueIds);
+                }
+                return result;
+            };
+            setExtraResiduesAlignedTo(restoreExtraResidues(uiState?.selections?.alignedTo));
+            setExtraResiduesAligned(restoreExtraResidues(uiState?.selections?.aligned));
             if (uiState?.selections?.alignedTo) {
                 if (typeof uiState.selections.alignedTo.subunit === 'string') setSelectedSubunitAlignedTo(uiState.selections.alignedTo.subunit as any);
                 if (typeof uiState.selections.alignedTo.chainId === 'string') setSelectedChainIdAlignedTo(uiState.selections.alignedTo.chainId);
@@ -8142,6 +8386,17 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 }
                 if (typeof uiState.highlights.aligned.subunit === 'boolean') {
                     setSubunitHighlightOnAligned(uiState.highlights.aligned.subunit);
+                }
+            }
+            extraInspectTarget.current = {};
+            for (const [key, target, chains] of [
+                ['AAlignedTo', uiState?.inspectByViewer?.viewerA?.alignedTo?.residueChainId, uiState?.selections?.alignedTo?.chainIdsExtra],
+                ['AAligned', uiState?.inspectByViewer?.viewerA?.aligned?.residueChainId, uiState?.selections?.aligned?.chainIdsExtra],
+                ['BAlignedTo', uiState?.inspectByViewer?.viewerB?.alignedTo?.residueChainId, uiState?.selections?.alignedTo?.chainIdsExtra],
+                ['BAligned', uiState?.inspectByViewer?.viewerB?.aligned?.residueChainId, uiState?.selections?.aligned?.chainIdsExtra],
+            ] as const) {
+                if (typeof target === 'string' && Array.isArray(chains) && chains.includes(target)) {
+                    extraInspectTarget.current[key] = target;
                 }
             }
             if (uiState?.inspectByViewer?.viewerA?.alignedTo) {
@@ -8776,6 +9031,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     clearSelectedChainId3: handleClearChainIdAlignedTo3,
                                     additionalSelectedChainIds: selectedChainIdsAlignedToExtra,
                                     setAdditionalSelectedChainIds: handleAdditionalChainIdsAlignedToChange,
+                                    additionalResidueControls: makeAdditionalResidueControls('AlignedTo', 'A'),
                                     chainZoomLabel: selectedChainIdAlignedTo && chainInfoAlignedTo.chainLabels.has(selectedChainIdAlignedTo)
                                         ? chainInfoAlignedTo.chainLabels.get(selectedChainIdAlignedTo) ?? ''
                                         : '',
@@ -8962,6 +9218,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     clearSelectedChainId3: handleClearChainIdAligned3,
                                     additionalSelectedChainIds: selectedChainIdsAlignedExtra,
                                     setAdditionalSelectedChainIds: handleAdditionalChainIdsAlignedChange,
+                                    additionalResidueControls: makeAdditionalResidueControls('Aligned', 'A'),
                                     chainZoomLabel: selectedChainIdAligned && chainInfoAligned.chainLabels.has(selectedChainIdAligned)
                                         ? chainInfoAligned.chainLabels.get(selectedChainIdAligned) ?? ''
                                         : '',
@@ -9254,6 +9511,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     clearSelectedChainId3: handleClearChainIdAlignedTo3,
                                     additionalSelectedChainIds: selectedChainIdsAlignedToExtra,
                                     setAdditionalSelectedChainIds: handleAdditionalChainIdsAlignedToChange,
+                                    additionalResidueControls: makeAdditionalResidueControls('AlignedTo', 'B'),
                                     chainZoomLabel: selectedChainIdAlignedTo && chainInfoAlignedTo.chainLabels.has(selectedChainIdAlignedTo)
                                         ? chainInfoAlignedTo.chainLabels.get(selectedChainIdAlignedTo) ?? ''
                                         : '',
@@ -9440,6 +9698,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     clearSelectedChainId3: handleClearChainIdAligned3,
                                     additionalSelectedChainIds: selectedChainIdsAlignedExtra,
                                     setAdditionalSelectedChainIds: handleAdditionalChainIdsAlignedChange,
+                                    additionalResidueControls: makeAdditionalResidueControls('Aligned', 'B'),
                                     chainZoomLabel: selectedChainIdAligned && chainInfoAligned.chainLabels.has(selectedChainIdAligned)
                                         ? chainInfoAligned.chainLabels.get(selectedChainIdAligned) ?? ''
                                         : '',
