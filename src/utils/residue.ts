@@ -6,8 +6,8 @@ import { resolveChainIndices } from './chain';
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.1.0
- * @lastModified 2026-11-23
+ * @version 1.2.0
+ * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
 
@@ -15,11 +15,23 @@ import { resolveChainIndices } from './chain';
  * Information about a residue for labeling purposes.
  */
 export interface ResidueLabelInfo {
-    id: string; // residue id (auth_seq_id as string)
+    id: string; // author residue number, optionally followed by :insertion-code
     name: string; // e.g., 'LEU 70 [auth 70]'
     compId: string; // e.g., 'LEU'
     seqNumber: number; // e.g., 70
     insCode: string; // insertion code, if any
+}
+
+export function residueSelectionId(authSeqId: string | number, insertionCode: string): string {
+    const code = insertionCode === '.' || insertionCode === '?' ? '' : insertionCode;
+    return code ? `${authSeqId}:${code}` : String(authSeqId);
+}
+
+export function parseResidueSelectionId(id: string): { authSeqId: string; insertionCode?: string } {
+    const separator = id.indexOf(':');
+    return separator < 0
+        ? { authSeqId: id }
+        : { authSeqId: id.slice(0, separator), insertionCode: id.slice(separator + 1) };
 }
 
 const RNA_ONE_LETTER_CODES = new Set(['A', 'C', 'G', 'U', 'I', 'T', 'N']);
@@ -130,10 +142,6 @@ export function getResidueInfo(
                 residueId = residues.auth_seq_id.value[resIdx]?.toString();
             }
             if (!residueId) continue;
-            // Atom ID (use atomIdx as string)
-            if (!residueToAtomIds[residueId]) residueToAtomIds[residueId] = [];
-            residueToAtomIds[residueId].push(atomIdx.toString());
-            //console.log('[getResidueInfo] Atom', atomIdx, 'added to residue', residueId);
             // Build enhanced residue label info
             let label_comp_id = '';
             let label_seq_id = '';
@@ -177,6 +185,10 @@ export function getResidueInfo(
             } else if (residues && residues.pdbx_PDB_ins_code && Array.isArray(residues.pdbx_PDB_ins_code.value)) {
                 insCode = residues.pdbx_PDB_ins_code.value[resIdx] || '';
             }
+            if (insCode === '.' || insCode === '?') insCode = '';
+            residueId = residueSelectionId(residueId, insCode);
+            if (!residueToAtomIds[residueId]) residueToAtomIds[residueId] = [];
+            residueToAtomIds[residueId].push(atomIdx.toString());
 
             // Atom-level fallback: residue table can be missing comp_id while atom table still has it.
             atom_label_comp_id = readColumnValue(atoms?.label_comp_id, atomIdx) || readColumnValue(atoms?.label_comp_id, i);

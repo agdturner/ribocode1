@@ -6,7 +6,7 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT. See LICENSE file for more info.
  *
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.4.0
+ * @version 1.5.0
  * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
@@ -58,6 +58,7 @@ import { Mat4, Vec3 } from 'molstar/lib/mol-math/linear-algebra';
 import { StructureElement, StructureProperties, Unit } from 'molstar/lib/mol-model/structure';
 import { OrderedSet, SortedArray } from 'molstar/lib/mol-data/int';
 import { normalizeChainIdentifier, resolveChainIndices } from './utils/chain';
+import { residueSelectionId } from './utils/residue';
 import type { LoadedMolecule, ViewerKey, MoleculeMode } from './types/ribocode';
 import { A, B } from './constants/ribocode';
 import { makeFogSetters, makeClippingSetters, makeZoomHandler, makeChainHighlightToggleHandler, makeResidueHighlightToggleHandler, makeSubunitHighlightToggleHandler, makeChainInspectToggleHandler, makeResidueInspectToggleHandler, makeSubunitInspectToggleHandler } from './utils/viewerHelpers';
@@ -4176,7 +4177,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                             continue;
                         }
                         if (!chains.has(chainId)) chains.set(chainId, { ids: new Set(), elements: [] });
-                        chains.get(chainId)?.ids.add(String(authSeqId));
+                        chains.get(chainId)?.ids.add(residueSelectionId(authSeqId, StructureProperties.residue.pdbx_PDB_ins_code(location)));
                         if (!byChain.has(chainId)) byChain.set(chainId, []);
                     }
                     if (chainId) byChain.get(chainId)?.push(index);
@@ -4250,7 +4251,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     const residueIds = slot.residueIds.filter(id => !removedIds.has(id));
                     const highlightedIds = highlight.residueIds.filter(id => !removedIds.has(id));
                     const source = highlight.viewer === 'A' ? viewerA.ref.current : viewerB.ref.current;
-                    const removedLoci = source && getResiduesLoci(source, highlight.structureRef, slot.chainId, [...removedIds]);
+                    const removedLoci = source && getResiduesLoci(source, highlight.structureRef, slot.chainId, [...removedIds],
+                        Object.fromEntries([...removedIds].map(id => [id, ''])));
                     const remainingLoci = removedLoci
                         ? lociApi.subtract(highlight.loci, lociApi.remap(removedLoci, highlight.loci.structure))
                         : highlight.loci;
@@ -4341,7 +4343,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     if (highlight.dataset !== dataset) continue;
                     const loci = highlight.viewer === viewer
                         ? (highlight.structureRef === structureRef ? highlight.loci : null)
-                        : getResiduesLoci(plugin, structureRef, highlight.chainId, highlight.residueIds);
+                        : getResiduesLoci(plugin, structureRef, highlight.chainId, highlight.residueIds,
+                            Object.fromEntries(highlight.residueIds.map(id => [id, ''])));
                     if (!loci) continue;
                     desired = desired ? lociApi.union(desired, lociApi.remap(loci, desired.structure)) : loci;
                 }

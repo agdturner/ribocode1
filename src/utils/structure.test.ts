@@ -4,7 +4,7 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.1.0
+ * @version 1.2.0
  * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
@@ -14,6 +14,7 @@ import { CIF } from 'molstar/lib/mol-io/reader/cif';
 import { trajectoryFromMmCIF } from 'molstar/lib/mol-model-formats/structure/mmcif';
 import { Structure, StructureElement } from 'molstar/lib/mol-model/structure';
 import { OrderedSet } from 'molstar/lib/mol-data/int';
+import { getResidueInfo } from './residue';
 import { getStructureRepresentations, focusLociOnChain, focusLociOnResidue, getChainLoci, getResidueLoci, getResiduesLoci, getSubunitLoci, highlightLociOnChain, highlightLociOnResidues, restoreResidueLoci, serializeResidueLoci } from './structure';
 
 // Static mock for a valid Loci object
@@ -105,6 +106,18 @@ ${rows.join('\n')}
         expect(atomIndices(getResidueLoci(plugin, 'ref', 'Z', '1', 'C'))).toEqual([]);
         expect(atomIndices(getResiduesLoci(plugin, 'ref', 'Z', ['01', '1'], { '01': 'B', '1': 'C' }))).toEqual([4]);
         expect(atomIndices(getResiduesLoci(plugin, 'ref', 'Z', ['01', '1'], { '01': 'B' }))).toEqual([3, 4]);
+        expect(atomIndices(getResiduesLoci(plugin, 'ref', 'Z', ['1'], { '1': '' }))).toEqual([3]);
+        expect(atomIndices(getResiduesLoci(plugin, 'ref', 'Z', ['1:B']))).toEqual([4]);
+        expect(atomIndices(getResiduesLoci(plugin, 'ref', 'Z', ['1', '1:B'], { '1': '' }))).toEqual([3, 4]);
+    });
+
+    it('keeps residue labels and atoms separate for shared author numbers', () => {
+        const structure = getChainLoci(plugin, 'ref', 'Z')?.structure;
+        if (!structure) throw new Error('Expected a structure');
+        const info = getResidueInfo(structure, 'Z');
+        expect([...info.residueLabels.keys()]).toEqual(['1', '1:B']);
+        expect(info.residueToAtomIds['1']).toEqual(['3']);
+        expect(info.residueToAtomIds['1:B']).toEqual(['4']);
     });
 
     it('round-trips exact loci without expanding insertion codes and rejects incompatible data', () => {
