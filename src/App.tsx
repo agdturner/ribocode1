@@ -36,7 +36,7 @@ import { inferColorThemeKind, parseColorFileContent, registerThemeIfNeeded } fro
 import { useFileInput } from './hooks/useFileInput';
 import { useChainState } from './hooks/useChainState';
 import { getAtomDataFromStructureUnits, summarizeAtomCloud } from './utils/data';
-import { applyStructureDimOverlay, clearRibocodeHalo, clearStructureHighlightOverpaint, excludeRibocodeHalo, getChainLoci, getResiduesLoci, getStructureRepresentations, highlightLociOnChain, highlightLociOnResidues, highlightLociOnSubunit, inspectLociOnChain, inspectLociOnResidues, inspectLociOnSubunit, isApplyingRibocodeSelection, withRibocodeSelection, type HighlightDisplayMode } from './utils/structure';
+import { applyStructureDimOverlay, clearRibocodeHalo, clearStructureHighlightOverpaint, excludeRibocodeHalo, getChainLoci, getResiduesLoci, getStructureRepresentations, highlightLociOnChain, highlightLociOnResidues, highlightLociOnSubunit, inspectLociOnChain, inspectLociOnResidues, inspectLociOnSubunit, isApplyingRibocodeSelection, restoreResidueLoci, serializeResidueLoci, withRibocodeSelection, type HighlightDisplayMode, type SerializableResidueLoci } from './utils/structure';
 import { parseDictionaryFileContent } from './utils/dictionary';
 import { useResidueState } from './hooks/useResidueState';
 import { useSubunitState } from './hooks/useSubunitState';
@@ -186,6 +186,13 @@ interface SessionUiState {
             subunit?: boolean;
         };
     };
+    nativeResidueHighlights?: Array<{
+        dataset: ColorThemeMode;
+        viewer: 'A' | 'B';
+        chainId: string;
+        residueIds: string[];
+        loci: SerializableResidueLoci;
+    }>;
     inspectByViewer?: {
         viewerA?: {
             alignedTo?: {
@@ -7547,6 +7554,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     subunit: subunitHighlightOnAligned,
                 },
             },
+            nativeResidueHighlights: [...nativeResidueHighlights.values()].map(({ dataset, viewer, chainId, residueIds, loci }) => ({
+                dataset, viewer, chainId, residueIds, loci: serializeResidueLoci(loci),
+            })),
             inspectByViewer: {
                 viewerA: {
                     alignedTo: {
@@ -7746,6 +7756,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                         subunit: subunitHighlightOnAligned,
                     },
                 },
+                nativeResidueHighlights: [...nativeResidueHighlights.values()].map(({ dataset, viewer, chainId, residueIds, loci }) => ({
+                    dataset, viewer, chainId, residueIds, loci: serializeResidueLoci(loci),
+                })),
                 inspectByViewer: {
                     viewerA: {
                         alignedTo: {
@@ -8245,6 +8258,38 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 restoredRefsB.aligned,
                 uiState?.structureTransformsByViewer?.viewerB?.aligned
             );
+
+            const restoredNativeHighlights = new Map<string, NativeResidueHighlight>();
+            if (Array.isArray(uiState?.nativeResidueHighlights)) {
+                for (const saved of uiState.nativeResidueHighlights) {
+                    if (!saved || (saved.dataset !== 'AlignedTo' && saved.dataset !== 'Aligned')
+                        || (saved.viewer !== 'A' && saved.viewer !== 'B')
+                        || typeof saved.chainId !== 'string' || !saved.chainId
+                        || !Array.isArray(saved.residueIds) || !saved.residueIds.length
+                        || !saved.residueIds.every(id => typeof id === 'string' && id.length > 0)) {
+                        console.warn('[Session] Invalid native residue highlight:', saved);
+                        continue;
+                    }
+                    const plugin = saved.viewer === 'A' ? viewerA.ref.current : viewerB.ref.current;
+                    const refs = saved.viewer === 'A' ? restoredRefsA : restoredRefsB;
+                    const structureRef = saved.dataset === 'AlignedTo' ? refs.alignedTo : refs.aligned;
+                    const loci = plugin && structureRef
+                        ? restoreResidueLoci(plugin, structureRef, saved.loci)
+                        : null;
+                    if (!plugin || !structureRef || !loci || StructureElement.Loci.isEmpty(loci)) {
+                        console.warn('[Session] Could not restore native residue highlight:', saved);
+                        continue;
+                    }
+                    withRibocodeSelection(plugin, () => {
+                        plugin.managers.interactivity.lociSelects.select({ loci }, false);
+                    });
+                    restoredNativeHighlights.set(nativeHighlightKey(saved.dataset, saved.chainId), {
+                        dataset: saved.dataset, viewer: saved.viewer, chainId: saved.chainId,
+                        residueIds: saved.residueIds, structureRef, loci,
+                    });
+                }
+            }
+            setNativeResidueHighlights(restoredNativeHighlights);
 
             // Restore per-viewer camera snapshots with sync propagation suspended so
             // one viewer snapshot cannot overwrite the other while state settles.
