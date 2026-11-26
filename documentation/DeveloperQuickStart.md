@@ -4,7 +4,11 @@ You will need [Git](https://git-scm.com/) to clone the repository and [Node](htt
 
 Node 26 may require the operating system's `libatomic` runtime on Linux; if
 Node reports that `libatomic.so.1` is missing, install the appropriate runtime
-package for your distribution before retrying.
+package for your distribution before retrying, along the lines of:
+```sh
+sudo apt update
+sudo apt install libatomic1
+```
 
 Fork [Ribocode](https://github.com/ribocode-slola/ribocode1).
 
