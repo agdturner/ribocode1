@@ -38,6 +38,7 @@ Welcome to the Ribocode Developer Guide!
     - [System Dependencies for Playwright (Linux)](#system-dependencies-for-playwright-linux)
     - [Installing Playwright](#installing-playwright)
     - [Running E2E Tests](#running-e2e-tests)
+    - [Troubleshooting Parallel E2E Failures](#troubleshooting-parallel-e2e-failures)
     - [Using Real Datasets in E2E Tests](#using-real-datasets-in-e2e-tests)
     - [E2E Test Best Practices](#e2e-test-best-practices)
       - [Session Round-Trip Regression Patterns](#session-round-trip-regression-patterns)
@@ -807,6 +808,28 @@ run against the intended server.
 - `npm run test:e2e:reuse` sets `PW_E2E_REUSE_SERVER=1` and reuses an existing dev server on `5173`.
 - `npm run test:e2e:webgl` sets `PW_E2E_FORCE_WEBGL=1` and runs WebGL-gated specs in single-worker mode with WebGL launch flags.
 - `npm run test:e2e:webgl:reuse` combines `PW_E2E_FORCE_WEBGL=1` with `PW_E2E_REUSE_SERVER=1`.
+
+#### Troubleshooting Parallel E2E Failures
+
+Normal local runs can use multiple workers; CI and forced-WebGL runs default to
+one worker. If a normal parallel run fails or times out, stop other test runs and
+rerun with one worker:
+
+```sh
+npm run test:e2e -- --workers=1
+```
+
+This keeps the normal browser settings while changing the worker count. For
+forced-WebGL checks, use `npm run test:e2e:webgl`, which defaults to one worker
+and uses different browser launch flags. A serial pass can indicate concurrency
+or resource sensitivity, but does not prove the cause: investigate repeatable
+failures, including possible application or test races.
+
+Workers in one Playwright run share its dev server; they do not each start a
+server on port `5173`. In strict mode, an occupied port prevents startup.
+To avoid conflicts, run independent suites one at a time, or give each its own
+server port and output directory. When changing ports, configure both `baseURL`
+and `webServer` together. Reuse mode can instead connect to an existing server.
 
 #### Expected skipped tests in normal (`test:e2e`) runs
 
