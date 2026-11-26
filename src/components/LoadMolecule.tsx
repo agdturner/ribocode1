@@ -9,7 +9,7 @@ export const repTypeSelectIdSuffix = 'representation-type';
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.1.0
+ * @version 1.2.0
  * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
@@ -415,6 +415,7 @@ interface LoadDataRowProps {
     onSelectChainId3?: (id: string) => void;
     additionalSelectedChainIds?: string[];
     onAdditionalSelectedChainIdsChange?: (ids: string[]) => void;
+    onMoveChainSelection?: (index: number, direction: -1 | 1) => void;
     additionalResidueControls?: AdditionalResidueControls[];
     chainSelectDisabled: boolean;
     chainZoomLabel: string;
@@ -567,6 +568,7 @@ interface LoadDataRowProps {
         onSelectChainId3?: (id: string) => void;
         additionalSelectedChainIds?: string[];
         onAdditionalSelectedChainIdsChange?: (ids: string[]) => void;
+        onMoveChainSelection?: (index: number, direction: -1 | 1) => void;
         additionalResidueControls?: AdditionalResidueControls[];
         onClearChainId2?: () => void;
         onClearChainId3?: () => void;
@@ -712,6 +714,7 @@ interface LoadDataRowProps {
         onClearChainId3 = () => {},
         additionalSelectedChainIds = EMPTY_CHAIN_SELECTIONS,
         onAdditionalSelectedChainIdsChange,
+        onMoveChainSelection,
         additionalResidueControls = [],
         chainSelectDisabled,
         chainZoomLabel,
@@ -845,6 +848,28 @@ interface LoadDataRowProps {
         const selectedChainSequence = React.useMemo(
             () => [selectedChainId, selectedChainId2, selectedChainId3, ...additionalSelectedChainIds].map(id => id ?? ''),
             [selectedChainId, selectedChainId2, selectedChainId3, additionalSelectedChainIds]
+        );
+        const renderMoveButtons = (index: number) => (
+            <>
+                {([-1, 1] as const).map(direction => {
+                    const action = direction === -1 ? 'up' : 'down';
+                    const target = index + direction;
+                    return (
+                        <button
+                            key={action}
+                            type="button"
+                            className="msp-btn msp-form-control"
+                            id={`${idPrefix}-move-chain${index + 1}-${action}-btn`}
+                            aria-label={`Move Select ${index + 1} ${action}`}
+                            title={`Move Select ${index + 1} ${action}`}
+                            disabled={!onMoveChainSelection || !selectedChainSequence[index] || !selectedChainSequence[target]}
+                            onClick={() => onMoveChainSelection?.(index, direction)}
+                        >
+                            {direction === -1 ? 'Up' : 'Down'}
+                        </button>
+                    );
+                })}
+            </>
         );
         const additionalSlotCount = Math.max(0, effectiveChainLabels.size - 3);
         const additionalSlotVisibility = React.useMemo(() => {
@@ -1437,8 +1462,9 @@ interface LoadDataRowProps {
                                 </span>
                             </div>
                         )}
-                        <div className="load-data-control-row" id={`${idPrefix}-selected-chain-label`} style={{ marginLeft: 12 }}>
+                        <div className="load-data-control-row" id={`${idPrefix}-selected-chain-label`} style={{ marginLeft: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span>Selected 1: {selectedChainLabel}</span>
+                            {renderMoveButtons(0)}
                         </div>
                         <div className="load-data-control-row" style={{ marginLeft: 12 }}>
                             <button
@@ -1546,6 +1572,7 @@ interface LoadDataRowProps {
                             <>
                                 <div className="load-data-control-row" id={`${idPrefix}-selected-chain2-label`} style={{ marginLeft: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <span>Selected 2: {selectedChain2Label}</span>
+                                    {renderMoveButtons(1)}
                                     <button
                                         type="button"
                                         className="msp-btn msp-form-control"
@@ -1667,6 +1694,7 @@ interface LoadDataRowProps {
                             <>
                                 <div className="load-data-control-row" id={`${idPrefix}-selected-chain3-label`} style={{ marginLeft: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <span>Selected 3: {selectedChain3Label}</span>
+                                    {renderMoveButtons(2)}
                                     <button
                                         type="button"
                                         className="msp-btn msp-form-control"
@@ -1814,6 +1842,7 @@ interface LoadDataRowProps {
                                 <React.Fragment key={`additional-select-slot-${slotNumber}`}>
                                     <div className="load-data-control-row" id={`${idPrefix}-selected-chain${slotNumber}-label`} style={{ marginLeft: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <span>{`Selected ${slotNumber}: ${selectedLabel}`}</span>
+                                        {renderMoveButtons(slotNumber - 1)}
                                         <button
                                             type="button"
                                             className="msp-btn msp-form-control"
@@ -2015,6 +2044,7 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
     onSelectChainId3,
     additionalSelectedChainIds,
     onAdditionalSelectedChainIdsChange,
+    onMoveChainSelection,
     additionalResidueControls,
     chainSelectDisabled,
     chainZoomLabel,
@@ -2547,6 +2577,7 @@ const LoadDataRow: React.FC<LoadDataRowProps> = ({
                         onSelectChainId3={onSelectChainId3}
                         additionalSelectedChainIds={additionalSelectedChainIds}
                         onAdditionalSelectedChainIdsChange={onAdditionalSelectedChainIdsChange}
+                        onMoveChainSelection={onMoveChainSelection}
                         additionalResidueControls={additionalResidueControls}
                         chainSelectDisabled={chainSelectDisabled}
                         chainZoomLabel={chainZoomLabel}

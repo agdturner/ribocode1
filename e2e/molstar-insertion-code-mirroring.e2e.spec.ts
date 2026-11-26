@@ -3,10 +3,11 @@
  *
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT.
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.2.0
+ * @version 1.3.0
  * @lastModified 2026-11-26
  */
 import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 import { nativeClippingLaunchOptions } from './helpers/native-clipping';
 
 const cif = `data_insertions
@@ -100,12 +101,21 @@ test('additional slot preserves distinct insertion codes and Mol* markers', asyn
   const inspect = left.locator(`#${prefix}-inspect-residue4-btn`);
   await inspect.click();
   await expect(inspect).toHaveAttribute('aria-pressed', 'true');
+  await left.locator(`#${prefix}-move-chain4-up-btn`).click();
+  await expect(left.locator(`#${prefix}-selected-chain3-label`)).toContainText('A');
+  const movedSelect = left.locator(`#${prefix}-residue3-select`);
+  if (!await movedSelect.isVisible()) await left.locator(`#${prefix}-residue3-controls-toggle-btn`).click();
+  await expect(movedSelect.locator('option:checked')).toHaveText(['GLY 1 [auth 194]', 'SER 3B [auth 194]']);
+  await expect(sequence.locator('[data-seqid="0"]').filter({ hasText: 'G' })).toHaveClass(/msp-sequence-residue-selected/);
+  await expect(sequence.locator('[data-seqid="2"]').filter({ hasText: 'S' })).toHaveClass(/msp-sequence-residue-selected/);
 
   await page.click('#session-menu-btn');
   const download = page.waitForEvent('download');
   await page.locator('#session-menu-dropdown .session-menu-item:text-is("Save All")').click();
   const sessionPath = await (await download).path();
   expect(sessionPath).toBeTruthy();
+  const saved = JSON.parse(await readFile(sessionPath!, 'utf8'));
+  expect(saved.uiState.inspectByViewer.viewerA.alignedTo.residueChainId).toBe('A');
   await page.reload();
   await page.locator('#session-menu-file-input-all').setInputFiles(sessionPath!);
   await expect(left.getByRole('button', { name: /Hide insertions/i })).toBeVisible({ timeout: 90000 });
@@ -115,11 +125,18 @@ test('additional slot preserves distinct insertion codes and Mol* markers', asyn
   await left.locator(`#${prefix}-residue-controls-toggle-btn`).click();
   await expect(firstSlotSelect.locator('option')).toHaveCount(1);
   await expect(firstSlotSelect.locator('option:checked')).toHaveCount(0);
-  await expect(left.locator(`#${prefix}-selected-chain4-label`)).toContainText('A');
-  await left.locator(`#${prefix}-select-chain4-controls-toggle-btn`).click();
-  await left.locator(`#${prefix}-residue4-controls-toggle-btn`).click();
-  await expect(select.locator('option:checked')).toHaveText(['GLY 1 [auth 194]', 'SER 3B [auth 194]']);
-  await expect(inspect).toHaveAttribute('aria-pressed', 'true');
+  await expect(left.locator(`#${prefix}-selected-chain3-label`)).toContainText('A');
+  await left.locator(`#${prefix}-select-chain3-controls-toggle-btn`).click();
+  await left.locator(`#${prefix}-residue3-controls-toggle-btn`).click();
+  await expect(movedSelect.locator('option:checked')).toHaveText(['GLY 1 [auth 194]', 'SER 3B [auth 194]']);
+  await expect(left.locator(`#${prefix}-inspect-residue3-btn`)).toHaveAttribute('aria-pressed', 'true');
+  await page.click('#session-menu-btn');
+  const restoredDownload = page.waitForEvent('download');
+  await page.locator('#session-menu-dropdown .session-menu-item:text-is("Save All")').click();
+  const restoredPath = await (await restoredDownload).path();
+  expect(restoredPath).toBeTruthy();
+  const restored = JSON.parse(await readFile(restoredPath!, 'utf8'));
+  expect(restored.uiState.inspectByViewer.viewerA.alignedTo.residueChainId).toBe('A');
 
   await page.click('#session-menu-btn');
   const saveDownload = page.waitForEvent('download');
@@ -140,9 +157,9 @@ test('additional slot preserves distinct insertion codes and Mol* markers', asyn
   await left.locator(`#${prefix}-residue-controls-toggle-btn`).click();
   await expect(firstSlotSelect.locator('option')).toHaveCount(1);
   await expect(firstSlotSelect.locator('option:checked')).toHaveCount(0);
-  await left.locator(`#${prefix}-select-chain4-controls-toggle-btn`).click();
-  await left.locator(`#${prefix}-residue4-controls-toggle-btn`).click();
-  await expect(select.locator('option:checked')).toHaveText(['GLY 1 [auth 194]', 'SER 3B [auth 194]']);
+  await left.locator(`#${prefix}-select-chain3-controls-toggle-btn`).click();
+  await left.locator(`#${prefix}-residue3-controls-toggle-btn`).click();
+  await expect(movedSelect.locator('option:checked')).toHaveText(['GLY 1 [auth 194]', 'SER 3B [auth 194]']);
 });
 
 test('mirrors distinct insertion codes and restores them across a session', async ({ page }) => {

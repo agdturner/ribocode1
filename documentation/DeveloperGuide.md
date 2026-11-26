@@ -641,6 +641,10 @@ All slots use ordered, per-dataset chain/residue selection state. An uninitializ
 residue selection is distinct from an explicitly empty one, so newly selected
 chains can default to all residues without changing an empty session selection.
 The session serialization format remains unchanged.
+Adjacent chain reordering swaps complete selection entries within one dataset;
+it does not use replacement handlers or cascade-clear subsequent slots. Native
+residue highlights and inspect targets follow their chain IDs, while alignment
+and shared-residue comparisons continue to use their existing slot positions.
 
 ### Round-Trip Guarantees
 
