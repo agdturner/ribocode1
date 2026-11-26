@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT.
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
+ * @version 1.1.0
  * @lastModified 2026-11-26
  */
 import { useCallback, useMemo, useState } from 'react';
@@ -34,6 +34,16 @@ export function useChainSelections() {
       if (equalIds(current[index].residueIds, residueIds)) return current;
       const next = current.slice();
       next[index] = { ...current[index], residueIds };
+      return next;
+    });
+  }, []);
+
+  const move = useCallback((index: number, direction: -1 | 1) => {
+    setSlots(current => {
+      const target = index + direction;
+      if (!Number.isInteger(index) || !current[index]?.chainId || !current[target]?.chainId) return current;
+      const next = current.slice();
+      [next[index], next[target]] = [next[target], next[index]];
       return next;
     });
   }, []);
@@ -78,5 +88,5 @@ export function useChainSelections() {
   const additionalResidues = useMemo(() => new Map(slots.slice(3).flatMap(slot =>
     slot.residueIds === null ? [] : [[slot.chainId, slot.residueIds] as const])), [slots]);
 
-  return { slots, setChain, setResidues, fixedSetters, setAdditionalChains, additionalChains, additionalResidues, setAdditionalResidues };
+  return { slots, setChain, setResidues, move, fixedSetters, setAdditionalChains, additionalChains, additionalResidues, setAdditionalResidues };
 }

@@ -3,6 +3,7 @@ A chronological version based list of changes.
 
 ## [Unreleased]
 
+- Add Up/Down controls for reordering selected chains while retaining their residue selections, native highlights and session order.
 - Unify selected-chain and residue state across all slots, and preserve an explicitly empty residue selection in session round trips for Select 1–3.
 - Add independent residue controls for every selected chain, including Select 4 and later, with Mol* selection synchronization and session persistence. See [ribocode-slola/ribocode1#183](https://github.com/ribocode-slola/ribocode1/issues/183).
 - Distinguish residues with the same author number but different insertion codes in residue controls and mirrored Mol* highlights, including session save/load round trips.

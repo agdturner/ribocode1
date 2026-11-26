@@ -6,7 +6,7 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT. See LICENSE file for more info.
  *
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.7.0
+ * @version 1.8.0
  * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
@@ -5567,6 +5567,18 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     });
 
     const extraInspectTarget = useRef<Partial<Record<'AAlignedTo' | 'AAligned' | 'BAlignedTo' | 'BAligned', string>>>({});
+    const moveChainSelection = (dataset: ColorThemeMode, index: number, direction: -1 | 1) => {
+        const alignedTo = dataset === 'AlignedTo';
+        const selections = alignedTo ? alignedToSelections : alignedSelections;
+        const primaryChain = selections.slots[0].chainId;
+        const targets = alignedTo
+            ? ([['AAlignedTo', residueInspectOnAAlignedTo], ['BAlignedTo', residueInspectOnBAlignedTo]] as const)
+            : ([['AAligned', residueInspectOnAAligned], ['BAligned', residueInspectOnBAligned]] as const);
+        for (const [key, active] of targets) {
+            if (active && !extraInspectTarget.current[key] && primaryChain) extraInspectTarget.current[key] = primaryChain;
+        }
+        selections.move(index, direction);
+    };
     const makeAdditionalResidueControls = (dataset: ColorThemeMode, viewer: 'A' | 'B'): AdditionalResidueControls[] => {
         const alignedTo = dataset === 'AlignedTo';
         const chains = alignedTo ? selectedChainIdsAlignedToExtra : selectedChainIdsAlignedExtra;
@@ -6099,12 +6111,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             const key = `${viewer}${dataset}` as const;
             if (!active) delete extraInspectTarget.current[key];
             const chainId = extraInspectTarget.current[key];
-            const chains = dataset === 'AlignedTo' ? selectedChainIdsAlignedToExtra : selectedChainIdsAlignedExtra;
-            const infos = dataset === 'AlignedTo' ? extraResidueInfoAlignedTo : extraResidueInfoAligned;
-            const selections = dataset === 'AlignedTo' ? extraResiduesAlignedTo : extraResiduesAligned;
-            const index = chainId ? chains.indexOf(chainId) : -1;
+            const slots = dataset === 'AlignedTo' ? alignedToSelections.slots : alignedSelections.slots;
+            const infos = dataset === 'AlignedTo'
+                ? [residueInfoAlignedTo, residueInfoAlignedTo2, residueInfoAlignedTo3, ...extraResidueInfoAlignedTo]
+                : [residueInfoAligned, residueInfoAligned2, residueInfoAligned3, ...extraResidueInfoAligned];
+            const index = chainId ? slots.findIndex(slot => slot.chainId === chainId) : -1;
             if (!chainId || index < 0) return null;
-            const ids = extraSelection(selections, chainId, infos[index]);
+            const ids = slots[index].residueIds ?? (infos[index] ? [...infos[index]!.residueLabels.keys()] : []);
             return {
                 residueChainId: chainId, residueIds: ids,
                 residueInsCodes: Object.fromEntries(ids.map(id => [id, infos[index]?.residueLabels.get(id)?.insCode])),
@@ -6214,6 +6227,14 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         selectedResidueIdsAligned,
         selectedResidueInsCodesAlignedTo,
         selectedResidueInsCodesAligned,
+        alignedToSelections.slots,
+        alignedSelections.slots,
+        residueInfoAlignedTo,
+        residueInfoAlignedTo2,
+        residueInfoAlignedTo3,
+        residueInfoAligned,
+        residueInfoAligned2,
+        residueInfoAligned3,
         selectedChainIdsAlignedToExtra,
         selectedChainIdsAlignedExtra,
         extraResiduesAlignedTo,
@@ -8367,13 +8388,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 }
             }
             extraInspectTarget.current = {};
-            for (const [key, target, chains] of [
-                ['AAlignedTo', uiState?.inspectByViewer?.viewerA?.alignedTo?.residueChainId, uiState?.selections?.alignedTo?.chainIdsExtra],
-                ['AAligned', uiState?.inspectByViewer?.viewerA?.aligned?.residueChainId, uiState?.selections?.aligned?.chainIdsExtra],
-                ['BAlignedTo', uiState?.inspectByViewer?.viewerB?.alignedTo?.residueChainId, uiState?.selections?.alignedTo?.chainIdsExtra],
-                ['BAligned', uiState?.inspectByViewer?.viewerB?.aligned?.residueChainId, uiState?.selections?.aligned?.chainIdsExtra],
+            for (const [key, target, selection] of [
+                ['AAlignedTo', uiState?.inspectByViewer?.viewerA?.alignedTo?.residueChainId, uiState?.selections?.alignedTo],
+                ['AAligned', uiState?.inspectByViewer?.viewerA?.aligned?.residueChainId, uiState?.selections?.aligned],
+                ['BAlignedTo', uiState?.inspectByViewer?.viewerB?.alignedTo?.residueChainId, uiState?.selections?.alignedTo],
+                ['BAligned', uiState?.inspectByViewer?.viewerB?.aligned?.residueChainId, uiState?.selections?.aligned],
             ] as const) {
-                if (typeof target === 'string' && Array.isArray(chains) && chains.includes(target)) {
+                if (typeof target === 'string' && [selection?.chainId, selection?.chainId2, selection?.chainId3, ...(selection?.chainIdsExtra ?? [])].includes(target)) {
                     extraInspectTarget.current[key] = target;
                 }
             }
@@ -9009,6 +9030,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     clearSelectedChainId3: handleClearChainIdAlignedTo3,
                                     additionalSelectedChainIds: selectedChainIdsAlignedToExtra,
                                     setAdditionalSelectedChainIds: handleAdditionalChainIdsAlignedToChange,
+                                    onMoveChainSelection: (index: number, direction: -1 | 1) => moveChainSelection('AlignedTo', index, direction),
                                     additionalResidueControls: makeAdditionalResidueControls('AlignedTo', 'A'),
                                     chainZoomLabel: selectedChainIdAlignedTo && chainInfoAlignedTo.chainLabels.has(selectedChainIdAlignedTo)
                                         ? chainInfoAlignedTo.chainLabels.get(selectedChainIdAlignedTo) ?? ''
@@ -9196,6 +9218,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     clearSelectedChainId3: handleClearChainIdAligned3,
                                     additionalSelectedChainIds: selectedChainIdsAlignedExtra,
                                     setAdditionalSelectedChainIds: handleAdditionalChainIdsAlignedChange,
+                                    onMoveChainSelection: (index: number, direction: -1 | 1) => moveChainSelection('Aligned', index, direction),
                                     additionalResidueControls: makeAdditionalResidueControls('Aligned', 'A'),
                                     chainZoomLabel: selectedChainIdAligned && chainInfoAligned.chainLabels.has(selectedChainIdAligned)
                                         ? chainInfoAligned.chainLabels.get(selectedChainIdAligned) ?? ''
@@ -9489,6 +9512,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     clearSelectedChainId3: handleClearChainIdAlignedTo3,
                                     additionalSelectedChainIds: selectedChainIdsAlignedToExtra,
                                     setAdditionalSelectedChainIds: handleAdditionalChainIdsAlignedToChange,
+                                    onMoveChainSelection: (index: number, direction: -1 | 1) => moveChainSelection('AlignedTo', index, direction),
                                     additionalResidueControls: makeAdditionalResidueControls('AlignedTo', 'B'),
                                     chainZoomLabel: selectedChainIdAlignedTo && chainInfoAlignedTo.chainLabels.has(selectedChainIdAlignedTo)
                                         ? chainInfoAlignedTo.chainLabels.get(selectedChainIdAlignedTo) ?? ''
@@ -9676,6 +9700,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                                     clearSelectedChainId3: handleClearChainIdAligned3,
                                     additionalSelectedChainIds: selectedChainIdsAlignedExtra,
                                     setAdditionalSelectedChainIds: handleAdditionalChainIdsAlignedChange,
+                                    onMoveChainSelection: (index: number, direction: -1 | 1) => moveChainSelection('Aligned', index, direction),
                                     additionalResidueControls: makeAdditionalResidueControls('Aligned', 'B'),
                                     chainZoomLabel: selectedChainIdAligned && chainInfoAligned.chainLabels.has(selectedChainIdAligned)
                                         ? chainInfoAligned.chainLabels.get(selectedChainIdAligned) ?? ''

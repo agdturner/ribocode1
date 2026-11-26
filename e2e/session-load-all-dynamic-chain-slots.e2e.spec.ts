@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.2.0
+ * @version 1.3.0
  * @lastModified 2026-11-26
  */
 import { test, expect, type Page } from '@playwright/test';
@@ -229,6 +229,82 @@ test('Save All/Load All restores dynamic chain and residue selections in both co
         options.map(option => (option as HTMLOptionElement).value)), { timeout: 30000 })
         .toEqual(selectedResidues.get(`${viewer}-${slot}`));
     }
+  }
+});
+
+test('reorders selections independently across all slots and preserves them in a session', async ({ page }) => {
+  test.setTimeout(240000);
+  await page.goto('/');
+  await loadAlignedToAndAligned(page);
+  const datasets = [['A', 'alignedto'], ['B', 'aligned']] as const;
+  const expected = new Map<string, Array<{ chain: string; residues: string[] }>>();
+  for (const [viewer, mode] of datasets) {
+    const prefix = `viewer-column-${viewer}-${mode}`;
+    await ensureSelectZoomControlsOpen(page, viewer);
+    await ensureChainControlsOpen(page, viewer);
+    const selections: Array<{ chain: string; residues: string[] }> = [];
+    for (let slot = 1; slot <= 5; slot++) {
+      const suffix = slot === 1 ? '' : String(slot);
+      const rowPrefix = slot === 1 ? `viewer-column-${viewer}-chain-table-row-` : `${prefix}-chain${slot}-chain-table-row-`;
+      await ensureSectionOpen(page, `#${prefix}-select-chain${suffix}-controls-toggle-btn`, `[data-testid^="${rowPrefix}"]`);
+      const chain = await selectFirstRowAndGetChainId(page, rowPrefix);
+      const residueToggle = page.locator(`#${prefix}-residue${suffix}-controls-toggle-btn`);
+      const select = page.locator(`#${prefix}-residue${suffix}-select`);
+      if (!await select.isVisible()) await residueToggle.click();
+      await expect.poll(() => select.locator('option').count(), { timeout: 30000 }).toBeGreaterThan(0);
+      const residues = slot === 3 ? [] : await select.locator('option').evaluateAll(options =>
+        options.slice(0, 1).map(option => (option as HTMLOptionElement).value));
+      await select.selectOption(residues);
+      selections.push({ chain, residues });
+    }
+    expected.set(viewer, selections);
+  }
+  const assertSelections = async (viewer: 'A' | 'B', mode: 'alignedto' | 'aligned') => {
+    const prefix = `viewer-column-${viewer}-${mode}`;
+    const selections = expected.get(viewer)!;
+    for (const [index, item] of selections.entries()) {
+      const slot = index + 1;
+      const suffix = slot === 1 ? '' : String(slot);
+      await expect(page.locator(`#${prefix}-selected-chain${suffix}-label`)).toContainText(item.chain, { timeout: 30000 });
+      const toggle = page.locator(`#${prefix}-residue${suffix}-controls-toggle-btn`);
+      if (!await toggle.isVisible()) await page.locator(`#${prefix}-select-chain${suffix}-controls-toggle-btn`).click();
+      const select = page.locator(`#${prefix}-residue${suffix}-select`);
+      if (!await select.isVisible()) await toggle.click();
+      await expect.poll(() => select.locator('option:checked').evaluateAll(options =>
+        options.map(option => (option as HTMLOptionElement).value)), { timeout: 30000 }).toEqual(item.residues);
+    }
+  };
+  for (const [viewer, mode] of datasets) {
+    const prefix = `viewer-column-${viewer}-${mode}`;
+    const selections = expected.get(viewer)!;
+    for (const [slot, direction] of [[1, 'down'], [4, 'up'], [5, 'up']] as const) {
+      await page.locator(`#${prefix}-move-chain${slot}-${direction}-btn`).click();
+      const index = slot - 1;
+      const target = index + (direction === 'up' ? -1 : 1);
+      [selections[index], selections[target]] = [selections[target], selections[index]];
+      await assertSelections(viewer, mode);
+    }
+    if (viewer === 'A') await assertSelections('B', 'aligned');
+  }
+  const leftSelect = page.locator('#viewer-column-A-alignedto-residue3-select');
+  const rightSelect = page.locator('#viewer-column-B-aligned-residue3-select');
+  const leftIds = await leftSelect.locator('option').evaluateAll(options => options.map(option => (option as HTMLOptionElement).value));
+  const rightIds = new Set(await rightSelect.locator('option').evaluateAll(options => options.map(option => (option as HTMLOptionElement).value)));
+  const common = leftIds.filter(id => rightIds.has(id));
+  if (common.length > 0) {
+    await page.locator('#viewer-column-A-alignedto-residue3-select-common-btn').click();
+    await expect.poll(() => leftSelect.locator('option:checked').evaluateAll(options =>
+      options.map(option => (option as HTMLOptionElement).value))).toEqual(common);
+    await leftSelect.selectOption(expected.get('A')![2].residues);
+  } else {
+    await expect(page.locator('#viewer-column-A-alignedto-residue3-select-common-btn')).toBeDisabled();
+  }
+  const session = await saveAllAndDownloadSession(page);
+  await loadAllFromSessionFile(page, session);
+  for (const [viewer, mode] of datasets) {
+    await ensureSelectZoomControlsOpen(page, viewer);
+    await ensureChainControlsOpen(page, viewer);
+    await assertSelections(viewer, mode);
   }
 });
 

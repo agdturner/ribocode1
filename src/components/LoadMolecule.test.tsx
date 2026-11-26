@@ -4,7 +4,7 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.1.0
+ * @version 1.2.0
  * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
@@ -989,6 +989,30 @@ describe('LoadDataRow', () => {
         fireEvent.click(document.getElementById('test-viewer-a-select-chain4-controls-toggle-btn') as HTMLButtonElement);
         fireEvent.click(document.querySelector('[data-testid="test-viewer-a-chain4-chain-table-row-D"]') as HTMLTableRowElement);
         expect(onAdditionalSelectedChainIdsChange).toHaveBeenCalledWith(['D']);
+    });
+
+    it('moves occupied slots and disables moves at their boundaries', () => {
+        const onMoveChainSelection = vi.fn();
+        render(
+            <LoadDataRow
+                {...baseProps}
+                isLoaded={true}
+                selectedChainId="A"
+                selectedChainId2="B"
+                selectedChainId3="C"
+                additionalSelectedChainIds={['D', 'E']}
+                chainInfo={{ chainLabels: new Map([['A', 'A'], ['B', 'B'], ['C', 'C'], ['D', 'D'], ['E', 'E'], ['F', 'F']]) }}
+                onMoveChainSelection={onMoveChainSelection}
+            />
+        );
+        fireEvent.click(screen.getByText('Show Chain Controls'));
+        expect(screen.getByRole('button', { name: 'Move Select 1 up' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Move Select 5 down' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Move Select 6 up' })).toBeDisabled();
+        fireEvent.click(screen.getByRole('button', { name: 'Move Select 1 down' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Move Select 4 up' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Move Select 5 up' }));
+        expect(onMoveChainSelection.mock.calls).toEqual([[0, 1], [3, -1], [4, -1]]);
     });
 
     it.each([

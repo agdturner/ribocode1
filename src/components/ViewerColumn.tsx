@@ -4,7 +4,7 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.1.0
+ * @version 1.2.0
  * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
@@ -107,6 +107,7 @@ export interface LoadDataRowPropsInput {
 	clearSelectedChainId3?: () => void;
 	additionalSelectedChainIds?: string[];
 	setAdditionalSelectedChainIds?: (ids: string[]) => void;
+	onMoveChainSelection?: (index: number, direction: -1 | 1) => void;
 	additionalResidueControls?: AdditionalResidueControls[];
 	chainZoomLabel: string;
 	chainZoomLabel2?: string;
@@ -300,6 +301,7 @@ export function getLoadDataRowProps({
 	clearSelectedChainId3,
 	additionalSelectedChainIds,
 	setAdditionalSelectedChainIds,
+	onMoveChainSelection,
 	additionalResidueControls,
 	chainZoomLabel,
 	chainZoomLabel2,
@@ -607,6 +609,7 @@ export function getLoadDataRowProps({
 		onClearChainId3: clearSelectedChainId3,
 		additionalSelectedChainIds,
 		onAdditionalSelectedChainIdsChange: setAdditionalSelectedChainIds,
+		onMoveChainSelection,
 		additionalResidueControls,
 		chainZoomLabel,
 		chainZoomLabel2,
@@ -1287,6 +1290,7 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 						   onClearChainId3={activeLoadProps.onClearChainId3}
 						   additionalSelectedChainIds={activeLoadProps.additionalSelectedChainIds}
 						   onAdditionalSelectedChainIdsChange={activeLoadProps.onAdditionalSelectedChainIdsChange}
+						   onMoveChainSelection={activeLoadProps.onMoveChainSelection}
 						   additionalResidueControls={activeLoadProps.additionalResidueControls}
 						   chainSelectDisabled={activeLoadProps.chainSelectDisabled}
 						   chainZoomLabel={activeLoadProps.chainZoomLabel}

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT.
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
+ * @version 1.1.0
  * @lastModified 2026-11-26
  */
 import { act, renderHook } from '@testing-library/react';
@@ -70,5 +70,44 @@ describe('useChainSelections', () => {
       result.current.setChain(0, 'B');
     });
     expect(result.current.slots[0]).toEqual({ chainId: 'B', residueIds: null });
+  });
+
+  it('moves complete selections across fixed and additional slots without affecting another dataset', () => {
+    const { result } = renderHook(() => [useChainSelections(), useChainSelections()] as const);
+    act(() => {
+      for (const [index, chain] of ['A', 'B', 'C'].entries()) result.current[0].setChain(index, chain);
+      result.current[0].setAdditionalChains(['D', 'E']);
+      result.current[0].setResidues(0, ['194:A']);
+      result.current[0].setResidues(1, []);
+      result.current[0].setResidues(2, ['3']);
+      result.current[0].setResidues(3, ['194:B']);
+      result.current[0].setResidues(4, []);
+      result.current[1].setChain(0, 'X');
+    });
+    act(() => {
+      result.current[0].move(0, 1);
+      result.current[0].move(3, -1);
+      result.current[0].move(4, -1);
+    });
+    expect(result.current[0].slots).toEqual([
+      { chainId: 'B', residueIds: [] },
+      { chainId: 'A', residueIds: ['194:A'] },
+      { chainId: 'D', residueIds: ['194:B'] },
+      { chainId: 'E', residueIds: [] },
+      { chainId: 'C', residueIds: ['3'] },
+    ]);
+    expect(result.current[1].slots[0].chainId).toBe('X');
+  });
+
+  it('does not move into an empty or out-of-range slot', () => {
+    const { result } = renderHook(() => useChainSelections());
+    act(() => result.current.setChain(0, 'A'));
+    const before = result.current.slots;
+    act(() => {
+      result.current.move(0, -1);
+      result.current.move(0, 1);
+      result.current.move(4, -1);
+    });
+    expect(result.current.slots).toBe(before);
   });
 });
