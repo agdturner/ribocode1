@@ -6,8 +6,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT. See LICENSE file for more info.
  *
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.3.0
- * @lastModified 2026-11-24
+ * @version 1.4.0
+ * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -63,7 +63,7 @@ import { A, B } from './constants/ribocode';
 import { makeFogSetters, makeClippingSetters, makeZoomHandler, makeChainHighlightToggleHandler, makeResidueHighlightToggleHandler, makeSubunitHighlightToggleHandler, makeChainInspectToggleHandler, makeResidueInspectToggleHandler, makeSubunitInspectToggleHandler } from './utils/viewerHelpers';
 import { selectedAtomTypes } from './constants/ribocode';
 import { parseRpNameTableBySpecies } from './utils/rpNameTable';
-import { extractUniProtAccessionsFromText, fetchUniProtGeneNamesBatched, parseChainToMoleculeNameFromCifText, parseChainToUniProtFromCifText, UniProtGeneNameCache } from './utils/uniprot';
+import { fetchUniProtGeneNamesBatched, parseChainToMoleculeNameFromCifText, parseChainToUniProtFromCifText, UniProtGeneNameCache } from './utils/uniprot';
 import rpNameTableCsv from '../data/input/RP_name_table_uniprot.csv?raw';
 
 /**
@@ -1234,7 +1234,6 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
 
         try {
             const text = await file.text();
-            const accessions = extractUniProtAccessionsFromText(text);
             const chainToUniProt = parseChainToUniProtFromCifText(text);
             const chainToMoleculeName = parseChainToMoleculeNameFromCifText(text);
 
@@ -1258,14 +1257,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                 console.info(`[UniProt] Parsed ${chainToMoleculeName.size} chain->molecule mapping(s) from ${file.name}.`);
             }
 
-            if (accessions.size > 0) {
-                console.info(`[UniProt] File scan discovered ${accessions.size} accession(s) from ${file.name}.`);
-                onUniprotAccessionsDiscovered(accessions);
-            } else {
-                console.info(`[UniProt] File scan found no UniProt-style accessions in ${file.name}.`);
-            }
+            onUniprotAccessionsDiscovered(chainToUniProt.values());
         } catch (err) {
-            console.warn(`[UniProt] Failed to scan ${file.name} for accessions.`, err);
+            console.warn(`[UniProt] Failed to parse metadata from ${file.name}.`, err);
         }
     }, [onUniprotAccessionsDiscovered]);
 

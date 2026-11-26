@@ -4,7 +4,7 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.1.0
+ * @version 1.2.0
  * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
@@ -67,6 +67,25 @@ describe('parseChainToUniProtFromCifText', () => {
             '1 A P61247', '2 B P08865', '#',
         ].join('\n');
         expect([...parseChainToUniProtFromCifText(cif)]).toEqual([['B', 'P08865']]);
+    });
+
+    it('parses singleton references in the AlphaFold fixture', () => {
+        const cif = fs.readFileSync(path.resolve(__dirname, '../../data/input/AF-Q13895-F1-model_v6.cif'), 'utf8');
+        expect([...parseChainToUniProtFromCifText(cif)]).toEqual([['A', 'Q13895']]);
+    });
+
+    it('respects singleton database provenance and skips unrelated multiline text', () => {
+        const cif = [
+            'data_test', '_note.text', ';',
+            'loop_', '_struct_ref.id', '_struct_ref.db_name', '_struct_ref.pdbx_db_accession', '9 UNP Q9V3G1',
+            '_struct_ref.id 9', '_struct_ref.db_name UNP', '_struct_ref.pdbx_db_accession Q9V3G1', ';',
+            '_struct_ref.id', '1', '_struct_ref.db_name GB', '_struct_ref.pdbx_db_accession P61247',
+            '_struct_ref_seq.ref_id 1', '_struct_ref_seq.pdbx_strand_id A',
+            '_struct_ref_seq.pdbx_db_accession P61247',
+        ].join('\n');
+        expect(parseChainToUniProtFromCifText(cif).size).toBe(0);
+        expect([...parseChainToUniProtFromCifText(cif.replace('_struct_ref.db_name GB', '_struct_ref.db_name ?'))])
+            .toEqual([['A', 'P61247']]);
     });
 });
 
