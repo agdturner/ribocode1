@@ -1,0 +1,566 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>AlignmentTesting | ribocode1 - v0.25.0</title><meta name="description" content="Documentation for ribocode1"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">ribocode1 - v0.25.0</a>
+<div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="" aria-current="page">AlignmentTesting</a></li></ul></div>
+<div class="tsd-panel tsd-typography"><h1 id="alignment-testing-reference" class="tsd-anchor-link">Alignment Testing Reference<a href="#alignment-testing-reference" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<h2 id="alignment-regression-testing" class="tsd-anchor-link">Alignment regression testing<a href="#alignment-regression-testing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Alignment changes should be validated with both automated and manual checks before release.</p>
+<p>Reference decision record: <a href="decisions_ADR-0001-alignment-quality-gates.html">ADR-0001 Alignment Quality Gates</a>.</p>
+<h3 id="post-alignment-camera-and-clipping-checks" class="tsd-anchor-link">Post-alignment camera and clipping checks<a href="#post-alignment-camera-and-clipping-checks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>These checks validate viewer consistency, not the molecular fit. Camera parity should also be checked with <code>PW_E2E_FORCE_WEBGL=1</code>: the default
+browser mode did not consistently reproduce a clipping readback regression.
+Mol* exposes clipping radius as a rounded percentage. When reflecting camera events
+in the controls, do not write an unchanged percentage back through <code>setProps</code>:
+that round trip quantizes the exact camera radius and can undo realignment parity.
+Intentional clipping changes must still be applied.</p>
+<p>Run the focused camera/residue/clipping checks with software WebGL:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test:e2e:webgl</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-2">e2e/residue-realign.e2e.spec.ts</span><span class="hl-1"> </span><span class="hl-2">e2e/clipping-controls-live-sync.e2e.spec.ts</span><span class="hl-1"> </span><span class="hl-2">e2e/clipping-sync-after-molstar-reset-zoom.e2e.spec.ts</span><span class="hl-1"> </span><span class="hl-2">e2e/clipping-sync-after-molstar-wheel-zoom.e2e.spec.ts</span><span class="hl-1"> </span><span class="hl-2">e2e/sync-and-realign-camera.e2e.spec.ts</span>
+</code><button type="button">Copy</button></pre>
+
+<p>The full-ribosome residue and related live-clipping/repeat-alignment workflows have
+240-second budgets. Load readiness must wait for the Aligned visibility control's
+<code>Hide</code> accessible label, not merely visibility of its disabled <code>Show Aligned</code>
+placeholder. The camera check requires both snapshots and a maximum difference
+below <code>0.0001</code>; it polls for completion because fit metrics precede asynchronous
+structure transforms and camera restoration.</p>
+<h3 id="molecular-fit-and-benchmark-checks" class="tsd-anchor-link">Molecular fit and benchmark checks<a href="#molecular-fit-and-benchmark-checks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Recent findings from benchmark datasets:</p>
+<ul>
+<li>6XU6.cif -&gt; 6XU8.cif, chain CU -&gt; CU is currently stable with strong improvement.</li>
+<li>7WTT.cif -&gt; 7WTZ.cif contains distinct <code>E</code> and <code>e</code> chains. After correcting
+case-sensitive lookup, the <code>e</code> fit uses 20 pairs out of 55 moving C-alpha
+anchors and measured 0.354 Angstrom RMSD. This limited coverage does not
+establish general fit quality. Earlier 262-pair results used the wrong chain.</li>
+<li>The current fit already includes both rotation and translation, so adding a second translation pass is not expected to fix weak fits by itself.</li>
+<li>Multi-chain anchor fitting currently uses only the first selected chain pair;
+the metric's chain ID list alone does not establish that later pairs contributed.
+The e/E browser diagnostic records this limitation; it is not a quality gate
+for a combined fit.</li>
+<li>A robust outlier-trim re-fit experiment was evaluated and did not improve the 7WTT/7WTZ e-case.</li>
+</ul>
+<h3 id="offline-multi-chain-weighting-diagnostic" class="tsd-anchor-link">Offline multi-chain weighting diagnostic<a href="#offline-multi-chain-weighting-diagnostic" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Run the diagnostic separately to print its report:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-5">--run</span><span class="hl-1"> </span><span class="hl-5">--maxWorkers=1</span><span class="hl-1"> </span><span class="hl-5">--disableConsoleIntercept</span><span class="hl-1"> </span><span class="hl-2">src/utils/multiChainAlignmentDiagnostic.test.ts</span>
+</code><button type="button">Copy</button></pre>
+
+<p>This developer-only experiment fits one transform using either equal atom-pair
+weights or equal total weight per chain pair. It reports per-pair anchor counts,
+coverage, fit weight, and RMSD under the shared transform and each pair's own
+transform. Coverage uses the observed C-alpha anchor counts in each input, not
+the full biological sequence. The 7WTT/7WTZ diagnostic matches unique author
+residue number, insertion code and component; duplicate keys are excluded. It
+does not handle renumbered chains and is not the production pairing policy.
+Low coverage or a large shared-versus-individual difference warrants further
+investigation; neither establishes a cause or an automatic exclusion threshold.</p>
+<p>On the e/E fixture, the fit used 20 e and 262 E pairs. Per-atom weighting gave
+shared RMSDs of 0.494 and 0.326 Angstrom respectively; equal-chain weighting
+gave 0.415 and 0.353 Angstrom. Individual fits were 0.354 and 0.316 Angstrom.
+These particular pairs agree well; e has only 20/55 moving-anchor coverage.
+Synthetic conflicting pairs also check that the weighting changes the compromise.
+These measurements do not choose a production weighting policy.</p>
+<h3 id="developer-only-multi-chain-fit" class="tsd-anchor-link">Developer-only multi-chain fit<a href="#developer-only-multi-chain-fit" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Open the app with <code>?experimentalMultiChainAlignment=1</code> to enable the
+experimental Align Chains path; without the flag the existing behavior is
+unchanged. Select corresponding chains in the same slot on each side and press
+Align Chains. Every occupied fixed or dynamic slot must have a chain on both
+sides. A failed or ambiguous pair blocks the entire fit; it is not silently
+excluded.</p>
+<p>The experiment uses the first anchor type in <code>P</code>, <code>CA</code>, <code>C4'</code>, <code>C1'</code> order
+with at least ten unique matches for each chain pair. A match uses author
+residue number, insertion code and component; duplicate keys are excluded,
+and missing author numbers or components cannot match. Unknown insertion codes
+are treated as blank, following the offline diagnostic; the report warns about
+this assumption and counts affected pairs. These keys do not establish sequence
+correspondence and cannot handle renumbered chains reliably.
+If residue-key coverage is below 50% on either side, the affected report row
+warns, but the fit is still applied and no chain is excluded. Exactly 50%
+does not trigger this warning. The threshold is an experimental prompt to
+inspect the result, not a correctness guarantee; even a high-coverage match
+can be wrong.</p>
+<p>If no anchor type has ten key matches, the experiment tries a protein-only
+sequence fallback using observed C-alpha anchors ordered by <code>label_seq_id</code>.
+It rejects non-protein anchors, missing or duplicate sequence positions and
+alignments larger than 2,000,000 matrix cells. Mol* aligns the observed amino
+acid sequences using BLOSUM62; only identical known amino acids become pairs.
+It requires at least ten pairs, at least 50% identity among aligned positions
+and at least 50% matched-anchor coverage on each side. Forward and reversed
+sequence alignments must produce the same identical-residue pairs. These
+thresholds and the two-trace check are experimental safeguards, not proof of a
+unique or biologically correct alignment; missing residues, repeats and
+divergence remain sources of uncertainty. RNA does not have a sequence
+fallback. No ordered atom pairing is used.</p>
+<p>The shared fit gives each matched anchor pair equal weight. The persistent report
+shows the last applied fit's correspondence method, sequence identity when
+applicable, per-pair coverage, shared-fit RMSD and independent fit RMSD.
+Observed counts include finite anchors of the chosen type even if they
+cannot be matched. The report is not saved with sessions and may describe an
+earlier selection after the user changes chains. The experiment is not a
+production correspondence policy or a recommendation to deselect chains.</p>
+<h4 id="6xu66xu8-cu-and-cp-observation" class="tsd-anchor-link">6XU6/6xu8 CU and CP observation<a href="#6xu66xu8-cu-and-cp-observation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>A manual CU/CP selection and the automated fixture test both produce one shared
+fit with 240 pairs. CU uses 55 protein-sequence pairs (57.9% identity; 55/96
+reference and 55/99 moving anchors); its shared and individual RMSDs are 3.134
+and 2.850 Angstrom. CP uses 185 residue-key pairs (185/185 on both sides);
+its shared and individual RMSDs are 2.082 and 1.841 Angstrom.</p>
+<p>All 185 CP matches carry the unknown-insertion warning. In each input, the
+<code>_atom_site.pdbx_PDB_ins_code</code> value for every CP C-alpha anchor is <code>?</code>
+(unknown). For those same label-chain and sequence positions, the
+<code>_pdbx_poly_seq_scheme.pdb_ins_code</code> value is <code>.</code> (not present/not applicable)
+and the author sequence numbers agree. This supports the blank-code assumption
+for this example but does not make the atom-site values known or establish
+biological correspondence. The experiment continues to warn.</p>
+<p>Other tested pairs illustrate the limits of the safeguards: CO/CO has 205
+residue-key matches and 0.982 Angstrom individual RMSD; deliberately mismatched
+CP/CU is rejected because the forward and reverse sequence traces disagree.
+However, deliberately mismatched CP/CO <strong>is accepted</strong>: 14 incidental residue
+keys pass the minimum of ten, despite coverage of only 14/185 and 14/205 and
+an individual RMSD of 20.135 Angstrom. The report now warns about its low
+coverage but still applies the fit. Residue-key matches are not subject to
+the sequence fallback's identity and coverage thresholds. A successful fit is
+therefore not a correspondence-quality check; inspect the report and do not
+rely on a fit merely because it was accepted. This known limitation needs a
+separate policy decision before any production use.</p>
+<h4 id="curated-correspondence-safeguard-check" class="tsd-anchor-link">Curated correspondence safeguard check<a href="#curated-correspondence-safeguard-check" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>The offline <code>correspondenceSafeguardsDiagnostic.test.ts</code> exercises a small,
+hand-selected set of protein and RNA chain pairs from the two existing fixture
+pairs. &quot;Plausible&quot; means matching molecule descriptions, except CU where the
+descriptions are L22-like and L22; it is not independently established
+biological ground truth. &quot;Mismatch&quot; means deliberately selecting chains with
+different descriptions. This is not a representative sample or an estimate of
+error rates. RMSDs are individual fits in Angstrom; an independent Mol* RMSD
+minimizer verifies the reported values for the same selected anchor pairs, not
+the correctness of those correspondences.</p>
+<table>
+<thead>
+<tr>
+<th>Structures</th>
+<th>Reference / moving</th>
+<th>Classification</th>
+<th>Matches / observed reference, moving</th>
+<th>Low-coverage warning</th>
+<th style="text-align:right">Individual RMSD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6XU6 / 6xu8</td>
+<td>CP / CP</td>
+<td>Plausible L17</td>
+<td>185 / 185, 185</td>
+<td>No</td>
+<td style="text-align:right">1.841</td>
+</tr>
+<tr>
+<td>6XU6 / 6xu8</td>
+<td>CO / CO</td>
+<td>Plausible L13a</td>
+<td>205 / 205, 205</td>
+<td>No</td>
+<td style="text-align:right">0.982</td>
+</tr>
+<tr>
+<td>6XU6 / 6xu8</td>
+<td>CU / CU</td>
+<td>Plausible L22-like / L22, sequence</td>
+<td>55 / 96, 99</td>
+<td>Not applicable</td>
+<td style="text-align:right">2.850</td>
+</tr>
+<tr>
+<td>6XU6 / 6xu8</td>
+<td>A7 / A7</td>
+<td>Plausible 5S RNA</td>
+<td>119 / 119, 119</td>
+<td>No</td>
+<td style="text-align:right">1.364</td>
+</tr>
+<tr>
+<td>6XU6 / 6xu8</td>
+<td>A8 / A8</td>
+<td>Plausible 5.8S RNA</td>
+<td>122 / 122, 122</td>
+<td>No</td>
+<td style="text-align:right">1.203</td>
+</tr>
+<tr>
+<td>6XU6 / 6xu8</td>
+<td>A9 / A9</td>
+<td>Plausible 2S RNA</td>
+<td>29 / 29, 29</td>
+<td>No</td>
+<td style="text-align:right">0.830</td>
+</tr>
+<tr>
+<td>6XU6 / 6xu8</td>
+<td>B2 / B2</td>
+<td>Plausible 18S RNA</td>
+<td>1935 / 1935, 1935</td>
+<td>No</td>
+<td style="text-align:right">2.875</td>
+</tr>
+<tr>
+<td>6XU6 / 6xu8</td>
+<td>CP / CO</td>
+<td>Mismatch L17 / L13a</td>
+<td>14 / 185, 205</td>
+<td>Yes</td>
+<td style="text-align:right">20.135</td>
+</tr>
+<tr>
+<td>6XU6 / 6xu8</td>
+<td>A7 / A8</td>
+<td>Mismatch 5S / 5.8S RNA</td>
+<td>29 / 119, 122</td>
+<td>Yes</td>
+<td style="text-align:right">38.938</td>
+</tr>
+<tr>
+<td>6XU6 / 6xu8</td>
+<td>B2 / A5</td>
+<td>Mismatch 18S / 28S RNA</td>
+<td>478 / 1935, 3701</td>
+<td>Yes</td>
+<td style="text-align:right">85.342</td>
+</tr>
+<tr>
+<td>7WTT / 7WTZ</td>
+<td>e / e</td>
+<td>Plausible S30</td>
+<td>20 / 20, 55</td>
+<td>Yes</td>
+<td style="text-align:right">0.354</td>
+</tr>
+<tr>
+<td>7WTT / 7WTZ</td>
+<td>E / E</td>
+<td>Plausible S4</td>
+<td>262 / 262, 262</td>
+<td>No</td>
+<td style="text-align:right">0.316</td>
+</tr>
+<tr>
+<td>7WTT / 7WTZ</td>
+<td>T / T</td>
+<td>Plausible S19</td>
+<td>144 / 144, 144</td>
+<td>No</td>
+<td style="text-align:right">0.701</td>
+</tr>
+<tr>
+<td>7WTT / 7WTZ</td>
+<td>F / F</td>
+<td>Plausible S5</td>
+<td>189 / 189, 189</td>
+<td>No</td>
+<td style="text-align:right">0.821</td>
+</tr>
+<tr>
+<td>7WTT / 7WTZ</td>
+<td>2 / 2</td>
+<td>Plausible 18S RNA</td>
+<td>1566 / 1575, 1623</td>
+<td>No</td>
+<td style="text-align:right">10.840</td>
+</tr>
+<tr>
+<td>7WTT / 7WTZ</td>
+<td>T / F</td>
+<td>Mismatch S19 / S5</td>
+<td>11 / 144, 189</td>
+<td>Yes</td>
+<td style="text-align:right">14.975</td>
+</tr>
+</tbody>
+</table>
+<p>All table rows use residue keys except CU, which uses the protein sequence
+fallback. The three other selected mismatches were rejected: 6XU6/6xu8 CP/CU
+and 7WTT/7WTZ e/E because forward and reverse protein traces disagreed; and
+6XU6/6xu8 A8/A9 because too few residue keys matched and no qualifying protein
+fallback was available. This last result does not imply RNA sequence alignment
+was attempted.</p>
+<p>Thus, in this limited set, all four accepted mismatches received the low-coverage
+warning, but the plausible e/e pair did too. The 7WTT/7WTZ 18S pair shows that
+high key coverage can still produce a large RMSD without a low-coverage warning;
+the cause is not established, and the warning is not a general fit-quality
+test. The 50% warning remains advisory: these observations do not justify an
+automatic rejection or a new RMSD threshold without further evaluation.</p>
+<h4 id="7wtt7wtz-18s-correspondence-and-residuals" class="tsd-anchor-link">7WTT/7WTZ 18S correspondence and residuals<a href="#7wtt7wtz-18s-correspondence-and-residuals" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>The offline <code>rna18sAlignmentDiagnostic.test.ts</code> compares chain 2's P atoms
+using the experimental residue-key pairs and a separately computed sequence
+alignment. The latter aligns the observed P-bearing residues ordered by label
+sequence ID using Mol*'s default alignment scoring, and retains only identical
+known RNA codes. It is not an alignment of the full deposited sequence. The
+diagnostic rejects duplicate P sequence positions and residue keys; its
+coordinates are checked against the experimental matched anchors. Unknown
+insertion codes are treated as blank as in the experiment.</p>
+<table>
+<thead>
+<tr>
+<th>Measurement</th>
+<th style="text-align:right">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Observed P anchors, reference / moving</td>
+<td style="text-align:right">1575 / 1623</td>
+</tr>
+<tr>
+<td>Residue-key pairs and independent fit RMSD</td>
+<td style="text-align:right">1566; 10.840 Angstrom</td>
+</tr>
+<tr>
+<td>Sequence alignment: identical known pairs / aligned positions</td>
+<td style="text-align:right">1567 / 1568</td>
+</tr>
+<tr>
+<td>Sequence-pair independent fit RMSD</td>
+<td style="text-align:right">11.109 Angstrom</td>
+</tr>
+<tr>
+<td>Pair overlap, key / forward sequence</td>
+<td style="text-align:right">1558</td>
+</tr>
+<tr>
+<td>Pair overlap, forward / reverse sequence</td>
+<td style="text-align:right">1561 of 1567 each</td>
+</tr>
+</tbody>
+</table>
+<p>The reference has one P-bearing residue with unknown RNA code; the moving
+chain has none. The differing forward and reverse traces demonstrate ambiguity
+in this sequence calculation. Neither a sequence alignment nor matching
+molecule descriptions prove biological correspondence. The large overlap and
+similar fits indicate that the high RMSD is not simply explained by the choice
+between these two pairing methods; they do not establish its cause.</p>
+<p>Under the independent all-key-pair fit, median, 90th and 95th percentile
+residuals are 3.635, 7.109 and 12.864 Angstrom; the maximum is 102.029
+Angstrom. Of the 1566 pairs, 335 exceed 5 Angstrom, 111 exceed 10 Angstrom
+and 27 exceed 20 Angstrom. These distances are descriptive, not policy
+thresholds. Reference label positions 1301-1400 contain 78 matched anchors,
+with 44.133 Angstrom window RMSD and 82.6% of the total squared residual.
+Positions 1363-1377 are a consecutive run over 20 Angstrom, with the largest
+residual at label/author position 1365 in both structures. Unobserved residues
+are absent from these statistics.</p>
+<p>As an exploratory in-sample calculation, select the 90% of key pairs with the
+smallest residuals under the all-pair fit, then fit that subset once. Its
+training RMSD is 2.835 Angstrom from the fitted transform (2.837 as reported
+by the minimizer), but the RMSD of <em>all</em> original key pairs under
+that subset fit is 11.103 Angstrom. This illustrates concentration of error,
+not independent validation or a proposed exclusion rule. The independent Mol*
+minimizer's RMSDs and residuals recomputed from its transform agree within
+0.002 Angstrom (the minimizer uses a float32 matrix); it also agrees with the
+experiment's fit for the same key pairs. Further structural inspection of the
+high-deviation region is needed before attributing the result to conformation,
+modelling, or correspondence.</p>
+<h4 id="exploratory-local-fits" class="tsd-anchor-link">Exploratory local fits<a href="#exploratory-local-fits" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>The same diagnostic fits selected windows of reference label positions using
+the residue-key P pairs. Window boundaries were chosen for illustration, not
+by a systematic search: 1301-1400 was identified by its large global-fit
+residual, and 1363-1377 is the consecutive high-residual run within it. Other
+windows provide comparisons. Missing or unmatched positions are not included.
+The local RMSD is measured on the <em>same</em> pairs used to fit that window; the
+outside RMSD is measured on all remaining key pairs, not used in that local
+fit. Each row has a different outside set, so outside values are best compared
+with the global fit on the same row.</p>
+<table>
+<thead>
+<tr>
+<th>Reference label window</th>
+<th style="text-align:right">Pairs</th>
+<th style="text-align:right">Window RMSD: local / global fit (Å)</th>
+<th style="text-align:right">Outside RMSD: local / global fit (Å)</th>
+<th style="text-align:right">Relative rotation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>101-200</td>
+<td style="text-align:right">91</td>
+<td style="text-align:right">0.724 / 3.416</td>
+<td style="text-align:right">12.634 / 11.138</td>
+<td style="text-align:right">3.9°</td>
+</tr>
+<tr>
+<td>601-700</td>
+<td style="text-align:right">76</td>
+<td style="text-align:right">3.110 / 4.937</td>
+<td style="text-align:right">12.016 / 11.057</td>
+<td style="text-align:right">2.7°</td>
+</tr>
+<tr>
+<td>901-1000</td>
+<td style="text-align:right">100</td>
+<td style="text-align:right">0.903 / 4.359</td>
+<td style="text-align:right">12.954 / 11.146</td>
+<td style="text-align:right">4.3°</td>
+</tr>
+<tr>
+<td>1301-1400</td>
+<td style="text-align:right">78</td>
+<td style="text-align:right">23.031 / 44.133</td>
+<td style="text-align:right">131.303 / 4.645</td>
+<td style="text-align:right">82.2°</td>
+</tr>
+<tr>
+<td>1363-1377</td>
+<td style="text-align:right">15</td>
+<td style="text-align:right">1.452 / 86.457</td>
+<td style="text-align:right">186.807 / 6.809</td>
+<td style="text-align:right">152.2°</td>
+</tr>
+<tr>
+<td>1401-1500</td>
+<td style="text-align:right">59</td>
+<td style="text-align:right">2.722 / 13.539</td>
+<td style="text-align:right">33.752 / 10.721</td>
+<td style="text-align:right">25.8°</td>
+</tr>
+<tr>
+<td>1701-1800</td>
+<td style="text-align:right">89</td>
+<td style="text-align:right">2.188 / 4.392</td>
+<td style="text-align:right">12.577 / 11.110</td>
+<td style="text-align:right">3.8°</td>
+</tr>
+</tbody>
+</table>
+<p>Relative rotation is between each local transform and the all-key-pair
+transform, not a measured molecular hinge angle. At the centroid of all
+moving matched P anchors, the 1363-1377 local transform places that point
+153.352 Å from its global-fit position; this defined point avoids interpreting
+a raw translation vector that depends on the coordinate origin. The local
+fit's RMSD is independently checked against the experimental fitter. All 15
+core pairs are also present in both sequence traces, though that does not
+prove they are biologically correct.</p>
+<p>The 15-pair region can be aligned locally despite its large global-fit
+deviation, but doing so produces a very poor fit to the remaining chain.
+Conversely, the larger 1301-1400 window does not itself fit well as one rigid
+unit. This is compatible with local rearrangement, but neither a small local
+training RMSD nor this comparison alone proves flexibility, tangling,
+modelling error, or a particular biological mechanism. No automatic fit or
+rejection policy follows from these selected examples.</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-5">--run</span><span class="hl-1"> </span><span class="hl-2">src/utils/experimentalMultiChainAlignment.test.ts</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-5">--run</span><span class="hl-1"> </span><span class="hl-2">src/utils/correspondenceSafeguardsDiagnostic.test.ts</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-5">--run</span><span class="hl-1"> </span><span class="hl-2">src/utils/rna18sAlignmentDiagnostic.test.ts</span><br/><span class="hl-3">PW_E2E_FORCE_WEBGL</span><span class="hl-1">=</span><span class="hl-2">1</span><span class="hl-1"> </span><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">playwright</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-2">e2e/experimental-multi-chain-alignment.e2e.spec.ts</span><span class="hl-1"> </span><span class="hl-5">--workers=1</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="conflicting-chain-fixture" class="tsd-anchor-link">Conflicting chain fixture<a href="#conflicting-chain-fixture" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The same diagnostic compares 7WTT/7WTZ author chains T (40S S19), F (40S S5)
+and K (RRP12-like protein). Both files identify the chains with those descriptions.
+Correspondences use matching author residue number, insertion code and component.
+This is a candidate selected by screening these fixtures, not proof of the cause
+of the observed differences:</p>
+<table>
+<thead>
+<tr>
+<th>Pair</th>
+<th style="text-align:right">Matched C-alpha anchors (reference / moving observed)</th>
+<th style="text-align:right">Individual RMSD</th>
+<th style="text-align:right">Shared per-atom RMSD</th>
+<th style="text-align:right">Shared equal-chain RMSD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T</td>
+<td style="text-align:right">144 (144 / 144)</td>
+<td style="text-align:right">0.701 Angstrom</td>
+<td style="text-align:right">16.291 Angstrom</td>
+<td style="text-align:right">6.062 Angstrom</td>
+</tr>
+<tr>
+<td>F</td>
+<td style="text-align:right">189 (189 / 189)</td>
+<td style="text-align:right">0.821 Angstrom</td>
+<td style="text-align:right">12.510 Angstrom</td>
+<td style="text-align:right">4.715 Angstrom</td>
+</tr>
+<tr>
+<td>K</td>
+<td style="text-align:right">909 (1022 / 909)</td>
+<td style="text-align:right">1.425 Angstrom</td>
+<td style="text-align:right">10.796 Angstrom</td>
+<td style="text-align:right">15.853 Angstrom</td>
+</tr>
+</tbody>
+</table>
+<p>Per-atom weighting gives K 73% of the fit weight, while equal-chain weighting
+gives each pair one third. Fitting T and F without K gives their RMSDs as 0.731
+and 0.834 Angstrom; the excluded K anchors under that transform have 20.650
+Angstrom RMSD.
+This supports reporting trade-offs and coverage, not automatically deselecting
+K or concluding that the mismatch is necessarily biological. Different sets
+have different overall RMSD denominators and should be compared per pair.</p>
+<p>Recommended focused automated checks:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-2">src/utils/alignmentGeometry.test.ts</span><span class="hl-1"> </span><span class="hl-2">src/utils/realignment.test.ts</span><span class="hl-1"> </span><span class="hl-2">src/App.test.tsx</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-2">src/utils/alignmentPerformance.test.ts</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">playwright</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-2">e2e/alignment-performance-cu-6xu6-6xu8.e2e.spec.ts</span><br/><span class="hl-0">npx</span><span class="hl-1"> </span><span class="hl-2">playwright</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-2">e2e/alignment-diagnostic-e-7wtt-7wtz.e2e.spec.ts</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Recommended manual benchmark workflow:</p>
+<ol>
+<li>Load <code>AlignedTo</code> using <code>6XU6.cif</code>.</li>
+<li>Load <code>Aligned</code> using <code>6XU8.cif</code>.</li>
+<li>Select known chain pairs used in day-to-day analysis and run <code>Align Chains</code>.</li>
+<li>Repeat alignment for the same pair and for several different pairs.</li>
+<li>Confirm alignment quality does not degrade and that camera/viewpoint behavior remains consistent.</li>
+</ol>
+<p>When alignment internals are changed:</p>
+<ul>
+<li>If the change is in <code>packages/molstar</code>, treat it as package-level geometry behavior and validate against the benchmark workflow above.</li>
+<li>If the change is in <code>src/App.tsx</code>, verify both in-place transform behavior and reload-based fallback behavior.</li>
+<li>Verify camera/viewpoint parity after sequential realign actions (for example chain -&gt; residue and residue -&gt; chain), not just fit metrics.</li>
+<li>Record any expected behavior changes in <code>CHANGELOG.md</code> so regressions are easier to trace.</li>
+</ul>
+<p>Next alignment investigation focus:</p>
+<ul>
+<li>Improve correspondence quality and coverage for difficult chain pairs rather than adding extra translation-only corrections.</li>
+<li>Investigate residue-correspondence-aware pairing coverage in chain alignment tests, including gaps in automated checks for residue-key alignment behavior.</li>
+<li>Keep both benchmark families active during changes:
+<ul>
+<li>Strong-case guardrail: 6XU6/6XU8 CU -&gt; CU should remain stable.</li>
+<li>Weak-case guardrail: 7WTT/7WTZ e -&gt; e should materially improve without regressions elsewhere.</li>
+</ul>
+</li>
+</ul>
+<p>See the <a href="AlignmentDevelopment.html">alignment development reference</a> for implementation and the developer-only experiment.</p>
+</div></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#alignment-testing-reference"><span>Alignment <wbr/>Testing <wbr/>Reference</span></a>
+<ul>
+<li><a href="#alignment-regression-testing"><span>Alignment regression testing</span></a></li>
+<li>
+<ul>
+<li><a href="#post-alignment-camera-and-clipping-checks"><span>Post-<wbr/>alignment camera and clipping checks</span></a></li>
+<li><a href="#molecular-fit-and-benchmark-checks"><span>Molecular fit and benchmark checks</span></a></li>
+<li><a href="#offline-multi-chain-weighting-diagnostic"><span>Offline multi-<wbr/>chain weighting diagnostic</span></a></li>
+<li><a href="#developer-only-multi-chain-fit"><span>Developer-<wbr/>only multi-<wbr/>chain fit</span></a></li>
+<li>
+<ul>
+<li><a href="#6xu66xu8-cu-and-cp-observation"><span>6<wbr/>XU6/6xu8 <wbr/>CU and <wbr/>CP observation</span></a></li>
+<li><a href="#curated-correspondence-safeguard-check"><span>Curated correspondence safeguard check</span></a></li>
+<li><a href="#7wtt7wtz-18s-correspondence-and-residuals"><span>7<wbr/>WTT/7<wbr/>WTZ 18<wbr/>S correspondence and residuals</span></a></li>
+<li><a href="#exploratory-local-fits"><span>Exploratory local fits</span></a></li></ul></li>
+<li><a href="#conflicting-chain-fixture"><span>Conflicting chain fixture</span></a></li></ul></li></ul></div></details></div>
+<div class="site-menu">
+<nav class="tsd-navigation"><a href="../modules.html">ribocode1 - v0.25.0</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>

@@ -1,9 +1,161 @@
-<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>decisions/ADR-0001-alignment-quality-gates | ribocode1 - v0.23.2</title><meta name="description" content="Documentation for ribocode1"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">ribocode1 - v0.23.2</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">decisions/ADR-0001-alignment-quality-gates</a></li></ul></div><div class="tsd-panel tsd-typography"><h1 id="adr-0001-alignment-quality-gates-and-ownership-split" class="tsd-anchor-link">ADR-0001: Alignment Quality Gates and Ownership Split<a href="#adr-0001-alignment-quality-gates-and-ownership-split" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>decisions/ADR-0001-alignment-quality-gates | ribocode1 - v0.25.0</title><meta name="description" content="Documentation for ribocode1"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">ribocode1 - v0.25.0</a>
+<div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="" aria-current="page">decisions/ADR-0001-alignment-quality-gates</a></li></ul></div>
+<div class="tsd-panel tsd-typography"><h1 id="adr-0001-alignment-quality-gates-and-ownership-split" class="tsd-anchor-link">ADR-0001: Alignment Quality Gates and Ownership Split<a href="#adr-0001-alignment-quality-gates-and-ownership-split" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
 <ul>
 <li>Status: Accepted</li>
 <li>Date: 2026-10-13</li>
 <li>Decision Makers: Ribocode maintainers</li>
 </ul>
+<h2 id="multi-chain-fitting-handoff-2026-11-24" class="tsd-anchor-link">Multi-chain fitting handoff (2026-11-24)<a href="#multi-chain-fitting-handoff-2026-11-24" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>PR #170 was merged into shared <code>main</code>. Local <code>main</code> was fast-forwarded to merge
+commit <code>a5aa56bb2d918d73d799d9da045b7fe3a8dfc063</code>; the current work branch
+<code>investigate/multi-chain-fitting</code> starts there. The fork's <code>main</code> has not been
+updated. Ribocode pins Mol* commit <code>901cef218be8f231ebb749160e83d586be77ab34</code>,
+which is reachable from the shared Mol* <code>investigate/ribocode-on-5.13.1</code> branch.
+Keep that branch available while Ribocode depends on it.</p>
+<p>The <strong>developer-only multi-chain fitting experiment</strong> is implemented behind
+<code>?experimentalMultiChainAlignment=1</code>. Production alignment remains unchanged.
+The agreed design:</p>
+<ul>
+<li>Pair selected chains by slot, including fixed and dynamic slots. Block the
+experimental fit with an explicit explanation if either side of an occupied
+slot is missing or ambiguous; never silently omit a selected pair.</li>
+<li>Prefer at least 10 unambiguous shared residue-key anchors per pair. If these
+are insufficient, use the explicitly reported protein sequence fallback subject
+to the safeguards in the testing reference. Never substitute ordered pairing.
+Neither shared keys nor sequence alignment prove biological correspondence.</li>
+<li>Fit one shared transform with equal weight per matched anchor pair. Do not
+automatically exclude displaced chains. Show a persistent in-page report
+with each pair's matched and observed anchor counts, coverage, shared-fit
+RMSD and individual-fit RMSD so users can assess trade-offs.</li>
+</ul>
+<p>The default path in <code>src/App.tsx</code> still collects only the first two chain slots;
+its anchor path uses only the first pair and its fallback can pair residues by
+order. The experiment instead matches author residue number, insertion code and
+component, excludes duplicate keys and counts unmatched observed anchors in
+coverage. Unknown insertion codes are treated as blank, with an explicit report
+warning and count, to allow the 7WTT/7WTZ fixtures to be investigated. This is
+an assumption, not evidence that the codes are actually blank. The 6XU6/6xu8
+CU pair instead needs the sequence fallback: its 55 identical observed residues
+have no shared author numbers. See the
+<a href="AlignmentTesting.html#developer-only-multi-chain-fit">alignment testing reference</a>
+for use and limitations.</p>
+<p>Focused tests cover the e/E and T/F/K fixtures, incomplete slots, duplicate
+keys, multiple anchor types and degenerate fits. Browser checks cover the
+persistent report and failure behavior. The real 6XU6/6xu8 CU/CP combination
+also exercises sequence and residue-key correspondence in one shared fit.
+CP's atom-site insertion codes are unknown even though its sequence-scheme
+records have no insertion code; the warning remains appropriate.</p>
+<p>Deliberately mismatched CP/CO passes the current ten-key rule with only 14
+matches and an individual RMSD of approximately 20.135 Angstrom. Conversely,
+CP/CU is rejected by the sequence trace safeguard. Acceptance does not validate
+correspondence. The experimental report warns per row when residue-key
+coverage is below 50% on either side but still applies the fit; exactly 50%
+does not warn. This also warns for the previously studied low-coverage e/e
+pair without excluding it. Stricter quality criteria remain an
+open policy decision; the experiment must not be presented as production-ready.
+Broader
+structure validation, experimental initial-alignment session round trips and a
+production correspondence/weighting policy remain outstanding before release
+qualification; this handoff does not establish 0.25.0 readiness.</p>
+<h2 id="validation-update-2026-11-24" class="tsd-anchor-link">Validation update (2026-11-24)<a href="#validation-update-2026-11-24" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li>Ribocode now pins the shared Mol* 5.13.1-based branch at commit
+<code>901cef218be8f231ebb749160e83d586be77ab34</code>, which carries forward the geometry
+fix. The full Mol* library build, Ribocode type-check and production build pass.</li>
+<li>The full unit suite passed 410 tests with two workers and a 30-second test
+timeout; the full forced-WebGL browser suite passed 54 tests with one worker
+and a 180-second default timeout. The initial concurrent unit run had five
+failures, mostly timeouts. These adjusted runs do not establish that the
+default PR command passes under all conditions.</li>
+<li>Experimental session round trips and broader structure validation remain
+outstanding; the initial-alignment experiment is not production-qualified.</li>
+</ul>
+<h2 id="current-investigation-status-2026-11-23" class="tsd-anchor-link">Current investigation status (2026-11-23)<a href="#current-investigation-status-2026-11-23" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li>Weak-case follow-up: both 7WTT and 7WTZ contain distinct author chains <code>E</code>
+and <code>e</code>. Case-sensitive anchor, atom and residue lookup now distinguishes them,
+prioritizes exact author IDs over label aliases, and rejects ambiguous
+case-insensitive fallback matches. A forced-WebGL browser run found 262 <code>E</code>
+anchors in each structure and 20 and 55 <code>e</code> anchors in the reference and
+moving structures respectively. The e-to-e fit used 20 pairs, with RMSD
+0.354 Angstrom and improvement ratio 8.44; it covers only 20 of the moving
+chain's 55 anchors. The old 262-pair, 72.233 Angstrom result used the wrong
+chain and is not comparable. The previous sequence-identical 20-pair analysis
+remains a separate offline metric.</li>
+<li>The same browser run retained the CU-to-CU result: 95 pairs, RMSD 5.999
+Angstrom and improvement ratio 18.00. These results do not establish a general
+correspondence policy or qualify the release. Chain and residue loci now use
+the same chain resolution for selection, highlighting and zoom; residue loci
+also apply a supplied insertion code. Case-normalized custom chain colors
+remain a separate limitation.</li>
+<li>Multi-chain alignment has a separate limitation: when the first selected pair
+has enough anchors, the fit uses that pair's anchors only, even though metrics
+list both pairs. Element-data fallback combines selected chains. A separate
+correspondence policy and regression are needed before changing this behavior.
+In a forced-WebGL run selecting e/E in both 7WTT and 7WTZ, the metric listed
+both pairs but remained at 20 pairs, exactly the single e-pair count. Combined
+two-chain highlighting passed a separate forced-WebGL browser check.</li>
+<li>An offline weighting diagnostic now compares a shared per-atom fit with equal
+total weight per pair, reporting observed-anchor coverage and per-pair
+shared/individual RMSDs. For e/E, both pairs fit well together, while e covers
+only 20/55 moving anchors. The results and correspondence limitations are in
+the <a href="AlignmentTesting.html#offline-multi-chain-weighting-diagnostic">alignment testing reference</a>;
+they do not justify a production weighting or automatic exclusion policy.</li>
+<li>A screened real conflict in 7WTT/7WTZ (T, F and K) shows that the weighting
+can change which selected chains have the largest shared-fit residuals. T/F
+fit well without K, while K is displaced under their transform. This is a
+diagnostic observation, not a confirmed biological explanation or a reason
+to automatically exclude a chain; see the testing reference for per-pair
+coverage and measured values.</li>
+<li>Improved initial alignment remains a developer-only experiment; production defaults
+have not changed. Manual 6XU6/6XU8 comparison was positive.</li>
+<li>Geometry source/runtime mismatch is resolved and pinned to Mol* commit
+<code>2d4fd2c68fe4cdf600ebb38a84e9030bed4f8725</code>; formerly failing geometry tests now pass.</li>
+<li>An instrumented full-CU residue regression passed all assertions in 176 seconds.
+The previous 120-second budget could expire during loading or controls before fitting.
+Its readiness wait now requires the Aligned visibility control's accessible label
+to indicate <code>Hide</code>, rather than matching the disabled <code>Show Aligned</code> placeholder.
+Full-ribosome residue tests and the related clipping/repeat-alignment workflows
+use 240 seconds; the smaller AlphaFold test budget and all numerical assertions
+are unchanged. Aligned readiness allows up to 120 seconds for cold loading.</li>
+<li>Full PR-suite qualification, a passing full Mol* library build, experimental session
+round trips and broader structure validation remain required before release.</li>
+<li>The persistent camera-parity failure was reproduced with forced software WebGL:
+position, target and up matched exactly, but radius was 173.195677 in A versus
+172.354395 in B (difference 0.841282). Default browser runs could pass, so both
+modes matter when qualifying this regression.</li>
+<li>Root cause: Mol* reports clipping radius as a rounded integer percentage of the
+scene radius. App camera-event readback updated the clipping controls, whose
+fog/clipping effect wrote that percentage back to Mol*, quantizing the exact
+radius just copied during realignment. The effect now omits radius when the
+requested percentage already matches Mol*; intentional slider changes still apply.</li>
+<li>With that fix, all three residue regressions pass under forced software WebGL,
+including the unchanged camera threshold of 0.0001. Camera parity also passed a
+second focused run. Related reset-zoom, wheel/selection-mode clipping, live clipping
+and repeat-alignment checks pass across focused runs. Live clipping's interactive
+close/reopen check needs a 20-second polling budget on this environment.</li>
+<li>Camera helper/context/sync unit coverage passes (31 tests). TypeScript reports only
+the two previously known <code>container</code> TS2454 errors in <code>MolstarContainer.test.tsx</code>;
+the production Vite/PWA bundle builds successfully. Full PR-suite and full Mol*
+build qualification remain outstanding.</li>
+</ul>
+<p>The dated investigation sections preserve historical observations. Statements
+about deliberately failing geometry tests or unresolved provenance describe earlier
+checkpoints, not the current state.</p>
+<p>The camera check now requires both snapshots and polls the same threshold instead
+of silently skipping missing snapshots or using a fixed final delay. On failure it
+includes normalized and raw snapshots to distinguish radius drift from orientation
+or translation differences.</p>
 <h2 id="context" class="tsd-anchor-link">Context<a href="#context" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <p>Ribocode alignment behavior is implemented across two layers:</p>
 <ul>
@@ -50,10 +202,457 @@
 <li>Expand explicit automated coverage for residue-based chain correspondence behavior.</li>
 <li>Keep benchmark metrics in release notes when alignment internals change.</li>
 </ol>
+<h3 id="initial-load-diagnostics-2026-11-23" class="tsd-anchor-link">Initial-load diagnostics (2026-11-23)<a href="#initial-load-diagnostics-2026-11-23" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Initial loading modifies coordinates during mmCIF parsing. An identity structure-transform
+matrix therefore does not establish that the initial fit is correct. Diagnose coordinate
+alignment separately from camera orientation before changing either.</p>
+<ul>
+<li><a href="../media/alignmentGeometry.test.ts">Geometry diagnostics</a> check an asymmetric
+structure with a known rotation and translation, including unequal selected-atom counts
+in both directions and atoms excluded from the fit. They exercise both the compiled
+runtime and the pinned Mol* TypeScript source.</li>
+<li>The first diagnostic run passed all three compiled-runtime cases but failed both
+unequal-count cases in the pinned source. Local generated <code>packages/molstar/lib</code>
+geometry differs from the source: the runtime uses a shared rigid-transform helper
+that is absent from the source. Do not rebuild or treat a source-only defect as the
+cause of the observed viewer behavior without checking this provenance.</li>
+<li><a href="../media/initial-alignment-coordinate-diagnostic.e2e.spec.ts">Initial-load browser diagnostics</a>
+compare actual atomic coordinates for each dataset across viewers, record phosphorus
+counts and centroids, measure CU C-alpha distances using shared author residue IDs,
+and record camera forward/up dot products before manual realignment. The CU anchors
+are a diagnostic for this known pair, not an automatic correspondence policy.</li>
+<li>The first browser run found identical coordinates across viewers for both datasets
+(219,765 reference atoms and 216,955 aligned atoms; maximum coordinate distance zero).
+Camera forward/up dot products were both 1 at capture time. Initial CU C-alpha RMSD
+was 107.963 Angstrom over 95 shared author-residue anchors; subsequent chain alignment
+reported 5.999 Angstrom and a 17.997-fold improvement. Initial phosphorus counts were
+5,910 and 5,906. This reproduces a poor molecular fit despite coordinate and camera
+parity, but does not yet establish whether atom correspondence or another fitting
+detail is responsible.</li>
+<li>Four of five browser checks passed. The full-CU residue-versus-chain check reached
+its 120-second total timeout while waiting for residue metrics; its final quality
+assertions were not reached. The other two residue checks passed. Do not consider
+residue realignment fully validated from this run. An isolated rerun also reached
+the 120-second timeout, so the failure cannot be attributed solely to concurrent
+unit-test/type-check work in the first run.</li>
+</ul>
+<p>Run diagnostics with:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-5">--run</span><span class="hl-1"> </span><span class="hl-2">src/utils/alignmentGeometry.test.ts</span><span class="hl-1"> </span><span class="hl-2">src/utils/alignmentPerformance.test.ts</span><span class="hl-1"> </span><span class="hl-2">src/utils/realignment.test.ts</span><br/><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test:e2e:webgl</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-2">e2e/initial-alignment-coordinate-diagnostic.e2e.spec.ts</span>
+</code><button type="button">Copy</button></pre>
+
+<p>The source diagnostics intentionally remain failing pending a separate, validated fix.
+The browser diagnostic records initial fit quality without imposing an unverified RMSD
+threshold or camera-parity policy. Existing chain/residue quality gates remain required.</p>
+<h3 id="selector-and-pairing-comparison-2026-11-23" class="tsd-anchor-link">Selector and pairing comparison (2026-11-23)<a href="#selector-and-pairing-comparison-2026-11-23" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><a href="../media/initialAlignmentDiagnostic.test.ts">Offline fixture diagnostics</a> parse the
+first model using Mol*, reproduce initial coordinate centralisation, and compare four
+fits without changing application defaults. Candidate correspondence uses unique
+author chain/residue/insertion-code, residue component, atom name and alternate-location
+identities shared by the fixtures. This is fixture-specific matching, not a general
+chain-homology or sequence-alignment algorithm. Duplicate identities are excluded.</p>
+<p>All RMSDs below are in Angstrom. RNA evaluation uses shared P identities; protein
+evaluation uses shared C-alpha identities. Evaluation overlaps the fit for matching
+anchor types, so these are not independent validation scores. Protein evaluation is
+excluded from the P-only fit.</p>
+<table>
+<thead>
+<tr>
+<th>Pair</th>
+<th>Fit</th>
+<th>RNA RMSD</th>
+<th>Protein RMSD</th>
+<th>Author-ID chain proxy RMSD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6XU6/6XU8</td>
+<td>P, file order</td>
+<td>156.614</td>
+<td>177.528</td>
+<td>107.963</td>
+</tr>
+<tr>
+<td>6XU6/6XU8</td>
+<td>P, shared identity</td>
+<td>2.519</td>
+<td>2.140</td>
+<td>6.130</td>
+</tr>
+<tr>
+<td>6XU6/6XU8</td>
+<td>P + CA, shared identity</td>
+<td>2.529</td>
+<td>2.114</td>
+<td>6.138</td>
+</tr>
+<tr>
+<td>6XU6/6XU8</td>
+<td>C4' + CA, shared identity</td>
+<td>2.530</td>
+<td>2.114</td>
+<td>6.137</td>
+</tr>
+<tr>
+<td>7WTT/7WTZ</td>
+<td>P, file order</td>
+<td>11.065</td>
+<td>10.558</td>
+<td>2.985</td>
+</tr>
+<tr>
+<td>7WTT/7WTZ</td>
+<td>P, shared identity</td>
+<td>10.840</td>
+<td>9.920</td>
+<td>3.543</td>
+</tr>
+<tr>
+<td>7WTT/7WTZ</td>
+<td>P + CA, shared identity</td>
+<td>11.043</td>
+<td>9.380</td>
+<td>4.653</td>
+</tr>
+<tr>
+<td>7WTT/7WTZ</td>
+<td>C4' + CA, shared identity</td>
+<td>11.042</td>
+<td>9.381</td>
+<td>4.650</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Only 270 of 5,906 ordered P pairs have matching identities in 6XU6/6XU8;
+identity pairing yields 5,906 RNA and 11,442 protein evaluation pairs.</li>
+<li>Only 539 of 1,575 ordered P pairs have matching identities in 7WTT/7WTZ;
+identity pairing yields 1,566 RNA and 5,295 protein evaluation pairs.</li>
+<li>The CU author-ID proxy reproduces the browser's 107.963-Angstrom initial measurement,
+but only <strong>1 of its 95 author-number pairs has a matching residue component</strong>.
+Do not describe this proxy, or the earlier browser CU metric, as verified biological
+correspondence. The chain-e proxy has matching components for all 20 pairs, but that
+alone does not establish sequence correspondence.</li>
+<li>Better pairing alone produces a large improvement in the strong fixture, without
+adding protein atoms to the fit. Mixed anchors provide a smaller additional protein
+improvement. The weak fixture has trade-offs, including a worse chain-e proxy.
+No candidate is approved as a universal replacement.</li>
+</ul>
+<p>Reproduce with:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-5">--run</span><span class="hl-1"> </span><span class="hl-2">src/utils/initialAlignmentDiagnostic.test.ts</span><span class="hl-1"> </span><span class="hl-5">--reporter=verbose</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Next steps: inspect fixture chain/residue sequence correspondence, separate valid
+biological anchors from numbering-based proxies, and validate candidates on additional
+structures before proposing automatic pairing. Keep current chain/residue realignment
+unchanged and retain all existing quality gates.</p>
+<h3 id="observed-protein-sequence-correspondence-2026-11-23" class="tsd-anchor-link">Observed protein sequence correspondence (2026-11-23)<a href="#observed-protein-sequence-correspondence-2026-11-23" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The offline diagnostics now use Mol*'s existing BLOSUM62 sequence aligner to rank
+each target reference protein against all observed C-alpha chains in the moving
+fixture. Sequences include only residues with observed C-alpha coordinates, with
+alternate locations deduplicated. They are not complete deposited polymer sequences.
+Unknown one-letter codes do not count as identical anchors. This report does not
+change application pairing or establish a general acceptance threshold.</p>
+<table>
+<thead>
+<tr>
+<th>Target</th>
+<th>Observed lengths (reference/moving)</th>
+<th>Aligned positions</th>
+<th>Identical positions</th>
+<th>Best/second candidate score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6XU6/6XU8 CU</td>
+<td>96 / 99</td>
+<td>95</td>
+<td>55 (57.9% of aligned positions)</td>
+<td>CU: 278 / AZ: 5</td>
+</tr>
+<tr>
+<td>7WTT/7WTZ e</td>
+<td>20 / 55</td>
+<td>20</td>
+<td>20 (100% of aligned positions)</td>
+<td>e: 68 / Y: 11</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>CU is the strongest sequence candidate, but <strong>none of its 55 identical
+sequence-aligned residue pairs has matching author numbering</strong>. The earlier
+numbering-based proxy pairs different sequence positions.</li>
+<li>For sequence-identical CU C-alpha anchors, the current order-based P fit gives
+108.291-Angstrom RMSD. Identity-paired P fitting reduces that to 3.057 Angstrom.
+These protein anchors are excluded from the P-only fit and support the initial-fit
+improvement independently of the earlier numbering proxy.</li>
+<li>For chain e, the 20 identical positions have matching author numbering, but cover
+only 36.4% of the moving chain's observed 55 residues. Its sequence-supported RMSDs
+equal the earlier chain-e proxy values; the candidate fits still have trade-offs.</li>
+<li>Candidate ranking is only in the reference-to-moving direction for these two
+targets. Reciprocal matches, ambiguous chains, RNA sequence correspondence and
+complete polymer sequences remain to be investigated before automatic matching.</li>
+</ul>
+<h3 id="reciprocal-matching-and-rna-anchors-2026-11-23" class="tsd-anchor-link">Reciprocal matching and RNA anchors (2026-11-23)<a href="#reciprocal-matching-and-rna-anchors-2026-11-23" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Protein target matching is now checked in both directions. CU and e are unique
+top-scoring candidates reciprocally among observed protein chains.</p>
+<p>RNA candidates are extracted from observed C4' atoms, deduplicated by author
+chain/residue, then compared using Mol*'s default nucleotide scoring. All reference/
+moving candidate combinations are scored. A match contributes sequence-identical
+anchors only if it is the unique best-scoring match in both directions; ties and
+non-reciprocal choices are excluded. The same score table supplies both rankings.
+Unknown residue codes never contribute identical anchors.</p>
+<ul>
+<li>6XU6/6XU8 has five reciprocal candidate pairs: A9, A7, A8, B2 and A5.
+The first four have identical observed sequences. A5 has 3,707 versus 3,703
+observed residues, with 3,703 identical aligned positions. Together these yield
+5,912 C4' anchors without using chain-name or author-number equality for pairing.</li>
+<li>7WTT/7WTZ has a reciprocal chain-2 pair with 1,575 versus 1,624 observed
+residues and 1,567 identical positions (99.5% reference and 96.5% moving coverage).
+Reference candidate q contains only one unknown C4'-bearing residue and is
+non-reciprocal; it contributes no fit anchors. C4' presence alone is not a
+validated RNA-polymer classification, so this is explicitly a candidate report.</li>
+</ul>
+<p>An offline fit using only those reciprocal, sequence-identical C4' anchors gives:</p>
+<table>
+<thead>
+<tr>
+<th>Pair</th>
+<th>Fit C4' RMSD</th>
+<th>Evaluation P RMSD</th>
+<th>Evaluation protein CA RMSD</th>
+<th>Sequence-identical target CA RMSD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6XU6/6XU8</td>
+<td>2.479</td>
+<td>2.520</td>
+<td>2.139</td>
+<td>3.052 (55 CU pairs)</td>
+</tr>
+<tr>
+<td>7WTT/7WTZ</td>
+<td>11.062</td>
+<td>10.841</td>
+<td>9.908</td>
+<td>3.597 (20 e pairs)</td>
+</tr>
+</tbody>
+</table>
+<p>P and protein CA evaluation atoms are excluded from this C4'-only fit. Broad
+evaluation still uses shared fixture identities; only target CA evaluation uses
+sequence-derived correspondence. The weak fixture's chain-e score remains worse
+than the initial 2.985-Angstrom score, so the existing gates do not permit claiming
+a universal improvement.</p>
+<p>Synthetic checks confirm RNA sequence pairing ignores renamed chains/renumbered
+residues, excludes unknown anchors, and reports equal scores for identical competing
+sequences. No runtime alignment, selector or chain/residue realignment was changed.
+Next investigate complete polymer metadata, tie/coverage acceptance and weak-fixture
+domain motion before proposing an automatic initial-load policy.</p>
+<h3 id="polymer-metadata-and-weak-case-residuals-2026-11-23" class="tsd-anchor-link">Polymer metadata and weak-case residuals (2026-11-23)<a href="#polymer-metadata-and-weak-case-residuals-2026-11-23" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Offline candidate extraction now requires entity type <code>polymer</code> and the appropriate
+Mol* subtype (<code>polyribonucleotide</code> for RNA or <code>polypeptide*</code> for protein). Reference
+chain q in 7WTT is explicitly <code>non-polymer</code>, despite having a C4'-named atom and an
+inferred polypeptide subtype; requiring both type and subtype excludes it. The
+classified RNA candidates retain all 5,912 and 1,567 reciprocal anchors respectively,
+so previous candidate-fit measurements are unchanged. Hybrid RNA/DNA and DNA entities
+are not covered by this diagnostic policy.</p>
+<p>Weak-fixture per-chain residuals after the reciprocal RNA fit are not uniformly small.
+Independent offline fits on sequence-identical C-alpha pairs give:</p>
+<table>
+<thead>
+<tr>
+<th>Chain</th>
+<th>Global-fit identity CA RMSD</th>
+<th>Independent sequence CA RMSD</th>
+<th>Sequence pairs</th>
+<th>Reference/moving identical coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>K</td>
+<td>20.376</td>
+<td>1.425</td>
+<td>909</td>
+<td>88.9% / 100%</td>
+</tr>
+<tr>
+<td>R</td>
+<td>19.946</td>
+<td>1.654</td>
+<td>81</td>
+<td>100% / 66.4%</td>
+</tr>
+<tr>
+<td>M</td>
+<td>17.138</td>
+<td>1.043</td>
+<td>108</td>
+<td>100% / 87.8%</td>
+</tr>
+<tr>
+<td>f</td>
+<td>14.032</td>
+<td>2.524</td>
+<td>57</td>
+<td>100% / 78.1%</td>
+</tr>
+<tr>
+<td>t</td>
+<td>10.473</td>
+<td>11.453</td>
+<td>56</td>
+<td>94.9% / 44.1%</td>
+</tr>
+</tbody>
+</table>
+<p>Global and independent columns use different correspondence policies and sometimes
+different pair counts; do not interpret them as a controlled before/after metric.
+Nevertheless, several large global residuals coexist with good local rigid fits,
+consistent with differing relative chain placement rather than a missing universal
+translation. Chain t remains a poor local fit and needs separate correspondence/
+structural inspection. These findings do not prove domain motion or establish a
+single global transform that improves every chain.</p>
+<p>No production acceptance thresholds have been selected. Candidate uniqueness,
+reciprocity, known-residue identity, bilateral coverage and polymer classification
+must be considered together; a unique candidate can still have low coverage. The
+next implementation decision should distinguish initial whole-structure alignment
+from targeted chain alignment and explicitly define acceptable global/local trade-offs.
+Runtime chain/residue fitting remains unchanged.</p>
+<h3 id="approved-developer-only-integration-2026-11-23" class="tsd-anchor-link">Approved developer-only integration (2026-11-23)<a href="#approved-developer-only-integration-2026-11-23" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Maintainer choices: expose only through a development URL opt-in; allow the documented
+weak-fixture global/local trade-off for this experiment only; if correspondence is
+uncertain, warn and leave centered coordinates unfitted (do not fall back to the
+legacy fit).</p>
+<p>The prototype in <a href="../modules/utils_experimentalInitialAlignment.html">experimentalInitialAlignment.ts</a>
+requires unique reciprocal RNA polymer matches, at least 20 known identical residues,
+90% aligned identity and 80% identical coverage bilaterally for every observed RNA
+chain. Matching uses label-chain identity only to distinguish candidates, not to pair
+them across structures. A 50-million-cell comparison limit bounds the quadratic
+sequence aligner. Only RNA C4' anchors participate in this initial fit.</p>
+<p>Enable with <code>?experimentalInitialAlignment=1</code> on the development server before
+loading either file. Production and ordinary development loads remain unchanged.
+Session restoration explicitly bypasses the experiment; experimental session-baseline
+round trips are not supported yet. Both viewer parses receive the same explicit
+rotation/centroid transform, using the existing parser path. ReAligned loads and
+manual chain/residue fitting code are unchanged.</p>
+<p>Acceptance: strong-fixture evaluation P and protein CA RMSD below 3 Angstrom,
+sequence-identical CU CA RMSD below 4 Angstrom, coordinate parity across viewers,
+explicit rejected-match outcomes, and working manual chain realignment after the
+experimental fit. The weak-case exception does not relax default/release gates.
+Source/runtime provenance and the full-CU residue-test timeout still block promoting
+this experiment to a default.</p>
+<p>Verification of the integration: nine acceptance unit tests pass (including the
+20-pair/80%-coverage boundary); the broader 33-test unit run before those two boundary
+additions passed. Browser checks passed for unchanged default coordinates, accepted
+experimental coordinates in both viewers, manual CU chain alignment after the
+experiment, and warned/centered protein-only rejection. A selected unchanged
+7WTT/AlphaFold residue-realignment regression also passed. The Vite production build
+passed. Standalone type-checking reports only the two existing unassigned <code>container</code>
+diagnostics in MolstarContainer tests. The full suite was not run; the intentionally
+failing pinned-source geometry diagnostics and full-CU residue timeout remain open.</p>
+<h3 id="checkpoint-and-restart-2026-11-23" class="tsd-anchor-link">Checkpoint and restart (2026-11-23)<a href="#checkpoint-and-restart-2026-11-23" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The maintainer manually retried 6XU6/6XU8 with the experiment and confirmed that the
+initial alignment works much better. An earlier upside-down observation was withdrawn
+after retrying. This supports the candidate but does not approve a new default.</p>
+<p>Resume on branch <code>investigate/initial-alignment</code>:</p>
+<ol>
+<li>Manually compare additional pairs, especially 7WTT/7WTZ, using the development URL
+<code>?experimentalInitialAlignment=1</code> before loading either file.</li>
+<li>Reconcile pinned Mol* source with local generated runtime geometry before rebuilding
+Mol*. The two unequal-count source tests in alignmentGeometry.test.ts intentionally
+fail; the generated runtime currently passes them. Generated library files are not
+committed, so another checkout may behave differently until this is resolved.</li>
+<li>Investigate the existing 120-second full-CU residue-versus-chain regression timeout.</li>
+<li>Validate in-place/fallback manual alignment, session restoration and additional
+structures before promoting the experimental option. Experimental session baseline
+round trips are not supported; restoration currently uses the existing path.</li>
+</ol>
+<p>This is a work-in-progress safety checkpoint, not a release-ready change. No release
+version or default alignment policy has changed. The full PR suite has not passed on
+this branch; targeted validation and its limitations are recorded above.</p>
+<h3 id="sourceruntime-geometry-reconciliation-2026-11-23" class="tsd-anchor-link">Source/runtime geometry reconciliation (2026-11-23)<a href="#sourceruntime-geometry-reconciliation-2026-11-23" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The Mol* source on branch <code>fix/rigid-alignment-centroid-mapping</code> now uses the same
+rigid-coordinate helper as the previously working local runtime in all count branches.
+For extra moving atoms, the previous source added the moving centroid rather than
+the reference centroid. For extra reference atoms, it added the moving centroid before
+rotation and subtracted it afterward. Both paths now consistently apply
+<code>R * (moving - movingCentroid) + referenceCentroid</code>. Selection, truncation and rotation
+fitting policy are unchanged. The pinned source's single-pair translation safeguard,
+which was absent from the old generated runtime, is preserved.</p>
+<p>Both unequal-count diagnostics now pass against source and regenerated runtime.
+Additional single-pair source/runtime checks pass. Six Mol* Jest geometry tests pass,
+and the rebuilt application's focused 79-test unit/integration run passed before the
+two new single-pair checks. The subsequent geometry/performance/pair-tracking run
+passes all 15 tests.</p>
+<p>Build qualification: local dependencies were restored after TypeScript version drift
+and missing packages were observed; no dependency manifests or lockfiles were changed.
+The normal full library build remains blocked by unrelated Express server
+route-parameter type errors. A focused TypeScript build regenerated the geometry
+dependency tree in ESM and CommonJS, then ran the library asset/alias step. This
+does not qualify the full library build as passing. Parent type-checking still reports
+only the two existing MolstarContainer test diagnostics.</p>
+<p>Seven rebuilt browser checks passed: default and experimental initial coordinates,
+centered/unfitted rejection, CU and e chain benchmarks, repeat alignment in the camera
+regression spec, and the selected 7WTT/AlphaFold residue regression. CU remains at
+5.999-Angstrom chain RMSD with 17.997-fold improvement. The weak e diagnostic remains
+poor (72.233-Angstrom RMSD over 262 chain-fit atoms); a passing diagnostic is not a
+quality approval. This chain-fit metric uses different atoms from the earlier offline
+20-pair C-alpha comparison and must not be conflated with it.</p>
+<p>The reconciled source is committed and pushed to <code>agdturner/molstar</code> on branch
+<code>fix/rigid-alignment-centroid-mapping</code>, commit
+<code>2d4fd2c68fe4cdf600ebb38a84e9030bed4f8725</code>. Ribocode's submodule pin is updated to this
+commit. Fetching the exact SHA from the configured <code>ribocode-slola/molstar</code> remote
+succeeded, so the submodule URL does not need to change for this checkpoint.</p>
 <h2 id="consequences" class="tsd-anchor-link">Consequences<a href="#consequences" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <ul>
 <li>Alignment changes become easier to review objectively.</li>
 <li>Risk of repeating unstable experiments is reduced.</li>
 <li>Work remains traceable despite split ownership between App and customized Mol* code.</li>
 </ul>
-</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#adr-0001-alignment-quality-gates-and-ownership-split"><span>ADR-<wbr/>0001: <wbr/>Alignment <wbr/>Quality <wbr/>Gates and <wbr/>Ownership <wbr/>Split</span></a><ul><li><a href="#context"><span>Context</span></a></li><li><a href="#decision"><span>Decision</span></a></li><li><a href="#quality-gates"><span>Quality <wbr/>Gates</span></a></li><li><a href="#required-automated-checks"><span>Required <wbr/>Automated <wbr/>Checks</span></a></li><li><a href="#follow-up-work"><span>Follow-<wbr/>up <wbr/>Work</span></a></li><li><a href="#consequences"><span>Consequences</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules.html">ribocode1 - v0.23.2</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
+</div></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#adr-0001-alignment-quality-gates-and-ownership-split"><span>ADR-<wbr/>0001: <wbr/>Alignment <wbr/>Quality <wbr/>Gates and <wbr/>Ownership <wbr/>Split</span></a>
+<ul>
+<li><a href="#multi-chain-fitting-handoff-2026-11-24"><span>Multi-<wbr/>chain fitting handoff (2026-<wbr/>11-<wbr/>24)</span></a></li>
+<li><a href="#validation-update-2026-11-24"><span>Validation update (2026-<wbr/>11-<wbr/>24)</span></a></li>
+<li><a href="#current-investigation-status-2026-11-23"><span>Current investigation status (2026-<wbr/>11-<wbr/>23)</span></a></li>
+<li><a href="#context"><span>Context</span></a></li>
+<li><a href="#decision"><span>Decision</span></a></li>
+<li><a href="#quality-gates"><span>Quality <wbr/>Gates</span></a></li>
+<li><a href="#required-automated-checks"><span>Required <wbr/>Automated <wbr/>Checks</span></a></li>
+<li><a href="#follow-up-work"><span>Follow-<wbr/>up <wbr/>Work</span></a></li>
+<li>
+<ul>
+<li><a href="#initial-load-diagnostics-2026-11-23"><span>Initial-<wbr/>load diagnostics (2026-<wbr/>11-<wbr/>23)</span></a></li>
+<li><a href="#selector-and-pairing-comparison-2026-11-23"><span>Selector and pairing comparison (2026-<wbr/>11-<wbr/>23)</span></a></li>
+<li><a href="#observed-protein-sequence-correspondence-2026-11-23"><span>Observed protein sequence correspondence (2026-<wbr/>11-<wbr/>23)</span></a></li>
+<li><a href="#reciprocal-matching-and-rna-anchors-2026-11-23"><span>Reciprocal matching and <wbr/>RNA anchors (2026-<wbr/>11-<wbr/>23)</span></a></li>
+<li><a href="#polymer-metadata-and-weak-case-residuals-2026-11-23"><span>Polymer metadata and weak-<wbr/>case residuals (2026-<wbr/>11-<wbr/>23)</span></a></li>
+<li><a href="#approved-developer-only-integration-2026-11-23"><span>Approved developer-<wbr/>only integration (2026-<wbr/>11-<wbr/>23)</span></a></li>
+<li><a href="#checkpoint-and-restart-2026-11-23"><span>Checkpoint and restart (2026-<wbr/>11-<wbr/>23)</span></a></li>
+<li><a href="#sourceruntime-geometry-reconciliation-2026-11-23"><span>Source/runtime geometry reconciliation (2026-<wbr/>11-<wbr/>23)</span></a></li></ul></li>
+<li><a href="#consequences"><span>Consequences</span></a></li></ul></div></details></div>
+<div class="site-menu">
+<nav class="tsd-navigation"><a href="../modules.html">ribocode1 - v0.25.0</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>
