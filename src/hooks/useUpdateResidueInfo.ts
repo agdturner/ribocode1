@@ -4,8 +4,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.1
- * @lastModified 2026-06-22
+ * @version 1.1.0
+ * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { useEffect, useRef } from 'react';
@@ -26,6 +26,7 @@ import { ResidueLabelInfo } from '../utils/residue';
  * @param selectedResidueIds - Currently selected residue IDs (read-only, via ref).
  * @param setSelectedResidueIds - Setter for selected residue IDs.
  * @param label - Optional label for logging/debugging.
+ * @param emptyMeansDefault - When false, only null requests default selection; [] stays empty.
  */
 export function useUpdateResidueInfo(
   viewerRef: React.RefObject<any>,
@@ -33,10 +34,11 @@ export function useUpdateResidueInfo(
   molstar: any,
   selectedChainId: string,
   setResidueInfo: React.Dispatch<React.SetStateAction<{ residueLabels: Map<string, ResidueLabelInfo>; residueToAtomIds: Record<string, string[]> }>>,
-    selectedResidueIds: string[],
+    selectedResidueIds: string[] | null,
     setSelectedResidueIds: (ids: string[]) => void,
   label?: string,
-    defaultSelectionMode: 'first' | 'all' | 'none' = 'first'
+    defaultSelectionMode: 'first' | 'all' | 'none' = 'first',
+    emptyMeansDefault = true
 ) {
   // Use a ref so we can read the latest selectedResidueIds inside the effect
   // without adding it to the dependency array (which would cause infinite loops).
@@ -105,7 +107,8 @@ export function useUpdateResidueInfo(
       });
       // Reset selection when the current residue ID is not in the new chain.
       // Also auto-select the first residue when nothing is selected.
-      const currentIds = selectedResidueIdsRef.current;
+      const currentSelection = selectedResidueIdsRef.current;
+      const currentIds = currentSelection ?? [];
       const validIds = currentIds.filter(id => residueLabels.has(id));
       if (validIds.length !== currentIds.length) {
         if (validIds.length > 0) {
@@ -121,7 +124,7 @@ export function useUpdateResidueInfo(
         } else {
           setSelectedResidueIds([]);
         }
-      } else if (validIds.length === 0 && residueLabels.size > 0) {
+      } else if (validIds.length === 0 && residueLabels.size > 0 && (emptyMeansDefault || currentSelection === null)) {
         if (defaultSelectionMode === 'all') {
           setSelectedResidueIds(Array.from(residueLabels.keys()));
         } else if (defaultSelectionMode === 'first') {
@@ -136,5 +139,5 @@ export function useUpdateResidueInfo(
     }
   // selectedResidueIds intentionally omitted — accessed via ref to avoid loops
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewerRef, structureRef, getResidueInfo, selectedChainId, setResidueInfo, setSelectedResidueIds, label, defaultSelectionMode]);
+  }, [viewerRef, structureRef, getResidueInfo, selectedChainId, setResidueInfo, setSelectedResidueIds, label, defaultSelectionMode, emptyMeansDefault]);
 }

@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.1.0
+ * @version 1.2.0
  * @lastModified 2026-11-26
  */
 import { test, expect, type Page } from '@playwright/test';
@@ -184,6 +184,16 @@ test('Save All/Load All restores dynamic chain and residue selections in both co
       await expect(select.locator('option:checked')).toHaveCount(values.length);
       selectedResidues.set(`${viewer}-${slot}`, values);
     }
+    for (const slot of [1, 2, 3]) {
+      const suffix = slot === 1 ? '' : String(slot);
+      const prefix = `viewer-column-${viewer}-${mode}`;
+      const toggle = page.locator(`#${prefix}-residue${suffix}-controls-toggle-btn`);
+      const select = page.locator(`#${prefix}-residue${suffix}-select`);
+      if (!await select.isVisible()) await toggle.click();
+      await expect.poll(() => select.locator('option').count(), { timeout: 30000 }).toBeGreaterThan(0);
+      await select.selectOption([]);
+      await expect(select.locator('option:checked')).toHaveCount(0);
+    }
   }
 
   const sessionFilePath = await saveAllAndDownloadSession(page);
@@ -199,6 +209,16 @@ test('Save All/Load All restores dynamic chain and residue selections in both co
   for (const [index, [viewer, mode]] of ([['A', 'alignedto'], ['B', 'aligned']] as const).entries()) {
     const prefix = `viewer-column-${viewer}-${mode}`;
     await expect(page.locator(`#${prefix}-selected-chain5-label`)).toContainText(chain5[index], { timeout: 20000 });
+    for (const slot of [1, 2, 3]) {
+      const suffix = slot === 1 ? '' : String(slot);
+      const chainToggle = page.locator(`#${prefix}-select-chain${suffix}-controls-toggle-btn`);
+      const residueToggle = page.locator(`#${prefix}-residue${suffix}-controls-toggle-btn`);
+      if (!await residueToggle.isVisible()) await chainToggle.click();
+      const select = page.locator(`#${prefix}-residue${suffix}-select`);
+      if (!await select.isVisible()) await residueToggle.click();
+      await expect.poll(() => select.locator('option').count(), { timeout: 30000 }).toBeGreaterThan(0);
+      await expect(select.locator('option:checked')).toHaveCount(0);
+    }
     for (const slot of [4, 5]) {
       const chainToggle = page.locator(`#${prefix}-select-chain${slot}-controls-toggle-btn`);
       const residueToggle = page.locator(`#${prefix}-residue${slot}-controls-toggle-btn`);

@@ -637,6 +637,10 @@ Session exports associate each additional chain ID with its residue IDs, includi
 empty selections; sessions without that optional data use the normal default
 selection. Changing or removing a slot cascades to later slots and clears their
 residue state and tracked native markers.
+All slots use ordered, per-dataset chain/residue selection state. An uninitialized
+residue selection is distinct from an explicitly empty one, so newly selected
+chains can default to all residues without changing an empty session selection.
+The session serialization format remains unchanged.
 
 ### Round-Trip Guarantees
 
