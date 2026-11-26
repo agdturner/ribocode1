@@ -4,11 +4,13 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-10-14
+ * @version 1.1.0
+ * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
-import { extractUniProtAccessionsFromText, fetchUniProtGeneNames, fetchUniProtGeneNamesBatched, parseChainToMoleculeNameFromCifText } from './uniprot';
+import { extractUniProtAccessionsFromText, fetchUniProtGeneNames, fetchUniProtGeneNamesBatched, parseChainToMoleculeNameFromCifText, parseChainToUniProtFromCifText } from './uniprot';
+import fs from 'fs';
+import path from 'path';
 import { vi } from 'vitest';
 
 describe('extractUniProtAccessionsFromText', () => {
@@ -27,6 +29,44 @@ describe('extractUniProtAccessionsFromText', () => {
         expect(accessions.has('174924')).toBe(false);
         expect(accessions.has('6XU8')).toBe(false);
         expect(accessions.size).toBe(3);
+    });
+});
+
+describe('parseChainToUniProtFromCifText', () => {
+    it('uses reference database identity and handles multiline loop values', () => {
+        const cif = [
+            'loop_', '_struct_ref.id', '_struct_ref.db_name', '_struct_ref.pdbx_db_accession', '_struct_ref.pdbx_seq_one_letter_code',
+            '1 UNP P61247', ';SEQUENCE', 'CONTINUED', ';',
+            '2 GB P08865', ';OTHER', ';',
+            '3 GB NR_133545.1', ';RNA', ';',
+            '4 UNIPROT Q9V3G1', ';PROTEIN', ';',
+            '#', 'loop_', '_struct_ref_seq.ref_id', '_struct_ref_seq.pdbx_strand_id', '_struct_ref_seq.pdbx_db_accession',
+            '1 A P61247', '2 B P08865', '3 C NR_133545.1', '4 D Q9V3G1',
+            '5 E P38979', '6 F 174298', '#',
+        ].join('\n');
+
+        expect([...parseChainToUniProtFromCifText(cif)]).toEqual([
+            ['A', 'P61247'], ['D', 'Q9V3G1'], ['E', 'P38979'],
+        ]);
+    });
+
+    it('keeps protein references and excludes GenBank RNA references in 6XU6', () => {
+        const cif = fs.readFileSync(path.resolve(__dirname, '../../data/input/6XU6.cif'), 'utf8');
+        const chains = parseChainToUniProtFromCifText(cif);
+        expect(chains.get('AA')).toBe('P38979');
+        expect(chains.get('CA')).toBe('Q9V3G1');
+        for (const chain of ['A9', 'A7', 'A8', 'B2', 'A5']) {
+            expect(chains.has(chain)).toBe(false);
+        }
+    });
+
+    it('honours database identity even when struct_ref lacks an accession column', () => {
+        const cif = [
+            'loop_', '_struct_ref.id', '_struct_ref.db_name', '1 GB', '2 UNP', '#',
+            'loop_', '_struct_ref_seq.ref_id', '_struct_ref_seq.pdbx_strand_id', '_struct_ref_seq.pdbx_db_accession',
+            '1 A P61247', '2 B P08865', '#',
+        ].join('\n');
+        expect([...parseChainToUniProtFromCifText(cif)]).toEqual([['B', 'P08865']]);
     });
 });
 
@@ -104,6 +144,20 @@ describe('fetchUniProtGeneNamesBatched', () => {
 });
 
 describe('parseChainToMoleculeNameFromCifText', () => {
+    it('handles CIF comments, split rows, and embedded quotes without shifting subsequent values', () => {
+        const cifText = [
+            'loop_', '_entity.id', '_entity.pdbx_description',
+            "1 'Protein's domain' # description", '# comment between rows',
+            '2', "'Another protein'", 'stop_',
+            'loop_', '_struct_asym.id', '_struct_asym.entity_id',
+            'A 1 # first', 'B 2', '#',
+        ].join('\n');
+
+        const map = parseChainToMoleculeNameFromCifText(cifText);
+        expect(map.get('A')).toBe("Protein's domain");
+        expect(map.get('B')).toBe('Another protein');
+    });
+
     it('maps both label and auth chain IDs to molecule descriptions', () => {
         const cifText = [
             'loop_',

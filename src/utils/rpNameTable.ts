@@ -13,10 +13,12 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  *
  * @author Andy Turner <agdturner@gmail.com>
- * Version: 1.0.0
- * Last modified: 2026-06-22
+ * @version 1.1.0
+ * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
+
+import { isUniProtAccession, isUniProtDatabaseOrUnknown } from './uniprot';
 
 export type RpSpeciesKey = 'arabidopsis' | 'drosophila' | 'human' | 'yeast';
 
@@ -44,7 +46,7 @@ export interface RpNameLookupBySpecies {
 function normalizeAccession(value: unknown): string | undefined {
     if (value == null) return undefined;
     const accession = String(value).trim();
-    if (!accession || accession === '?' || accession === '.') return undefined;
+    if (!isUniProtAccession(accession)) return undefined;
     return accession;
 }
 
@@ -160,6 +162,7 @@ export function buildEntityToUniprotMap(model: any): Map<string, string> {
         if (!structRef) return entityToUniprot;
         const rowCount: number = structRef._rowCount ?? 0;
         for (let r = 0; r < rowCount; r++) {
+            if (!isUniProtDatabaseOrUnknown(structRef.db_name?.value?.(r))) continue;
             const entityId = structRef.entity_id?.value?.(r);
             const accession = normalizeAccession(structRef.pdbx_db_accession?.value?.(r));
             if (entityId != null && accession) {
@@ -184,8 +187,18 @@ export function buildChainToUniprotMap(model: any): Map<string, string> {
         const structRefSeq = model?.sourceData?.data?.db?.struct_ref_seq;
         if (!structRefSeq) return chainToUniprot;
 
+        const structRef = model?.sourceData?.data?.db?.struct_ref;
+        const refDatabases = new Map<string, boolean>();
+        for (let r = 0; r < (structRef?._rowCount ?? 0); r++) {
+            const refId = structRef.id?.value?.(r);
+            if (refId != null) {
+                refDatabases.set(String(refId), isUniProtDatabaseOrUnknown(structRef.db_name?.value?.(r)));
+            }
+        }
         const rowCount: number = structRefSeq._rowCount ?? 0;
         for (let r = 0; r < rowCount; r++) {
+            const refId = structRefSeq.ref_id?.value?.(r);
+            if (refId != null && refDatabases.get(String(refId)) === false) continue;
             const accession = normalizeAccession(structRefSeq.pdbx_db_accession?.value?.(r));
             if (!accession) continue;
 

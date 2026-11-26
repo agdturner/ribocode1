@@ -15,6 +15,7 @@ Welcome to the Ribocode Developer Guide!
 - [Mol* Advanced Controls Toggle](#mol-advanced-controls-toggle)
 - [Re-alignment Implementation Notes](#re-alignment-implementation-notes)
 - [Molstar](#molstar)
+- [UniProt Lookups and Chain Labels](#uniprot-lookups-and-chain-labels)
 - [Highlighting and Selection Colouring](#highlighting-and-selection-colouring)
 - [Documentation](#documentation)
   - [How to Generate Documentation](#how-to-generate-documentation)
@@ -37,6 +38,7 @@ Welcome to the Ribocode Developer Guide!
     - [System Dependencies for Playwright (Linux)](#system-dependencies-for-playwright-linux)
     - [Installing Playwright](#installing-playwright)
     - [Running E2E Tests](#running-e2e-tests)
+    - [Troubleshooting Parallel E2E Failures](#troubleshooting-parallel-e2e-failures)
     - [Using Real Datasets in E2E Tests](#using-real-datasets-in-e2e-tests)
     - [E2E Test Best Practices](#e2e-test-best-practices)
       - [Session Round-Trip Regression Patterns](#session-round-trip-regression-patterns)
@@ -355,6 +357,66 @@ and preserve the existing setup as a comparison:
 
 This is a possible maintenance simplification, not a decision to promote the
 experimental alignment paths or to upgrade to Mol* 6.
+
+## UniProt Lookups and Chain Labels
+
+Ribocode enriches chain labels with available ribosomal protein (RP) family
+names, UniProt accessions, gene names and mmCIF molecule descriptions. This is
+display metadata; it is not a prerequisite for loading or aligning structures.
+The [User Guide](./UserGuide.md#chain-selection) describes the visible labels
+and controls.
+
+### Mapping chains to accessions
+
+- [`rpNameTable.ts`](../src/utils/rpNameTable.ts) reads Mol* model `_struct_ref`
+  and `_struct_ref_seq` categories to map entities and author chain IDs to
+  accessions. [`uniprot.ts`](../src/utils/uniprot.ts) also parses uploaded
+  mmCIF text for chain mappings when model metadata is unavailable.
+- These mapping paths accept only accession-shaped values. An explicitly
+  non-UniProt `_struct_ref.db_name` is excluded, including its linked
+  `_struct_ref_seq` rows, even if an identifier looks like a UniProt accession.
+  Missing or unknown database identity is treated as a fallback: a
+  valid-looking identifier is accepted, but its format does not prove it is a
+  UniProt accession or that it exists.
+- [`chain.ts`](../src/utils/chain.ts) combines the mappings with
+  [`RP_name_table_uniprot.csv`](../data/input/RP_name_table_uniprot.csv) to
+  find RP family names. It uses a species-specific lookup where possible, with
+  an all-species fallback. It also incorporates available molecule descriptions
+  and gene names. The accession toggle affects label display; it does not
+  disable background lookups.
+
+### Discovery, requests and caching
+
+[`App.tsx`](../src/App.tsx) queues accessions discovered from chain mappings.
+Separately, when an mmCIF-like file is loaded, it scans the **entire file text**
+for strings matching the UniProt accession pattern and queues those too. This
+scan does not check database provenance: even an identifier from another
+database, or unrelated text, can be queried if it matches the pattern. The
+database filtering described above applies to chain mappings, not to this
+whole-file scan.
+
+The background queue deduplicates pending, in-flight and cached entries. The app
+requests gene names from the UniProt REST API in batches of 20, with a 1.2-second
+delay between batches, and updates labels as results arrive. Requests send
+accession strings to UniProt; the entire structure file is not sent by this
+lookup. An internet connection and a successful UniProt response are needed
+for newly resolved gene names.
+
+Results, including missing names represented by `null`, are kept in memory.
+Successful nonempty gene names are also stored in browser local storage and
+restored from saved sessions; null entries are not restored. A failed batch is
+currently recorded as null for each accession, indistinguishable in the cache
+from an accession with no returned gene name. Consequently it is not
+automatically retried while that null remains in memory. A reload or session
+restore can allow a later discovery to retry it.
+
+The UI reports cached, pending and in-flight counts; a completed entry does
+not necessarily mean a gene name was found. Browser console `[UniProt]`
+messages help trace discovery and batches, and the Network tab can reveal HTTP
+errors. For regressions, see
+[`uniprot.test.ts`](../src/utils/uniprot.test.ts),
+[`rpNameTable.test.ts`](../src/utils/rpNameTable.test.ts), and
+[`uniprot-reference-filter.e2e.spec.ts`](../e2e/uniprot-reference-filter.e2e.spec.ts).
 
 ## Highlighting and Selection Colouring
 
@@ -746,6 +808,28 @@ run against the intended server.
 - `npm run test:e2e:reuse` sets `PW_E2E_REUSE_SERVER=1` and reuses an existing dev server on `5173`.
 - `npm run test:e2e:webgl` sets `PW_E2E_FORCE_WEBGL=1` and runs WebGL-gated specs in single-worker mode with WebGL launch flags.
 - `npm run test:e2e:webgl:reuse` combines `PW_E2E_FORCE_WEBGL=1` with `PW_E2E_REUSE_SERVER=1`.
+
+#### Troubleshooting Parallel E2E Failures
+
+Normal local runs can use multiple workers; CI and forced-WebGL runs default to
+one worker. If a normal parallel run fails or times out, stop other test runs and
+rerun with one worker:
+
+```sh
+npm run test:e2e -- --workers=1
+```
+
+This keeps the normal browser settings while changing the worker count. For
+forced-WebGL checks, use `npm run test:e2e:webgl`, which defaults to one worker
+and uses different browser launch flags. A serial pass can indicate concurrency
+or resource sensitivity, but does not prove the cause: investigate repeatable
+failures, including possible application or test races.
+
+Workers in one Playwright run share its dev server; they do not each start a
+server on port `5173`. In strict mode, an occupied port prevents startup.
+To avoid conflicts, run independent suites one at a time, or give each its own
+server port and output directory. When changing ports, configure both `baseURL`
+and `webServer` together. Reuse mode can instead connect to an existing server.
 
 #### Expected skipped tests in normal (`test:e2e`) runs
 

@@ -57,6 +57,10 @@ For alignment or viewer changes, also run the applicable forced-WebGL checks in
 the [alignment testing reference](./AlignmentTesting.md). Standard browser tests
 may skip WebGL-dependent checks; the WebGL suite is separate from `test:pr`.
 
+If browser tests fail or time out with multiple workers, see
+[troubleshooting parallel E2E failures](./DeveloperGuide.md#troubleshooting-parallel-e2e-failures)
+for a one-worker rerun and guidance on interpreting it.
+
 On Linux, Playwright may also need system dependencies; see the
 [Playwright setup instructions](./DeveloperGuide.md#system-dependencies-for-playwright-linux).
 To reuse a running server for browser tests instead, use
