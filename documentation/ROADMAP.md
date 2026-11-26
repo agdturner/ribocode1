@@ -50,7 +50,6 @@ The improved initial fit remains disabled in production.
 ## Future Enhancements
 
 - Make it easier to reorder selected chains in the Select and Zoom Controls without removing and reselecting them. Keep each chain's residue selections with it when it moves to a different slot.
-- Review whole-file UniProt accession discovery so valid-looking identifiers from unrelated text or non-UniProt databases are not unnecessarily queried. Preserve useful fallback behavior and add regression coverage.
 
 
 ## Tracking and Release Notes

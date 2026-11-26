@@ -371,7 +371,7 @@ and controls.
 - [`rpNameTable.ts`](../src/utils/rpNameTable.ts) reads Mol* model `_struct_ref`
   and `_struct_ref_seq` categories to map entities and author chain IDs to
   accessions. [`uniprot.ts`](../src/utils/uniprot.ts) also parses uploaded
-  mmCIF text for chain mappings when model metadata is unavailable.
+  mmCIF text for chain mappings, including loop and single-item references.
 - These mapping paths accept only accession-shaped values. An explicitly
   non-UniProt `_struct_ref.db_name` is excluded, including its linked
   `_struct_ref_seq` rows, even if an identifier looks like a UniProt accession.
@@ -387,13 +387,11 @@ and controls.
 
 ### Discovery, requests and caching
 
-[`App.tsx`](../src/App.tsx) queues accessions discovered from chain mappings.
-Separately, when an mmCIF-like file is loaded, it scans the **entire file text**
-for strings matching the UniProt accession pattern and queues those too. This
-scan does not check database provenance: even an identifier from another
-database, or unrelated text, can be queried if it matches the pattern. The
-database filtering described above applies to chain mappings, not to this
-whole-file scan.
+[`App.tsx`](../src/App.tsx) queues accessions from structured chain mappings
+parsed from uploaded mmCIF-like files. Chain information extracted from Mol*
+models can also discover accessions. Arbitrary accession-shaped text outside
+these mappings is not queued. References with unknown database identity remain
+a format-only fallback, so those queries are not guaranteed to be UniProt.
 
 The background queue deduplicates pending, in-flight and cached entries. The app
 requests gene names from the UniProt REST API in batches of 20, with a 1.2-second

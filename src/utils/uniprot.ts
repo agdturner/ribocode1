@@ -4,7 +4,7 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.2.0
+ * @version 1.3.0
  * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
@@ -87,7 +87,13 @@ function tokenizeCifLine(line: string): string[] {
  */
 function parseLoopRows(cifText: string, categoryPrefix: string): { tags: string[]; rows: string[][] } | null {
     const lines = cifText.split(/\r?\n/);
+    let inMultiline = false;
     for (let i = 0; i < lines.length; i++) {
+        if (lines[i].startsWith(';')) {
+            inMultiline = !inMultiline;
+            continue;
+        }
+        if (inMultiline) continue;
         const line = lines[i].trim();
         if (line !== 'loop_') continue;
 
@@ -148,6 +154,41 @@ function parseLoopRows(cifText: string, categoryPrefix: string): { tags: string[
     return null;
 }
 
+function parseReferenceCategory(cifText: string, categoryPrefix: string): { tags: string[]; rows: string[][] } | null {
+    const loop = parseLoopRows(cifText, categoryPrefix);
+    if (loop) return loop;
+
+    const lines = cifText.split(/\r?\n/);
+    const tags: string[] = [];
+    const values: string[] = [];
+    let inMultiline = false;
+    for (let i = 0; i < lines.length; i++) {
+        const raw = lines[i];
+        if (raw.startsWith(';')) {
+            inMultiline = !inMultiline;
+            continue;
+        }
+        if (inMultiline) continue;
+
+        if (!raw.trimStart().startsWith(`${categoryPrefix}.`)) continue;
+        const tokens = tokenizeCifLine(raw);
+        const tag = tokens[0];
+        if (!tag?.startsWith(`${categoryPrefix}.`)) continue;
+        let value = tokens[1];
+        if (value === undefined) {
+            let next = i + 1;
+            while (next < lines.length && (!lines[next].trim() || lines[next].trim().startsWith('#'))) next++;
+            if (next >= lines.length || lines[next].startsWith(';')) continue;
+            value = tokenizeCifLine(lines[next])[0];
+            if (!value || value.startsWith('_')) continue;
+            i = next;
+        }
+        tags.push(tag);
+        values.push(value);
+    }
+    return tags.length ? { tags, rows: [values] } : null;
+}
+
 /**
  * Parse chain -> UniProt accession mappings directly from mmCIF text.
  *
@@ -157,7 +198,7 @@ function parseLoopRows(cifText: string, categoryPrefix: string): { tags: string[
 export function parseChainToUniProtFromCifText(cifText: string): Map<string, string> {
     const chainToUniProt = new Map<string, string>();
 
-    const structRefLoop = parseLoopRows(cifText, '_struct_ref');
+    const structRefLoop = parseReferenceCategory(cifText, '_struct_ref');
     const refIdToUniProt = new Map<string, { allowed: boolean; accession?: string }>();
     if (structRefLoop) {
         const idIdx = structRefLoop.tags.indexOf('_struct_ref.id');
@@ -178,7 +219,7 @@ export function parseChainToUniProtFromCifText(cifText: string): Map<string, str
         }
     }
 
-    const structRefSeqLoop = parseLoopRows(cifText, '_struct_ref_seq');
+    const structRefSeqLoop = parseReferenceCategory(cifText, '_struct_ref_seq');
     if (!structRefSeqLoop) return chainToUniProt;
 
     const strandIdx = structRefSeqLoop.tags.indexOf('_struct_ref_seq.pdbx_strand_id');
