@@ -4,8 +4,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-04-24
+ * @version 1.1.0
+ * @lastModified 2026-11-26
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { renderHook } from '@testing-library/react';
@@ -90,5 +90,23 @@ describe('useUpdateResidueInfo', () => {
     );
     expect(setResidueInfo).not.toHaveBeenCalled();
     expect(setSelectedResidueIds).not.toHaveBeenCalled();
+  });
+
+  it('distinguishes an explicit empty selection from an uninitialized selection', () => {
+    const viewerRef = { current: { managers: { structure: { hierarchy: { current: {
+      structures: [{ cell: { transform: { ref: 'ref1' }, obj: { data: {} } } }],
+    } } } } } };
+    const molstar = { getResidueInfo: vi.fn(() => ({
+      residueLabels: new Map([['1', { id: '1', compId: 'ALA', seqNumber: 1, name: 'ALA', insCode: '' }]]),
+      residueToAtomIds: {},
+    })) };
+    const setIds = vi.fn();
+    const setInfo = vi.fn();
+    const { rerender } = renderHook(({ ids, chain }) => useUpdateResidueInfo(
+      viewerRef, 'ref1', molstar, chain, setInfo, ids, setIds, 'Test', 'all', false
+    ), { initialProps: { ids: [] as string[] | null, chain: 'A' } });
+    expect(setIds).not.toHaveBeenCalled();
+    rerender({ ids: null, chain: 'B' });
+    expect(setIds).toHaveBeenCalledWith(['1']);
   });
 });

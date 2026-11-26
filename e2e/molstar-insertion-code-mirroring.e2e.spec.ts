@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT.
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.1.0
+ * @version 1.2.0
  * @lastModified 2026-11-26
  */
 import { expect, test } from '@playwright/test';
@@ -74,6 +74,11 @@ test('additional slot preserves distinct insertion codes and Mol* markers', asyn
   await left.getByRole('button', { name: 'Show Chain Controls' }).click();
   await left.locator(`#${prefix}-select-chain-controls-toggle-btn`).click();
   await left.getByTestId('viewer-column-A-chain-table-row-B').click();
+  await left.locator(`#${prefix}-residue-controls-toggle-btn`).click();
+  const firstSlotSelect = left.locator(`#${prefix}-residue-select`);
+  await expect(firstSlotSelect.locator('option')).toHaveCount(1);
+  await expect(firstSlotSelect.locator('option:checked')).toHaveCount(1);
+  await firstSlotSelect.selectOption([]);
   for (const [slot, chain] of [[2, 'C'], [3, 'D'], [4, 'A']] as const) {
     await left.locator(`#${prefix}-select-chain${slot}-controls-toggle-btn`).click();
     await left.getByTestId(`${prefix}-chain${slot}-chain-table-row-${chain}`).click();
@@ -106,11 +111,38 @@ test('additional slot preserves distinct insertion codes and Mol* markers', asyn
   await expect(left.getByRole('button', { name: /Hide insertions/i })).toBeVisible({ timeout: 90000 });
   await left.getByRole('button', { name: 'Show Select and Zoom Controls' }).click();
   await left.getByRole('button', { name: 'Show Chain Controls' }).click();
+  await left.locator(`#${prefix}-select-chain-controls-toggle-btn`).click();
+  await left.locator(`#${prefix}-residue-controls-toggle-btn`).click();
+  await expect(firstSlotSelect.locator('option')).toHaveCount(1);
+  await expect(firstSlotSelect.locator('option:checked')).toHaveCount(0);
   await expect(left.locator(`#${prefix}-selected-chain4-label`)).toContainText('A');
   await left.locator(`#${prefix}-select-chain4-controls-toggle-btn`).click();
   await left.locator(`#${prefix}-residue4-controls-toggle-btn`).click();
   await expect(select.locator('option:checked')).toHaveText(['GLY 1 [auth 194]', 'SER 3B [auth 194]']);
   await expect(inspect).toHaveAttribute('aria-pressed', 'true');
+
+  await page.click('#session-menu-btn');
+  const saveDownload = page.waitForEvent('download');
+  await page.locator('#session-menu-dropdown .session-menu-item:text-is("Save")').click();
+  const savePath = await (await saveDownload).path();
+  expect(savePath).toBeTruthy();
+  await page.reload();
+  await page.locator('#session-menu-file-input').setInputFiles(savePath!);
+  await expect(page.getByText('Load Session: Select Required Files')).toBeVisible();
+  await page.locator('[data-testid^="session-load-modal-file-input-"]').setInputFiles({
+    name: 'four-chains.cif', mimeType: 'chemical/x-cif', buffer: Buffer.from(fourChains),
+  });
+  await page.getByTestId('session-load-modal-load-btn').click();
+  await expect(left.getByRole('button', { name: /Hide insertions/i })).toBeVisible({ timeout: 90000 });
+  await left.getByRole('button', { name: 'Show Select and Zoom Controls' }).click();
+  await left.getByRole('button', { name: 'Show Chain Controls' }).click();
+  await left.locator(`#${prefix}-select-chain-controls-toggle-btn`).click();
+  await left.locator(`#${prefix}-residue-controls-toggle-btn`).click();
+  await expect(firstSlotSelect.locator('option')).toHaveCount(1);
+  await expect(firstSlotSelect.locator('option:checked')).toHaveCount(0);
+  await left.locator(`#${prefix}-select-chain4-controls-toggle-btn`).click();
+  await left.locator(`#${prefix}-residue4-controls-toggle-btn`).click();
+  await expect(select.locator('option:checked')).toHaveText(['GLY 1 [auth 194]', 'SER 3B [auth 194]']);
 });
 
 test('mirrors distinct insertion codes and restores them across a session', async ({ page }) => {
