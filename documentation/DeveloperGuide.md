@@ -208,11 +208,16 @@ This section defines expected behavior for loading, applying, saving, and testin
 
 ### Residue visual refresh note
 
-- Some residue transitions can retain stale visuals if only a single in-place update is applied.
-- Current expected behavior is an in-place two-step refresh for residue theme transitions:
-  1. apply an intermediate neutral theme (`chain-id`),
-  2. then apply the target residue theme.
-- This preserves representation identity while ensuring the rendered colors refresh correctly.
+- Apply the target residue theme directly, with a fresh `__ribocodeThemeRefreshNonce`.
+- The residue provider declares the refresh nonce and `__ribocodeActiveThemeKind` as hidden Mol* parameters and retains them in its theme props. Undeclared parameters are stripped by Mol* and cannot invalidate cached colours or preserve session metadata.
+- Queue residue-theme requests until both source and mirrored updates have completed. Do not expose an intermediate neutral theme in the selection controls.
+- Session serialization also recognizes registered residue-theme names when older representation metadata is absent.
+- When a session references files already open, reuse their structures but restore the saved representations rather than skipping the session state.
+
+### Chain-colour identity note
+
+- Chain edits target author chain IDs. Label aliases may be updated only when they do not collide with another author chain ID.
+- When seeding an editable default theme, preserve provider colours for all unaffected chains; author-ID colours take precedence over colliding label aliases.
 
 ### Sync scope note
 

@@ -6,8 +6,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT. See LICENSE file for more info.
  *
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.8.0
- * @lastModified 2026-11-26
+ * @version 1.8.1
+ * @lastModified 2026-11-27
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -1528,6 +1528,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             ];
 
         const map = new Map<string, string>();
+        const authorColors = new Map<string, string>();
         for (const { plugin, structureRef } of structureRefs) {
             if (!plugin || !structureRef) continue;
             const structureData = plugin.managers.structure.hierarchy.current.structures.find(
@@ -1549,8 +1550,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                         const resolved = normalizeThemeColor(chainIdTheme.color(location, false));
                         if (!resolved) continue;
                         if (auth) {
-                            map.set(auth, resolved);
-                            map.set(auth.toUpperCase(), resolved);
+                            authorColors.set(auth, resolved);
+                            authorColors.set(auth.toUpperCase(), resolved);
                         }
                         if (label) {
                             map.set(label, resolved);
@@ -1558,10 +1559,12 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                         }
                     }
                 }
-            } catch {
-                // Ignore fallback color extraction failures and keep other sources.
+            } catch (error) {
+                console.error(`Failed to extract default chain colours for ${mode}.`, error);
             }
         }
+        // Label aliases must not overwrite another chain's author identity.
+        for (const [chainId, color] of authorColors) map.set(chainId, color);
         return map;
     }, [molstarA.structureRefs, molstarB.structureRefs, viewerA.ref, viewerB.ref]);
 
@@ -1570,6 +1573,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         if (!normalizedSelectedChainId) return [];
         const selectedUpper = normalizedSelectedChainId.toUpperCase();
         const aliases = new Set<string>([normalizedSelectedChainId, selectedUpper]);
+        const otherAuthorIds = new Set<string>();
 
         const structureRefs: Array<{ plugin: PluginUIContext | null; structureRef?: string | null }> = mode === 'AlignedTo'
             ? [
@@ -1599,11 +1603,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                         const auth = String(StructureProperties.chain.auth_asym_id(location) ?? '').trim();
                         const label = String(StructureProperties.chain.label_asym_id(location) ?? '').trim();
                         const authUpper = auth.toUpperCase();
-                        const labelUpper = label.toUpperCase();
-                        const matches = auth === normalizedSelectedChainId
-                            || label === normalizedSelectedChainId
-                            || authUpper === selectedUpper
-                            || labelUpper === selectedUpper;
+                        const matches = auth === normalizedSelectedChainId || authUpper === selectedUpper;
+                        if (!matches && auth) otherAuthorIds.add(authUpper);
                         if (!matches) continue;
                         if (auth) {
                             aliases.add(auth);
@@ -1611,16 +1612,16 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                         }
                         if (label) {
                             aliases.add(label);
-                            aliases.add(labelUpper);
+                            aliases.add(label.toUpperCase());
                         }
                     }
                 }
-            } catch {
-                // Best-effort alias expansion; keep basic aliases on failure.
+            } catch (error) {
+                console.error(`Failed to resolve chain colour aliases for ${mode} chain ${chainId}.`, error);
             }
         }
 
-        return Array.from(aliases).filter(Boolean);
+        return Array.from(aliases).filter(alias => !!alias && !otherAuthorIds.has(alias.toUpperCase()));
     }, [molstarA.structureRefs, molstarB.structureRefs, viewerA.ref, viewerB.ref]);
 
     const isThemeInUseForFork = useCallback((themeName: string): boolean => {
@@ -1653,7 +1654,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             const targetMode = mode ?? 'AlignedTo';
             const chainAliases = getEquivalentChainIdsForMode(targetMode, chainId);
             const editableThemeName = EDITABLE_CHAIN_THEME_BY_MODE[targetMode];
-            const existingMap = getChainColorsFromActiveChainIdTheme(targetMode);
+            const existingMap = getChainColorsFromChainIdProvider(targetMode);
+            for (const [id, color] of getChainColorsFromActiveChainIdTheme(targetMode)) existingMap.set(id, color);
             const existingRows = getThemeRowsByName(editableThemeName);
             existingRows.forEach((row) => {
                 const chain = String(row.pdb_chain ?? '').trim();
@@ -1764,6 +1766,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
     }, [
         getEquivalentChainIdsForMode,
         getChainColorsFromActiveChainIdTheme,
+        getChainColorsFromChainIdProvider,
         getThemeRowsByName,
         isThemeInUseForFork,
         registerLoadedColorTheme,
@@ -2465,216 +2468,221 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         forceUpdate();
     }, [forceUpdate, molstarA.repIdMapRef, molstarB.repIdMapRef, selectedResidueThemeByMode, updateRepresentationThemePref, viewerA.ref, viewerB.ref]);
 
-    const setRepresentationResidueTheme = useCallback(async (mode: MoleculeMode, repRef: string, themeName: string): Promise<void> => {
-        const themeRefreshNonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        const getRepIdFromCell = (plugin: PluginUIContext | null, ref: string): string | null => {
-            const value = plugin?.state?.data?.cells?.get(ref)?.params?.values?._ribocodeId;
-            return typeof value === 'string' && value ? value : null;
-        };
-        const resolveModeAndRepId = (inputMode: MoleculeMode, inputRef: string): { resolvedMode: MoleculeMode; repId: string | null } => {
-            const mapAForMode = molstarA.repIdMapRef.current?.[inputMode] ?? {};
-            const mapBForMode = molstarB.repIdMapRef.current?.[inputMode] ?? {};
-            const repIdFromModeMap = Object.entries(mapAForMode).find(([, ref]) => ref === inputRef)?.[0]
-                ?? Object.entries(mapBForMode).find(([, ref]) => ref === inputRef)?.[0]
-                ?? null;
-            if (repIdFromModeMap) return { resolvedMode: inputMode, repId: repIdFromModeMap };
+    // Complete both viewers' updates before accepting the next theme transition.
+    const residueThemeUpdateQueue = useRef<Promise<void>>(Promise.resolve());
+    const setRepresentationResidueTheme = useCallback((mode: MoleculeMode, repRef: string, themeName: string): Promise<void> => {
+        const apply = async () => {
+            const themeRefreshNonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            const getRepIdFromCell = (plugin: PluginUIContext | null, ref: string): string | null => {
+                const value = plugin?.state?.data?.cells?.get(ref)?.params?.values?._ribocodeId;
+                return typeof value === 'string' && value ? value : null;
+            };
+            const resolveModeAndRepId = (inputMode: MoleculeMode, inputRef: string): { resolvedMode: MoleculeMode; repId: string | null } => {
+                const mapAForMode = molstarA.repIdMapRef.current?.[inputMode] ?? {};
+                const mapBForMode = molstarB.repIdMapRef.current?.[inputMode] ?? {};
+                const repIdFromModeMap = Object.entries(mapAForMode).find(([, ref]) => ref === inputRef)?.[0]
+                    ?? Object.entries(mapBForMode).find(([, ref]) => ref === inputRef)?.[0]
+                    ?? null;
+                if (repIdFromModeMap) return { resolvedMode: inputMode, repId: repIdFromModeMap };
 
-            const pluginForInputMode = inputMode === AlignedTo ? viewerA.ref.current : viewerB.ref.current;
-            const oppositePluginForInputMode = inputMode === AlignedTo ? viewerB.ref.current : viewerA.ref.current;
-            const repIdFromCell = getRepIdFromCell(pluginForInputMode, inputRef)
-                ?? getRepIdFromCell(oppositePluginForInputMode, inputRef);
-            if (repIdFromCell) return { resolvedMode: inputMode, repId: repIdFromCell };
+                const pluginForInputMode = inputMode === AlignedTo ? viewerA.ref.current : viewerB.ref.current;
+                const oppositePluginForInputMode = inputMode === AlignedTo ? viewerB.ref.current : viewerA.ref.current;
+                const repIdFromCell = getRepIdFromCell(pluginForInputMode, inputRef)
+                    ?? getRepIdFromCell(oppositePluginForInputMode, inputRef);
+                if (repIdFromCell) return { resolvedMode: inputMode, repId: repIdFromCell };
 
-            return { resolvedMode: inputMode, repId: null };
-        };
+                return { resolvedMode: inputMode, repId: null };
+            };
 
-        const { resolvedMode, repId } = resolveModeAndRepId(mode, repRef);
-        const pluginA = viewerA.ref.current;
-        const pluginB = viewerB.ref.current;
-        const oppositeMode: MoleculeMode = resolvedMode === Aligned ? AlignedTo : Aligned;
-        const isDefaultResidueThemeName =
-            themeName === DEFAULT_RESIDUE_THEME_BY_MODE.AlignedTo
-            || themeName === DEFAULT_RESIDUE_THEME_BY_MODE.Aligned;
-        const isDefaultThemeSelection =
-            themeName === DEFAULT_COLOR_THEME_NAME
-            || themeName === 'chain-id'
-            || isDefaultResidueThemeName;
-        const resolveEffectiveResidueThemeName = (targetMode: MoleculeMode): string => {
-            if (!isDefaultThemeSelection) return themeName;
-            const targetModeKey: ColorThemeMode = targetMode === 'Aligned' ? 'Aligned' : 'AlignedTo';
-            return DEFAULT_RESIDUE_THEME_BY_MODE[targetModeKey];
-        };
-        const ensureDefaultResidueThemeForMode = (targetMode: MoleculeMode) => {
-            if (!isDefaultThemeSelection) return;
-            const targetModeKey: ColorThemeMode = targetMode === 'Aligned' ? 'Aligned' : 'AlignedTo';
-            const defaultThemeName = DEFAULT_RESIDUE_THEME_BY_MODE[targetModeKey];
-            const canonicalRows = Array.from(getResidueTypeColorMapForDefaultTheme(targetModeKey).entries()).map(([type, color]) => ({
-                residue_type: type,
-                color,
-            }));
-            const existingRows = getThemeRowsByName(defaultThemeName);
-            const rowsToUse = canonicalRows.length > 0 ? canonicalRows : existingRows;
-            if (rowsToUse.length === 0) return;
+            const { resolvedMode, repId } = resolveModeAndRepId(mode, repRef);
+            const pluginA = viewerA.ref.current;
+            const pluginB = viewerB.ref.current;
+            const oppositeMode: MoleculeMode = resolvedMode === Aligned ? AlignedTo : Aligned;
+            const isDefaultResidueThemeName =
+                themeName === DEFAULT_RESIDUE_THEME_BY_MODE.AlignedTo
+                || themeName === DEFAULT_RESIDUE_THEME_BY_MODE.Aligned;
+            const isDefaultThemeSelection =
+                themeName === DEFAULT_COLOR_THEME_NAME
+                || themeName === 'chain-id'
+                || isDefaultResidueThemeName;
+            const resolveEffectiveResidueThemeName = (targetMode: MoleculeMode): string => {
+                if (!isDefaultThemeSelection) return themeName;
+                const targetModeKey: ColorThemeMode = targetMode === 'Aligned' ? 'Aligned' : 'AlignedTo';
+                return DEFAULT_RESIDUE_THEME_BY_MODE[targetModeKey];
+            };
+            const ensureDefaultResidueThemeForMode = (targetMode: MoleculeMode) => {
+                if (!isDefaultThemeSelection) return;
+                const targetModeKey: ColorThemeMode = targetMode === 'Aligned' ? 'Aligned' : 'AlignedTo';
+                const defaultThemeName = DEFAULT_RESIDUE_THEME_BY_MODE[targetModeKey];
+                const canonicalRows = Array.from(getResidueTypeColorMapForDefaultTheme(targetModeKey).entries()).map(([type, color]) => ({
+                    residue_type: type,
+                    color,
+                }));
+                const existingRows = getThemeRowsByName(defaultThemeName);
+                const rowsToUse = canonicalRows.length > 0 ? canonicalRows : existingRows;
+                if (rowsToUse.length === 0) return;
 
-            registerLoadedColorTheme(defaultThemeName, rowsToUse);
-            setLoadedColorThemeRowsByName(prev => {
-                const previousRows = Array.isArray(prev[defaultThemeName]) ? prev[defaultThemeName] : [];
-                const isSameLength = previousRows.length === rowsToUse.length;
-                const isSameRows = isSameLength && previousRows.every((row, idx) => {
-                    const nextRow = rowsToUse[idx] as any;
-                    return String(row?.residue_type ?? '') === String(nextRow?.residue_type ?? '')
-                        && String(row?.color ?? '') === String(nextRow?.color ?? '');
+                registerLoadedColorTheme(defaultThemeName, rowsToUse);
+                setLoadedColorThemeRowsByName(prev => {
+                    const previousRows = Array.isArray(prev[defaultThemeName]) ? prev[defaultThemeName] : [];
+                    const isSameLength = previousRows.length === rowsToUse.length;
+                    const isSameRows = isSameLength && previousRows.every((row, idx) => {
+                        const nextRow = rowsToUse[idx] as any;
+                        return String(row?.residue_type ?? '') === String(nextRow?.residue_type ?? '')
+                            && String(row?.color ?? '') === String(nextRow?.color ?? '');
+                    });
+                    if (isSameRows) return prev;
+                    return {
+                        ...prev,
+                        [defaultThemeName]: rowsToUse,
+                    };
                 });
-                if (isSameRows) return prev;
-                return {
-                    ...prev,
-                    [defaultThemeName]: rowsToUse,
-                };
+            };
+            const ensureThemeRegistered = (plugin: PluginUIContext | null, themeNameToRegister: string) => {
+                if (!plugin) return;
+                registerThemeIfNeeded(plugin, themeNameToRegister, chainColorMaps, residueTypeColorMaps);
+            };
+
+            ensureDefaultResidueThemeForMode(resolvedMode);
+            if (syncEnabled) ensureDefaultResidueThemeForMode(oppositeMode);
+
+            const themesToRegister = new Set<string>();
+            themesToRegister.add(resolveEffectiveResidueThemeName(resolvedMode));
+            if (syncEnabled) themesToRegister.add(resolveEffectiveResidueThemeName(oppositeMode));
+            themesToRegister.forEach((name) => {
+                ensureThemeRegistered(pluginA, name);
+                ensureThemeRegistered(pluginB, name);
             });
-        };
-        const ensureThemeRegistered = (plugin: PluginUIContext | null, themeNameToRegister: string) => {
-            if (!plugin) return;
-            registerThemeIfNeeded(plugin, themeNameToRegister, chainColorMaps, residueTypeColorMaps);
-        };
 
-        ensureDefaultResidueThemeForMode(resolvedMode);
-        if (syncEnabled) ensureDefaultResidueThemeForMode(oppositeMode);
+            const mapA = molstarA.repIdMapRef.current?.[resolvedMode] ?? {};
+            const mapB = molstarB.repIdMapRef.current?.[resolvedMode] ?? {};
 
-        const themesToRegister = new Set<string>();
-        themesToRegister.add(resolveEffectiveResidueThemeName(resolvedMode));
-        if (syncEnabled) themesToRegister.add(resolveEffectiveResidueThemeName(oppositeMode));
-        themesToRegister.forEach((name) => {
-            ensureThemeRegistered(pluginA, name);
-            ensureThemeRegistered(pluginB, name);
-        });
+            const targets = new Map<string, { plugin: PluginUIContext | null; ref: string; targetMode: MoleculeMode; viewerKey: ViewerKey }>();
+            let sourceViewerKey: ViewerKey | null = null;
+            const getRepRefsByMode = (plugin: PluginUIContext | null, targetMode: MoleculeMode): string[] => {
+                if (!plugin) return [];
+                const structureRef = plugin === pluginA
+                    ? molstarA.structureRefs[targetMode]
+                    : molstarB.structureRefs[targetMode];
+                if (!structureRef) return [];
+                const reps = getStructureRepresentations(plugin, structureRef);
+                return reps.map((rep: any) => String(rep?.repRef ?? '')).filter(Boolean);
+            };
 
-        const mapA = molstarA.repIdMapRef.current?.[resolvedMode] ?? {};
-        const mapB = molstarB.repIdMapRef.current?.[resolvedMode] ?? {};
+            if (syncEnabled) {
+                const inA = Boolean(pluginA?.state?.data?.cells?.get(repRef));
+                const inB = Boolean(pluginB?.state?.data?.cells?.get(repRef));
+                const sourceKey: ViewerKey = inA && !inB
+                    ? A
+                    : (inB && !inA
+                        ? B
+                        : (resolvedMode === AlignedTo ? A : B));
+                sourceViewerKey = sourceKey;
+                const targetKey: ViewerKey = sourceKey === A ? B : A;
+                const sourcePlugin = sourceKey === A ? pluginA : pluginB;
+                const targetPlugin = targetKey === A ? pluginA : pluginB;
 
-        const targets = new Map<string, { plugin: PluginUIContext | null; ref: string; targetMode: MoleculeMode; viewerKey: ViewerKey }>();
-        let sourceViewerKey: ViewerKey | null = null;
-        const getRepRefsByMode = (plugin: PluginUIContext | null, targetMode: MoleculeMode): string[] => {
-            if (!plugin) return [];
-            const structureRef = plugin === pluginA
-                ? molstarA.structureRefs[targetMode]
-                : molstarB.structureRefs[targetMode];
-            if (!structureRef) return [];
-            const reps = getStructureRepresentations(plugin, structureRef);
-            return reps.map((rep: any) => String(rep?.repRef ?? '')).filter(Boolean);
-        };
+                const sourceMap = sourceKey === A ? mapA : mapB;
+                const sourceRefByRepId = repId ? sourceMap[repId] : undefined;
+                const sourceRef = sourceRefByRepId && sourcePlugin?.state?.data?.cells?.get(sourceRefByRepId)
+                    ? sourceRefByRepId
+                    : (sourcePlugin?.state?.data?.cells?.get(repRef) ? repRef : undefined);
 
-        if (syncEnabled) {
-            const inA = Boolean(pluginA?.state?.data?.cells?.get(repRef));
-            const inB = Boolean(pluginB?.state?.data?.cells?.get(repRef));
-            const sourceKey: ViewerKey = inA && !inB
-                ? A
-                : (inB && !inA
-                    ? B
-                    : (resolvedMode === AlignedTo ? A : B));
-            sourceViewerKey = sourceKey;
-            const targetKey: ViewerKey = sourceKey === A ? B : A;
-            const sourcePlugin = sourceKey === A ? pluginA : pluginB;
-            const targetPlugin = targetKey === A ? pluginA : pluginB;
+                if (sourceRef) {
+                    targets.set(`${sourceKey}:${sourceRef}`, {
+                        plugin: sourcePlugin,
+                        ref: sourceRef,
+                        targetMode: resolvedMode,
+                        viewerKey: sourceKey,
+                    });
+                }
 
-            const sourceMap = sourceKey === A ? mapA : mapB;
-            const sourceRefByRepId = repId ? sourceMap[repId] : undefined;
-            const sourceRef = sourceRefByRepId && sourcePlugin?.state?.data?.cells?.get(sourceRefByRepId)
-                ? sourceRefByRepId
-                : (sourcePlugin?.state?.data?.cells?.get(repRef) ? repRef : undefined);
+                const oppositeMap = targetKey === A
+                    ? (molstarA.repIdMapRef.current?.[oppositeMode] ?? {})
+                    : (molstarB.repIdMapRef.current?.[oppositeMode] ?? {});
 
-            if (sourceRef) {
-                targets.set(`${sourceKey}:${sourceRef}`, {
-                    plugin: sourcePlugin,
-                    ref: sourceRef,
-                    targetMode: resolvedMode,
-                    viewerKey: sourceKey,
-                });
-            }
-
-            const oppositeMap = targetKey === A
-                ? (molstarA.repIdMapRef.current?.[oppositeMode] ?? {})
-                : (molstarB.repIdMapRef.current?.[oppositeMode] ?? {});
-
-            let mirroredRef = repId ? oppositeMap[repId] : undefined;
-            if (!mirroredRef && repId && targetPlugin) {
-                const targetRefs = getRepRefsByMode(targetPlugin, oppositeMode);
-                mirroredRef = targetRefs.find((candidateRef) => getRepIdFromCell(targetPlugin, candidateRef) === repId);
-            }
-            if (!mirroredRef && targetPlugin) {
-                const targetRefs = getRepRefsByMode(targetPlugin, oppositeMode);
-                if (sourceRef && sourcePlugin) {
-                    const sourceRefs = getRepRefsByMode(sourcePlugin, resolvedMode);
-                    const idx = sourceRefs.indexOf(sourceRef);
-                    if (idx >= 0 && idx < targetRefs.length) {
-                        mirroredRef = targetRefs[idx];
+                let mirroredRef = repId ? oppositeMap[repId] : undefined;
+                if (!mirroredRef && repId && targetPlugin) {
+                    const targetRefs = getRepRefsByMode(targetPlugin, oppositeMode);
+                    mirroredRef = targetRefs.find((candidateRef) => getRepIdFromCell(targetPlugin, candidateRef) === repId);
+                }
+                if (!mirroredRef && targetPlugin) {
+                    const targetRefs = getRepRefsByMode(targetPlugin, oppositeMode);
+                    if (sourceRef && sourcePlugin) {
+                        const sourceRefs = getRepRefsByMode(sourcePlugin, resolvedMode);
+                        const idx = sourceRefs.indexOf(sourceRef);
+                        if (idx >= 0 && idx < targetRefs.length) {
+                            mirroredRef = targetRefs[idx];
+                        }
+                    }
+                    if (!mirroredRef && targetRefs.length > 0) {
+                        // Representation sets can differ across viewers/modes, or the source ref can
+                        // be stale after rapid UI/state updates; still mirror to a concrete
+                        // opposite-viewer representation rather than dropping the update.
+                        mirroredRef = targetRefs[targetRefs.length - 1];
                     }
                 }
-                if (!mirroredRef && targetRefs.length > 0) {
-                    // Representation sets can differ across viewers/modes, or the source ref can
-                    // be stale after rapid UI/state updates; still mirror to a concrete
-                    // opposite-viewer representation rather than dropping the update.
-                    mirroredRef = targetRefs[targetRefs.length - 1];
+
+                if (mirroredRef) {
+                    targets.set(`${targetKey}:${mirroredRef}`, {
+                        plugin: targetPlugin,
+                        ref: mirroredRef,
+                        targetMode: oppositeMode,
+                        viewerKey: targetKey,
+                    });
+                }
+
+            } else {
+                if (repRef) {
+                    if (pluginA?.state?.data?.cells?.get(repRef)) targets.set(`A:${repRef}`, { plugin: pluginA, ref: repRef, targetMode: resolvedMode, viewerKey: A });
+                    if (pluginB?.state?.data?.cells?.get(repRef)) targets.set(`B:${repRef}`, { plugin: pluginB, ref: repRef, targetMode: resolvedMode, viewerKey: B });
+                }
+                if (repId) {
+                    const refA = mapA[repId];
+                    const refB = mapB[repId];
+                    if (refA) targets.set(`A:${refA}`, { plugin: pluginA, ref: refA, targetMode: resolvedMode, viewerKey: A });
+                    if (refB) targets.set(`B:${refB}`, { plugin: pluginB, ref: refB, targetMode: resolvedMode, viewerKey: B });
                 }
             }
 
-            if (mirroredRef) {
-                targets.set(`${targetKey}:${mirroredRef}`, {
-                    plugin: targetPlugin,
-                    ref: mirroredRef,
-                    targetMode: oppositeMode,
-                    viewerKey: targetKey,
-                });
-            }
+            const orderedTargets = Array.from(targets.entries())
+                .sort(([leftKey], [rightKey]) => {
+                    const leftIsSource = sourceViewerKey ? leftKey.startsWith(`${sourceViewerKey}:`) : false;
+                    const rightIsSource = sourceViewerKey ? rightKey.startsWith(`${sourceViewerKey}:`) : false;
+                    if (leftIsSource && !rightIsSource) return -1;
+                    if (!leftIsSource && rightIsSource) return 1;
+                    return 0;
+                })
+                .map(([, value]) => value);
 
-        } else {
-            if (repRef) {
-                if (pluginA?.state?.data?.cells?.get(repRef)) targets.set(`A:${repRef}`, { plugin: pluginA, ref: repRef, targetMode: resolvedMode, viewerKey: A });
-                if (pluginB?.state?.data?.cells?.get(repRef)) targets.set(`B:${repRef}`, { plugin: pluginB, ref: repRef, targetMode: resolvedMode, viewerKey: B });
-            }
-            if (repId) {
-                const refA = mapA[repId];
-                const refB = mapB[repId];
-                if (refA) targets.set(`A:${refA}`, { plugin: pluginA, ref: refA, targetMode: resolvedMode, viewerKey: A });
-                if (refB) targets.set(`B:${refB}`, { plugin: pluginB, ref: refB, targetMode: resolvedMode, viewerKey: B });
-            }
-        }
-
-        const orderedTargets = Array.from(targets.entries())
-            .sort(([leftKey], [rightKey]) => {
-                const leftIsSource = sourceViewerKey ? leftKey.startsWith(`${sourceViewerKey}:`) : false;
-                const rightIsSource = sourceViewerKey ? rightKey.startsWith(`${sourceViewerKey}:`) : false;
-                if (leftIsSource && !rightIsSource) return -1;
-                if (!leftIsSource && rightIsSource) return 1;
-                return 0;
-            })
-            .map(([, value]) => value);
-
-        for (const { plugin, ref, targetMode, viewerKey } of orderedTargets) {
-            const targetModeKey: ColorThemeMode = targetMode === 'Aligned' ? 'Aligned' : 'AlignedTo';
-            const explicitResidueThemeName = resolveEffectiveResidueThemeName(targetMode);
-            const applyResidueTheme = (themeNameToApply: string, refreshNonce: string) => updateRepresentationThemePref(plugin, ref, (prev) => {
+            for (const { plugin, ref, targetMode, viewerKey } of orderedTargets) {
                 const targetModeKey: ColorThemeMode = targetMode === 'Aligned' ? 'Aligned' : 'AlignedTo';
-                const chainThemeName = prev.chainThemeName ?? selectedColorThemeByMode[targetModeKey] ?? DEFAULT_COLOR_THEME_NAME;
-                return {
-                    chainThemeName,
-                    residueThemeName: explicitResidueThemeName,
-                    activeThemeKind: 'residue-type',
-                    colorThemeName: themeNameToApply,
-                    // Force Mol* to re-evaluate representation coloring so transitions
-                    // like custom-residue -> default-residue cannot keep stale visuals.
-                    colorThemeParams: {
-                        __ribocodeThemeRefreshNonce: refreshNonce,
-                    },
-                };
-            });
+                const explicitResidueThemeName = resolveEffectiveResidueThemeName(targetMode);
+                const applyResidueTheme = (themeNameToApply: string, refreshNonce: string) => updateRepresentationThemePref(plugin, ref, (prev) => {
+                    const targetModeKey: ColorThemeMode = targetMode === 'Aligned' ? 'Aligned' : 'AlignedTo';
+                    const chainThemeName = prev.chainThemeName ?? selectedColorThemeByMode[targetModeKey] ?? DEFAULT_COLOR_THEME_NAME;
+                    return {
+                        chainThemeName,
+                        residueThemeName: explicitResidueThemeName,
+                        activeThemeKind: 'residue-type',
+                        colorThemeName: themeNameToApply,
+                        // Force Mol* to re-evaluate representation coloring so transitions
+                        // like custom-residue -> default-residue cannot keep stale visuals.
+                        colorThemeParams: {
+                            __ribocodeThemeRefreshNonce: refreshNonce,
+                        },
+                    };
+                });
 
-            // In-place refresh for residue transitions: apply a neutral
-            // intermediate color theme first, then apply the target residue theme.
-            // This prevents stale visuals when switching default <-> custom residue themes.
-            await applyResidueTheme('chain-id', `${themeRefreshNonce}-pre`);
-            await applyResidueTheme(explicitResidueThemeName, `${themeRefreshNonce}-final`);
-        }
-        forceUpdate();
+                await applyResidueTheme(explicitResidueThemeName, `${themeRefreshNonce}-final`);
+            }
+            forceUpdate();
+        };
+        const update = residueThemeUpdateQueue.current.then(apply);
+        residueThemeUpdateQueue.current = update.catch(error => {
+            console.error(`Failed to update residue theme for ${mode} representation ${repRef}.`, error);
+        });
+        return update;
     }, [
         chainColorMaps,
         forceUpdate,
@@ -2822,8 +2830,10 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         }
         const values = rep?.params?.values ?? {};
         const colorThemeCandidate = values?.colorTheme ?? rep?.colorTheme;
-        const normalizeThemeKind = (value: unknown): 'chain' | 'residue-type' => {
-            return value === 'residue-type' ? 'residue-type' : 'chain';
+        const normalizeThemeKind = (value: unknown, themeName?: string): 'chain' | 'residue-type' => {
+            if (value === 'chain' || value === 'residue-type') return value;
+            // Mol* strips undeclared Ribocode metadata from representation params.
+            return themeName && residueTypeColorMaps.has(themeName) ? 'residue-type' : 'chain';
         };
         const resolveThemeName = (themeValue: unknown, fallback: string): string => {
             if (typeof themeValue === 'string' && themeValue.trim()) return themeValue;
@@ -2831,9 +2841,9 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         };
 
         if (typeof colorThemeCandidate === 'string') {
-            const activeThemeKind = normalizeThemeKind(values?._ribocodeActiveThemeKind ?? rep?.activeThemeKind);
-            const chainThemeName = resolveThemeName(values?._ribocodeChainTheme ?? rep?.chainThemeName, colorThemeCandidate);
-            const residueThemeName = resolveThemeName(values?._ribocodeResidueTheme ?? rep?.residueThemeName, DEFAULT_COLOR_THEME_NAME);
+            const activeThemeKind = normalizeThemeKind(values?._ribocodeActiveThemeKind ?? rep?.activeThemeKind, colorThemeCandidate);
+            const chainThemeName = resolveThemeName(values?._ribocodeChainTheme ?? rep?.chainThemeName, activeThemeKind === 'chain' ? colorThemeCandidate : DEFAULT_COLOR_THEME_NAME);
+            const residueThemeName = resolveThemeName(values?._ribocodeResidueTheme ?? rep?.residueThemeName, activeThemeKind === 'residue-type' ? colorThemeCandidate : DEFAULT_COLOR_THEME_NAME);
             return {
                 type: typeCandidate as AllowedRepresentationType,
                 colorTheme: { name: colorThemeCandidate, params: {} },
@@ -2847,7 +2857,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             const activeThemeKind = normalizeThemeKind(
                 values?._ribocodeActiveThemeKind
                 ?? rep?.activeThemeKind
-                ?? colorThemeCandidate?.params?.__ribocodeActiveThemeKind
+                ?? colorThemeCandidate?.params?.__ribocodeActiveThemeKind,
+                colorThemeCandidate.name
             );
             const fallbackChainTheme = activeThemeKind === 'chain' ? colorThemeCandidate.name : DEFAULT_COLOR_THEME_NAME;
             const fallbackResidueTheme = activeThemeKind === 'residue-type' ? colorThemeCandidate.name : DEFAULT_COLOR_THEME_NAME;
@@ -2872,7 +2883,7 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
             residueThemeName: resolveThemeName(values?._ribocodeResidueTheme ?? rep?.residueThemeName, DEFAULT_COLOR_THEME_NAME),
             activeThemeKind: normalizeThemeKind(values?._ribocodeActiveThemeKind ?? rep?.activeThemeKind),
         };
-    }, []);
+    }, [residueTypeColorMaps]);
 
     const serializeRepresentationsForMode = useCallback((
         molstar: ReturnType<typeof useMolstarViewer>,
@@ -3576,7 +3587,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
         // Prevent redundant state updates to break infinite update loops
         if (mode === AlignedTo) {
             if (alignedToFile && alignedToFile.name === file.name) {
-                // Already loaded, skip
+                if (options?.restoreSession) {
+                    await restoreSessionRepresentations(
+                        AlignedTo, sessionRepresentationsA, sessionRepresentationsB,
+                        molstarA.structureRefs[AlignedTo], molstarB.structureRefs[AlignedTo],
+                        pluginA, pluginB
+                    );
+                }
                 return viewerA.moleculeAlignedTo as LoadedMolecule | undefined;
             }
             // Loading a new reference dataset establishes a new baseline; clear
@@ -3666,7 +3683,13 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
 
         } else if (mode === Aligned) {
             if (alignedFile && alignedFile.name === file.name) {
-                // Already loaded, skip
+                if (options?.restoreSession) {
+                    await restoreSessionRepresentations(
+                        Aligned, sessionRepresentationsA, sessionRepresentationsB,
+                        molstarA.structureRefs[Aligned], molstarB.structureRefs[Aligned],
+                        viewerA.ref.current, viewerB.ref.current
+                    );
+                }
                 return viewerA.moleculeAligned as LoadedMolecule | undefined;
             }
             // A newly loaded aligned dataset must start from a clean in-place transform baseline.
@@ -8159,7 +8182,8 @@ const App: React.FC<AppProps> = ({ testForceIsMoleculeAlignedLoaded }) => {
                     AlignedTo,
                     undefined,
                     alignedToRepresentationsA,
-                    alignedToRepresentationsB
+                    alignedToRepresentationsB,
+                    { restoreSession: true }
                 ) as LoadedMolecule | undefined;
                 loadedAny = true;
                 if (alignedFile) {

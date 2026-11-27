@@ -4,13 +4,14 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-04-24
+ * @version 1.0.1
+ * @lastModified 2026-11-27
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { vi } from 'vitest';
 import { Color } from 'molstar/lib/mol-util/color';
-import { createChainColorTheme, getColourTheme, inferColorThemeKind, parseColorFileContent } from './colors';
+import { ParamDefinition as PD } from 'molstar/lib/mol-util/param-definition';
+import { createChainColorTheme, createResidueTypeColorTheme, getColourTheme, inferColorThemeKind, parseColorFileContent } from './colors';
 
 describe('getColourTheme', () => {
     let originalWarn: any;
@@ -95,6 +96,28 @@ describe('createChainColorTheme', () => {
         const color = colorFn(location);
 
         expect(color).toBe(Color.fromHexStyle('#FF8800'));
+    });
+});
+
+describe('createResidueTypeColorTheme', () => {
+    it('retains refresh and theme-kind params through Molstar normalization and theme creation', () => {
+        const provider = createResidueTypeColorTheme('residue-theme', new Map([['ALA', Color(0x8CFF8C)]]));
+        const firstProps = PD.normalizeParams(provider.getParams(), {
+            __ribocodeThemeRefreshNonce: 'first',
+            __ribocodeActiveThemeKind: 'residue-type',
+        }, 'all');
+        const secondProps = PD.normalizeParams(provider.getParams(), {
+            __ribocodeThemeRefreshNonce: 'second',
+            __ribocodeActiveThemeKind: 'residue-type',
+        }, 'all');
+        const first = provider.factory({}, firstProps);
+        const second = provider.factory({}, secondProps);
+
+        expect(first.props).toEqual(firstProps);
+        expect(first.props.__ribocodeThemeRefreshNonce).toBe('first');
+        expect(first.props.__ribocodeActiveThemeKind).toBe('residue-type');
+        expect(second.props).not.toEqual(first.props);
+        expect(provider.defaultValues.__ribocodeActiveThemeKind).toBe('residue-type');
     });
 });
 
