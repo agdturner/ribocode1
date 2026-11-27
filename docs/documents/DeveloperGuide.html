@@ -249,6 +249,8 @@ contains the version currently pinned by Ribocode.</p>
 <ul>
 <li>Chain edits target author chain IDs. Label aliases may be updated only when they do not collide with another author chain ID.</li>
 <li>When seeding an editable default theme, preserve provider colours for all unaffected chains; author-ID colours take precedence over colliding label aliases.</li>
+<li>Loaded custom chain and residue-type themes use <code>UNSPECIFIED_THEME_COLOR</code> (<code>#808080</code>) for omitted entries. Chain swatches sample the same provider as the viewer, including author/label lookup; residue swatches fill omitted types with the same grey.</li>
+<li>Fallback colours are display values, not stored theme rows. Imported custom themes export their explicit entries and remain partial in sessions. Editing the built-in Default chain theme still seeds the editable theme with the dataset's existing palette.</li>
 </ul>
 <h3 id="sync-scope-note" class="tsd-anchor-link">Sync scope note<a href="#sync-scope-note" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul>
@@ -798,14 +800,15 @@ run against the intended server.</p>
 <li><code>npm run test:e2e:webgl:reuse</code> combines <code>PW_E2E_FORCE_WEBGL=1</code> with <code>PW_E2E_REUSE_SERVER=1</code>.</li>
 </ul>
 <h4 id="troubleshooting-parallel-e2e-failures" class="tsd-anchor-link">Troubleshooting Parallel E2E Failures<a href="#troubleshooting-parallel-e2e-failures" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4>
-<p>Normal local runs can use multiple workers; CI and forced-WebGL runs default to
-one worker. If a normal parallel run fails or times out, stop other test runs and
-rerun with one worker:</p>
-<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test:e2e</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-5">--workers=1</span>
+<p>All E2E runs default to one worker to limit resource contention between the
+large molecular structures and WebGL viewers. To investigate parallel execution
+on a machine with sufficient resources, override the default explicitly:</p>
+<pre><code class="sh"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">test:e2e</span><span class="hl-1"> </span><span class="hl-5">--</span><span class="hl-1"> </span><span class="hl-5">--workers=4</span>
 </code><button type="button">Copy</button></pre>
 
-<p>This keeps the normal browser settings while changing the worker count. For
-forced-WebGL checks, use <code>npm run test:e2e:webgl</code>, which defaults to one worker
+<p>This keeps the normal browser settings while changing the worker count. If a
+parallel run fails or times out, stop other test runs and rerun without the
+override. For forced-WebGL checks, use <code>npm run test:e2e:webgl</code>, which defaults to one worker
 and uses different browser launch flags. A serial pass can indicate concurrency
 or resource sensitivity, but does not prove the cause: investigate repeatable
 failures, including possible application or test races.</p>
