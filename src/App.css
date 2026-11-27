@@ -154,58 +154,29 @@
 /* =========================
  * 2. Mol* vertical stacking and containment overrides
  * ========================= */
-.msp-container {
-	display: flex;
-	flex-direction: column;
+.molstar-container-root > .msp-plugin {
 	position: relative;
 	width: 100%;
-	height: auto;
+	height: 400px;
 }
 
-.msp-layout-static {
-	display: flex;
-	flex-direction: column;
-	position: relative;
-	width: 100%;
-	height: auto;
+.molstar-container-root .msp-layout-region:not(.msp-layout-main) {
+	display: none;
 }
 
-.msp-viewport {
-	position: relative;
-	width: 100%;
-	height: 400px; /* Sets a fixed height for the Mol* 3D viewer area, ensuring it is always visible and usable. Adjust as needed for your layout. */
-	margin-bottom: 10px;
-	overflow: hidden;
+.molstar-container-root .msp-layout-main {
+	inset: 0;
 }
 
-.msp-canvas {
-	width: 100%; /* Ensures the Mol* 3D canvas fills the available horizontal space of the viewer */
-	height: 400px; /* Matches the .msp-viewport height to keep the 3D canvas and viewport in sync */
-	display: block;
-	position: absolute;
-	top: 0;
-	left: 0;
-	margin-bottom: 10px;
-	z-index: 1;
+.molstar-container-root .msp-selection-viewport-controls {
+	max-width: calc(100% - 88px);
 }
 
-.msp-viewport-top-left-controls {
-	position: absolute;
-	top: 10px;
-	left: 10px;
-	z-index: 10;
-	pointer-events: auto;
+.molstar-container-root .msp-selection-viewport-controls > .msp-flex-row {
+	overflow-x: auto;
 }
 
-.msp-viewport-controls {
-	position: absolute;
-	top: 10px;
-	right: 10px;
-	z-index: 10;
-	pointer-events: auto;
-}
-
-.msp-log {
+.molstar-advanced-controls-panel .msp-log {
 	pointer-events: auto;
 	position: relative !important;
 	max-height: 100px;
@@ -214,39 +185,6 @@
 	border: 1px solid #ccc;
 	padding: 5px;
 	margin-top: 10px !important;
-}
-
-.msp-hover-box-wrapper {
-	position: relative;
-}
-
-.msp-hover-box-body {
-	display: none;
-	position: absolute;
-	top: 100%;
-	left: 0;
-	z-index: 20;
-	background-color: #fff;
-	border: 1px solid #ccc;
-	padding: 5px;
-	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.msp-hover-box-wrapper:hover .msp-hover-box-body {
-	display: block;
-}
-
-/* Keep a stable space for Mol* hover/selection info to avoid control layout jumps. */
-.molstar-container-root .msp-viewport {
-	position: relative;
-}
-
-.molstar-container-root .msp-highlight-toast-wrapper {
-	min-height: 48px;
-}
-
-.molstar-container-root .msp-highlight-info {
-	min-height: 40px;
 }
 
 /* =========================
@@ -268,8 +206,24 @@
 }
 
 
-.molstar-advanced-controls-hidden .msp-layout-region:not(.msp-layout-main) {
-	display: none !important;
+.molstar-advanced-controls-panel > .msp-plugin {
+	position: relative;
+}
+
+.molstar-advanced-controls-panel .msp-sequence {
+	position: relative;
+	inset: auto;
+	height: 160px;
+}
+
+.molstar-advanced-controls-panel .msp-left-panel-controls {
+	position: relative;
+	height: 280px;
+}
+
+.molstar-advanced-controls-panel .msp-left-panel-controls > .msp-scrollable-container {
+	position: absolute !important;
+	inset: 0 0 0 33px !important;
 }
 
 .molstar-advanced-controls-toggle {

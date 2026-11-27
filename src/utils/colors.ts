@@ -5,8 +5,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-04-24
+ * @version 1.0.1
+ * @lastModified 2026-11-27
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { Color } from 'molstar/lib/mol-util/color';
@@ -17,6 +17,7 @@ import { ColorTheme } from 'molstar/lib/mol-theme/color';
 import { ChainIdColorThemeParams } from 'molstar/lib/mol-theme/color/chain-id';
 import { ChainIdColorTheme, ChainIdColorThemeProvider } from 'molstar/lib/mol-theme/color/chain-id';
 import { PluginUIContext } from 'molstar/lib/mol-plugin-ui/context';
+import { ParamDefinition as PD } from 'molstar/lib/mol-util/param-definition';
 
 // Define a type for the data structure
 export type Data = Record<string, string>;
@@ -364,6 +365,13 @@ export function createChainColorTheme(
 export function createResidueTypeColorTheme(
     themeName: string,
     residueTypeColorMap: Map<string, Color>) {
+    const params = {
+        __ribocodeThemeRefreshNonce: PD.Text('', { isHidden: true }),
+        __ribocodeActiveThemeKind: PD.Select<'chain' | 'residue-type'>('residue-type', [
+            ['chain', 'Chain'],
+            ['residue-type', 'Residue'],
+        ], { isHidden: true }),
+    };
     const normalizeResidueType = (value: unknown): string => String(value ?? '').trim().toUpperCase();
     const normalizedResidueColorMap = new Map<string, Color>();
     residueTypeColorMap.forEach((color, key) => {
@@ -382,7 +390,7 @@ export function createResidueTypeColorTheme(
     };
 
     const unknownResidueColor = Color(0xFF00FF);
-    const theme = (_ctx: ThemeDataContext, _props: {}) => ({
+    const theme = (_ctx: ThemeDataContext, props: PD.Values<typeof params>) => ({
         granularity: 'group',
         color: (location: any) => {
             if (StructureElement.Location.is(location) && Unit.isAtomic(location.unit)) {
@@ -395,7 +403,7 @@ export function createResidueTypeColorTheme(
             }
             return unknownResidueColor;
         },
-        props: {},
+        props,
         description: 'Colors residues according to a custom residue-type map.'
     });
 
@@ -404,8 +412,8 @@ export function createResidueTypeColorTheme(
         label: themeName,
         category: ColorTheme.Category.Residue,
         factory: theme,
-        getParams: () => ({}),
-        defaultValues: {},
+        getParams: () => params,
+        defaultValues: PD.getDefaultValues(params),
         isApplicable: () => true,
     };
 }

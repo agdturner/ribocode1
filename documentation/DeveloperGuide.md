@@ -208,11 +208,16 @@ This section defines expected behavior for loading, applying, saving, and testin
 
 ### Residue visual refresh note
 
-- Some residue transitions can retain stale visuals if only a single in-place update is applied.
-- Current expected behavior is an in-place two-step refresh for residue theme transitions:
-  1. apply an intermediate neutral theme (`chain-id`),
-  2. then apply the target residue theme.
-- This preserves representation identity while ensuring the rendered colors refresh correctly.
+- Apply the target residue theme directly, with a fresh `__ribocodeThemeRefreshNonce`.
+- The residue provider declares the refresh nonce and `__ribocodeActiveThemeKind` as hidden Mol* parameters and retains them in its theme props. Undeclared parameters are stripped by Mol* and cannot invalidate cached colours or preserve session metadata.
+- Queue residue-theme requests until both source and mirrored updates have completed. Do not expose an intermediate neutral theme in the selection controls.
+- Session serialization also recognizes registered residue-theme names when older representation metadata is absent.
+- When a session references files already open, reuse their structures but restore the saved representations rather than skipping the session state.
+
+### Chain-colour identity note
+
+- Chain edits target author chain IDs. Label aliases may be updated only when they do not collide with another author chain ID.
+- When seeding an editable default theme, preserve provider colours for all unaffected chains; author-ID colours take precedence over colliding label aliases.
 
 ### Sync scope note
 
@@ -232,11 +237,9 @@ To reduce UI clutter for common workflows, each viewer column includes a dedicat
 - The button is rendered in `ViewerColumn` and defaults to collapsed:
   - Label when collapsed: `Show Advanced Mol* Controls`
   - Label when expanded: `Hide Advanced Mol* Controls`
-- The toggle state is passed to `MolstarContainer` via `showAdvancedControls`.
-- In collapsed mode, only the Mol* main viewport (`3D Canvas`) is shown.
-- In expanded mode, additional Mol* regions (sequence/menu/control/log panels) are shown.
-- The CSS behavior is implemented in `App.css` using:
-  - `.molstar-advanced-controls-hidden .msp-layout-region:not(.msp-layout-main)`
+- `MolstarContainer` disables the embedded layout regions and their native toggle; the viewport controls remain available.
+- `MolstarAdvancedControls` renders the sequence, left panel, structure tools and log below the viewer only when the Ribocode toggle is expanded.
+- The pinned Mol* light skin is imported before `App.css`; scoped overrides adapt the viewport and advanced panels to the two-column layout.
 
 This keeps default user workflows focused on Ribocode controls while preserving full Mol* UI access for advanced users.
 

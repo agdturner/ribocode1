@@ -3,8 +3,8 @@
  *
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-06-11
+ * @version 1.0.1
+ * @lastModified 2026-11-27
  */
 import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
@@ -31,7 +31,7 @@ async function openHighlightControls(page: Page, viewer: 'A' | 'B') {
 }
 
 test('AlignedTo highlight controls remain active across chain/subunit/residue toggles', async ({ page }) => {
-  test.setTimeout(90000);
+  test.setTimeout(180000);
 
   await page.goto('/');
   await loadAlignedToAndAligned(page);

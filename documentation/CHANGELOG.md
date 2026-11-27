@@ -3,6 +3,11 @@ A chronological version based list of changes.
 
 ## [Unreleased]
 
+- Use the Mol* light skin for embedded viewer controls, restoring the vertical toolbar and distinct selection icons; keep advanced panels behind the per-viewer toggle.
+- Prevent chain-colour edits from changing unrelated author chains through colliding label aliases, and serialize residue-theme transitions across viewers.
+- Preserve the residue-theme kind when saving sessions even when Mol* has removed undeclared representation metadata.
+- Restore saved representations when loading a session whose molecular files are already open.
+
 ## [v0.25.0]
 Release summary: this minor release adds residue controls for every selected chain and chain reordering, with improvements to selection synchronization and session restoration.
 

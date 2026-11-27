@@ -3,8 +3,8 @@
  *
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT
  * @author Copilot, Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-06-11
+ * @version 1.0.1
+ * @lastModified 2026-11-27
  */
 import { test, expect, type Page, type Browser } from '@playwright/test';
 import path from 'path';
@@ -943,6 +943,59 @@ test('sync-enabled flow mirrors representation residue theme switch across viewe
   await expect.poll(async () => (await getRepThemeStateByViewer(page, 'B'))?.colorThemeName, { timeout: 20000 }).toBe('Aligned-default-residue-colors');
 });
 
+async function getSpacefillThemeState(page: Page): Promise<RepThemeState | null> {
+  return page.evaluate(() => {
+    const api = (window as Window & {
+      __ribocodeTestApi?: {
+        getRepresentationThemeStates: (mode: MoleculeMode, viewer: 'A' | 'B') => Array<RepThemeState & { type: string }>;
+      };
+    }).__ribocodeTestApi;
+    if (!api) throw new Error('Representation test API is unavailable.');
+    const matches = api.getRepresentationThemeStates('AlignedTo', 'A').filter(row => row.type === 'spacefill');
+    if (matches.length > 1) throw new Error('Expected a unique spacefill representation.');
+    return matches[0] ?? null;
+  });
+}
+
+async function roundTripRepresentationTheme(page: Page, expectedTheme: string, otherTheme: string): Promise<string> {
+  await page.evaluate(() => {
+    Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true });
+  });
+  await page.locator('#session-menu-btn').click();
+  const downloaded = page.waitForEvent('download');
+  await page.locator('#session-menu-dropdown .session-menu-item:text-is("Save All")').click();
+  const download = await downloaded;
+  const sessionPath = await download.path();
+  expect(sessionPath).toBeTruthy();
+  if (!sessionPath) throw new Error('Save All did not produce a session download.');
+  const saved = JSON.parse(fs.readFileSync(sessionPath, 'utf8'));
+  expect(saved.embeddedFiles).toHaveProperty([saved.viewerA.moleculeAlignedTo.filename]);
+  expect(saved.viewerA.moleculeAlignedTo.representations).toContainEqual(expect.objectContaining({
+    type: 'spacefill',
+    activeThemeKind: 'residue-type',
+    residueThemeName: expectedTheme,
+    colorTheme: expect.objectContaining({ name: expectedTheme }),
+  }));
+  const beforeLoad = await getSpacefillThemeState(page);
+  if (!beforeLoad?.repId) throw new Error('Spacefill representation is unavailable before session load.');
+  await page.locator(`#viewer-column-A-rep-residue-theme-${beforeLoad.repId}`).selectOption(otherTheme);
+  await expect.poll(async () => (await getSpacefillThemeState(page))?.colorThemeName, {
+    timeout: 30000,
+  }).toBe(otherTheme);
+  await page.setInputFiles('#session-menu-file-input-all', sessionPath);
+  let repId = '';
+  await expect.poll(async () => {
+    const state = await getSpacefillThemeState(page);
+    repId = state?.repId ?? '';
+    return state?.colorThemeName;
+  }, { timeout: 60000 }).toBe(expectedTheme);
+  await openRepresentationControls(page);
+  await expect(page.locator(`#viewer-column-A-rep-theme-kind-${repId}`)).toHaveValue('residue-type');
+  await expect(page.locator(`#viewer-column-A-rep-residue-theme-${repId}`)).toHaveValue(expectedTheme);
+  await expect.poll(async () => (await getSpacefillThemeState(page))?.effectiveColorThemeName).toBe(expectedTheme);
+  return repId;
+}
+
 test('session save/load restores representation residue custom and default switches', async ({ page }) => {
   test.setTimeout(300000);
 
@@ -957,7 +1010,8 @@ test('session save/load restores representation residue custom and default switc
   await page.selectOption('#viewer-column-A-alignedto-color-mode-select', 'chain');
   await page.selectOption('#viewer-column-A-alignedto-chain-colour-theme-select', { value: chainTheme.value });
 
-  const alignedToRepId = await getLatestRepIdForViewerMode(page, 'A', 'AlignedTo');
+  await expect.poll(async () => (await getSpacefillThemeState(page))?.repId, { timeout: 20000 }).toBeTruthy();
+  let alignedToRepId = (await getSpacefillThemeState(page))?.repId ?? '';
   expect(alignedToRepId).not.toBe('');
 
   const kindSelect = page.locator(`#viewer-column-A-rep-theme-kind-${alignedToRepId}`);
@@ -969,6 +1023,8 @@ test('session save/load restores representation residue custom and default switc
   await residueSelect.selectOption({ value: residueTheme.value });
   await expect.poll(async () => (await getAlignedToRepThemeStateWithFallback(page, alignedToRepId))?.colorThemeName, { timeout: 20000 }).toBe(residueTheme.value);
 
-  await residueSelect.selectOption({ label: 'Default' });
+  alignedToRepId = await roundTripRepresentationTheme(page, residueTheme.value, 'AlignedTo-default-residue-colors');
+  await page.locator(`#viewer-column-A-rep-residue-theme-${alignedToRepId}`).selectOption({ label: 'Default' });
   await expect.poll(async () => (await getAlignedToRepThemeStateWithFallback(page, alignedToRepId))?.colorThemeName, { timeout: 20000 }).toBe('AlignedTo-default-residue-colors');
+  await roundTripRepresentationTheme(page, 'AlignedTo-default-residue-colors', residueTheme.value);
 });
