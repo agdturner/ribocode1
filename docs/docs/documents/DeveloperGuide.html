@@ -1,5 +1,5 @@
-<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>DeveloperGuide | ribocode1 - v0.25.0</title><meta name="description" content="Documentation for ribocode1"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
-<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">ribocode1 - v0.25.0</a>
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>DeveloperGuide | ribocode1 - v0.26.0</title><meta name="description" content="Documentation for ribocode1"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">ribocode1 - v0.26.0</a>
 <div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
 <ul role="listbox" id="tsd-search-results"></ul>
 <div id="tsd-search-status" aria-live="polite" aria-atomic="true">
@@ -239,14 +239,16 @@ contains the version currently pinned by Ribocode.</p>
 </ul>
 <h3 id="residue-visual-refresh-note" class="tsd-anchor-link">Residue visual refresh note<a href="#residue-visual-refresh-note" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul>
-<li>Some residue transitions can retain stale visuals if only a single in-place update is applied.</li>
-<li>Current expected behavior is an in-place two-step refresh for residue theme transitions:
-<ol>
-<li>apply an intermediate neutral theme (<code>chain-id</code>),</li>
-<li>then apply the target residue theme.</li>
-</ol>
-</li>
-<li>This preserves representation identity while ensuring the rendered colors refresh correctly.</li>
+<li>Apply the target residue theme directly, with a fresh <code>__ribocodeThemeRefreshNonce</code>.</li>
+<li>The residue provider declares the refresh nonce and <code>__ribocodeActiveThemeKind</code> as hidden Mol* parameters and retains them in its theme props. Undeclared parameters are stripped by Mol* and cannot invalidate cached colours or preserve session metadata.</li>
+<li>Queue residue-theme requests until both source and mirrored updates have completed. Do not expose an intermediate neutral theme in the selection controls.</li>
+<li>Session serialization also recognizes registered residue-theme names when older representation metadata is absent.</li>
+<li>When a session references files already open, reuse their structures but restore the saved representations rather than skipping the session state.</li>
+</ul>
+<h3 id="chain-colour-identity-note" class="tsd-anchor-link">Chain-colour identity note<a href="#chain-colour-identity-note" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Chain edits target author chain IDs. Label aliases may be updated only when they do not collide with another author chain ID.</li>
+<li>When seeding an editable default theme, preserve provider colours for all unaffected chains; author-ID colours take precedence over colliding label aliases.</li>
 </ul>
 <h3 id="sync-scope-note" class="tsd-anchor-link">Sync scope note<a href="#sync-scope-note" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul>
@@ -268,14 +270,9 @@ contains the version currently pinned by Ribocode.</p>
 <li>Label when expanded: <code>Hide Advanced Mol* Controls</code></li>
 </ul>
 </li>
-<li>The toggle state is passed to <code>MolstarContainer</code> via <code>showAdvancedControls</code>.</li>
-<li>In collapsed mode, only the Mol* main viewport (<code>3D Canvas</code>) is shown.</li>
-<li>In expanded mode, additional Mol* regions (sequence/menu/control/log panels) are shown.</li>
-<li>The CSS behavior is implemented in <code>App.css</code> using:
-<ul>
-<li><code>.molstar-advanced-controls-hidden .msp-layout-region:not(.msp-layout-main)</code></li>
-</ul>
-</li>
+<li><code>MolstarContainer</code> disables the embedded layout regions and their native toggle; the viewport controls remain available.</li>
+<li><code>MolstarAdvancedControls</code> renders the sequence, left panel, structure tools and log below the viewer only when the Ribocode toggle is expanded.</li>
+<li>The pinned Mol* light skin is imported before <code>App.css</code>; scoped overrides adapt the viewport and advanced panels to the two-column layout.</li>
 </ul>
 <p>This keeps default user workflows focused on Ribocode controls while preserving full Mol* UI access for advanced users.</p>
 <h2 id="re-alignment-implementation-notes" class="tsd-anchor-link">Re-alignment Implementation Notes<a href="#re-alignment-implementation-notes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
@@ -948,6 +945,7 @@ there and to the authors in the header of source files they modify.</p>
 <li><a href="#residue-theme-selection-behavior"><span>Residue theme selection behavior</span></a></li>
 <li><a href="#residue-default-mapping-contract"><span>Residue default mapping contract</span></a></li>
 <li><a href="#residue-visual-refresh-note"><span>Residue visual refresh note</span></a></li>
+<li><a href="#chain-colour-identity-note"><span>Chain-<wbr/>colour identity note</span></a></li>
 <li><a href="#sync-scope-note"><span>Sync scope note</span></a></li>
 <li><a href="#testing-implications-for-theme-regressions"><span>Testing implications for theme regressions</span></a></li></ul></li>
 <li><a href="#mol-advanced-controls-toggle"><span>Mol* <wbr/>Advanced <wbr/>Controls <wbr/>Toggle</span></a></li>
@@ -1030,7 +1028,7 @@ there and to the authors in the header of source files they modify.</p>
 <ul>
 <li><a href="#working-from-a-fork"><span>Working from a fork</span></a></li></ul></li></ul></div></details></div>
 <div class="site-menu">
-<nav class="tsd-navigation"><a href="../modules.html">ribocode1 - v0.25.0</a>
+<nav class="tsd-navigation"><a href="../modules.html">ribocode1 - v0.26.0</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">
 <li>Loading...</li></ul></nav></div></div></div><footer>
 <p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
