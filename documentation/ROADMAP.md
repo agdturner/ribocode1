@@ -13,8 +13,12 @@ This document outlines planned work for upcoming Ribocode versions. It is direct
 
 ## Planned Versions
 
+### v0.27.0 New UI Style
+- https://github.com/ribocode-slola/ribocode1/issues/129
+- https://github.com/ribocode-slola/ribocode1/issues/134
+- https://github.com/ribocode-slola/ribocode1/issues/188
 
-### v0.26.0 Improve alignment quality.
+### v0.28.0 Improve alignment quality.
 - Maintain objective benchmark tracking for:
   - 6XU6/6XU8 chain CU -> CU (stable reference case)
   - 7WTT/7WTZ chain e -> e (known weak case)

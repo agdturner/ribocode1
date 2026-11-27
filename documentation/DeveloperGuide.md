@@ -835,16 +835,17 @@ run against the intended server.
 
 #### Troubleshooting Parallel E2E Failures
 
-Normal local runs can use multiple workers; CI and forced-WebGL runs default to
-one worker. If a normal parallel run fails or times out, stop other test runs and
-rerun with one worker:
+All E2E runs default to one worker to limit resource contention between the
+large molecular structures and WebGL viewers. To investigate parallel execution
+on a machine with sufficient resources, override the default explicitly:
 
 ```sh
-npm run test:e2e -- --workers=1
+npm run test:e2e -- --workers=4
 ```
 
-This keeps the normal browser settings while changing the worker count. For
-forced-WebGL checks, use `npm run test:e2e:webgl`, which defaults to one worker
+This keeps the normal browser settings while changing the worker count. If a
+parallel run fails or times out, stop other test runs and rerun without the
+override. For forced-WebGL checks, use `npm run test:e2e:webgl`, which defaults to one worker
 and uses different browser launch flags. A serial pass can indicate concurrency
 or resource sensitivity, but does not prove the cause: investigate repeatable
 failures, including possible application or test races.

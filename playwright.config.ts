@@ -4,8 +4,8 @@
  * Copyright (c) 2024-now Ribocode contributors, licensed under MIT, See LICENSE file for more info.
  * 
  * @author Andy Turner <agdturner@gmail.com>
- * @version 1.0.0
- * @lastModified 2026-10-24
+ * @version 1.0.1
+ * @lastModified 2026-11-27
  * @see https://github.com/ribocode-slola/ribocode1
  */
 import { defineConfig, devices } from '@playwright/test';
@@ -30,7 +30,7 @@ export default defineConfig({
   fullyParallel: !forceWebGL,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : (forceWebGL ? 1 : undefined),
+  workers: 1,
   reporter: 'list',
   use: {
     trace: 'on-first-retry',
