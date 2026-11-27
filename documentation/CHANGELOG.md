@@ -3,6 +3,8 @@ A chronological version based list of changes.
 
 ## [Unreleased]
 
+- Use the Mol* light skin for embedded viewer controls, restoring the vertical toolbar and distinct selection icons; keep advanced panels behind the per-viewer toggle.
+
 ## [v0.25.0]
 Release summary: this minor release adds residue controls for every selected chain and chain reordering, with improvements to selection synchronization and session restoration.
 

@@ -1160,7 +1160,6 @@ const ViewerColumn: React.FC<ViewerColumnProps> = ({
 			   {...molstarContainerProps}
 			   idPrefix={viewerIdPrefix}
 			   viewerKey={viewerKey}
-			   showAdvancedControls={false}
 		       />
 		       <MoleculeUI key={moleculeUIAlignedToProps.key} {...(() => { const { key, ...rest } = moleculeUIAlignedToProps; return rest; })()} idPrefix={viewerIdPrefix} />
 		       <MoleculeUI key={moleculeUIAlignedProps.key} {...(() => { const { key, ...rest } = moleculeUIAlignedProps; return rest; })()} idPrefix={viewerIdPrefix} />

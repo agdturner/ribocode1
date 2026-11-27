@@ -232,11 +232,9 @@ To reduce UI clutter for common workflows, each viewer column includes a dedicat
 - The button is rendered in `ViewerColumn` and defaults to collapsed:
   - Label when collapsed: `Show Advanced Mol* Controls`
   - Label when expanded: `Hide Advanced Mol* Controls`
-- The toggle state is passed to `MolstarContainer` via `showAdvancedControls`.
-- In collapsed mode, only the Mol* main viewport (`3D Canvas`) is shown.
-- In expanded mode, additional Mol* regions (sequence/menu/control/log panels) are shown.
-- The CSS behavior is implemented in `App.css` using:
-  - `.molstar-advanced-controls-hidden .msp-layout-region:not(.msp-layout-main)`
+- `MolstarContainer` disables the embedded layout regions and their native toggle; the viewport controls remain available.
+- `MolstarAdvancedControls` renders the sequence, left panel, structure tools and log below the viewer only when the Ribocode toggle is expanded.
+- The pinned Mol* light skin is imported before `App.css`; scoped overrides adapt the viewport and advanced panels to the two-column layout.
 
 This keeps default user workflows focused on Ribocode controls while preserving full Mol* UI access for advanced users.
 
